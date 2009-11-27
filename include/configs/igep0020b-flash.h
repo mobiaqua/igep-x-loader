@@ -184,15 +184,15 @@
 #define CFG_SYNC_BURST_READ	1
 
 /* OneNAND is partitioned:
- *   0x0000000 - 0x0080000   X-Loader
- *   0x0080000 - 0x00c0000   U-boot Image
- *   0x00c0000 - 0x00e0000   U-Boot Env Data (X-loader doesn't care)
- *   0x00e0000 - 0x0120000   Kernel Image
- *   0x0120000 - 0x4000000   depends on application
+ * 0x00000000-0x00080000 : "X-Loader"
+ * 0x00080000-0x00240000 : "U-Boot"
+ * 0x00240000-0x00280000 : "U-Boot Env"
+ * 0x00280000-0x00780000 : "Kernel"
+ * 0x00780000-0x20000000 : "File System"
  */
 
 #define ONENAND_START_BLOCK 	4
-#define ONENAND_END_BLOCK	6
+#define ONENAND_END_BLOCK	18
 #define ONENAND_PAGE_SIZE	2048     /* 2KB */
 #define ONENAND_BLOCK_SIZE	0x20000  /* 128KB */
 
