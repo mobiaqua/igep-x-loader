@@ -161,14 +161,14 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf)
 	onenand_writew(onenand_block_address(block),
 		THIS_ONENAND(ONENAND_REG_START_ADDRESS1));
 
+	onenand_writew(onenand_bufferram_address(block),
+		THIS_ONENAND(ONENAND_REG_START_ADDRESS2));
+
 	onenand_writew(onenand_sector_address(page),
 		THIS_ONENAND(ONENAND_REG_START_ADDRESS8));
 
 	onenand_writew(onenand_buffer_address(),
 		THIS_ONENAND(ONENAND_REG_START_BUFFER));
-
-	onenand_writew(onenand_bufferram_address(block),
-		THIS_ONENAND(ONENAND_REG_START_ADDRESS2));
 
 	onenand_writew(ONENAND_INT_CLEAR, THIS_ONENAND(ONENAND_REG_INTERRUPT));
 
@@ -182,32 +182,11 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf)
 	while (!(READ_INTERRUPT() & ONENAND_INT_MASTER))
 		continue;
 
-	ctrl = READ_CTRL_STATUS();
-	
-	if (ctrl & ONENAND_CTRL_ERROR) {
-		hang();
-	}
-	
-	if (READ_INTERRUPT() & ONENAND_INT_READ) {
+	/* Check for invalid block mark. Bad block markers */
+	/* are stored in spare area of 1st or 2nd page */
+	if (page < 2 && (onenand_readw(THIS_ONENAND(ONENAND_SPARERAM)) != 0xffff))
+		return 1;
 
-		ecc = READ_ECC_STATUS();
-		if (ecc & ONENAND_ECC_2BIT_ALL) {
-			hang();
-		}
-
-		/* Check if the block is bad. Bad block markers    */
-		/* are stored in spare area of 1st or 2nd page */
-		if ((page == 0) || (page == 1))
-		{
-		    unsigned long *spareArea = (unsigned long *) (ONENAND_ADDR + ONENAND_SPARERAM);
-		    bbmarker = *spareArea;
-        	    /* for bad block markers */
-        	    if (bbmarker != 0xFFFF){
-        	        return 1;
-        	    }
-		}
-	}
-	
 #ifdef __HAVE_ARCH_MEMCPY32
 	/* 32 bytes boundary memory copy */
 	memcpy32(buf, base, ONENAND_PAGE_SIZE);
@@ -225,7 +204,7 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf)
 #define ONENAND_PAGES_PER_BLOCK		64
 
 /**
- * onenand_read_block - Read a block data to buf
+ * onenand_read_block - Read a block data to buf skipping bad blocks
  * @return 0 on sucess
  */ 
 
@@ -239,8 +218,8 @@ int onenand_read_block(unsigned char *buf, ulong block)
 	/* read the block page by page*/
 	for (page = ONENAND_START_PAGE;
 	    page < ONENAND_PAGES_PER_BLOCK; page++) {
-
 		if (onenand_read_page(block, page, buf + offset)){
+		    printf("Skipping Bad block %d", block);
 		    set_async_read();
 		    return 1;
 		}
