@@ -633,10 +633,6 @@ void per_clocks_enable(void)
 	sr32(CM_FCLKEN_PER, 0, 32, FCK_PER_ON);
 	sr32(CM_ICLKEN_PER, 0, 32, ICK_PER_ON);
 
-	/* Enable GPIO5 clocks for blinky LEDs */
-	sr32(CM_FCLKEN_PER, 16, 1, 0x1);	/* FCKen GPIO5 */
-	sr32(CM_ICLKEN_PER, 16, 1, 0x1);	/* ICKen GPIO5 */
-
 	delay(1000);
 }
 
@@ -876,37 +872,9 @@ int nand_init(void)
 	return 0;
 }
 
-#define DEBUG_LED1			26	/* gpio */
-#define DEBUG_LED2			27	/* gpio */
-
-void blinkLEDs()
-{
-	void *p;
-
-	/* Alternately turn the LEDs on and off */
-	p = (unsigned long *)OMAP34XX_GPIO5_BASE;
-	while (1) {
-		/* turn LED1 on and LED2 off */
-		*(unsigned long *)(p + 0x94) = 1 << (DEBUG_LED1 % 32);
-		*(unsigned long *)(p + 0x90) = 1 << (DEBUG_LED2 % 32);
-
-		/* delay for a while */
-		delay(1000);
-
-		/* turn LED1 off and LED2 on */
-		*(unsigned long *)(p + 0x90) = 1 << (DEBUG_LED1 % 32);
-		*(unsigned long *)(p + 0x94) = 1 << (DEBUG_LED2 % 32);
-
-		/* delay for a while */
-		delay(1000);
-	}
-}
-
-/* optionally do something like blinking LED */
+/* optionally do something */
 void board_hang(void)
 {
-	while (1)
-		blinkLEDs();
 }
 
 /******************************************************************************
