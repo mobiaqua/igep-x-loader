@@ -181,7 +181,6 @@
 /*-----------------------------------------------------------------------
  * Board oneNAND Info.
  */
-#define CFG_SYNC_BURST_READ	1
 
 /* OneNAND is partitioned:
  * 0x00000000-0x00080000 : "X-Loader"
@@ -195,6 +194,7 @@
 #define ONENAND_END_BLOCK	18
 #define ONENAND_PAGE_SIZE	2048     /* 2KB */
 #define ONENAND_BLOCK_SIZE	0x20000  /* 128KB */
+#define ONENAND_HAS_2PLANE	1
 
 #endif /* __CONFIG_H */
 
