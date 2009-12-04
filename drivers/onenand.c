@@ -48,14 +48,122 @@
 
 #define READ_ECC_STATUS()						\
 	onenand_readw(THIS_ONENAND(ONENAND_REG_ECC_STATUS))
-	
+
 #define SET_EMIFS_CS_CONFIG(v)					\
 	(*(volatile unsigned long *)(OMAP_EMIFS_CS_CONFIG) = (v))
 
-#define onenand_block_address(block)		(block)
-#define onenand_sector_address(page)		(page << 2)
-#define onenand_buffer_address()		((1 << 3) << 8)
-#define onenand_bufferram_address(block)	(0)
+#define ONENAND_DEVICE_ID()				\
+	(*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_DEVICE_ID)))
+
+#define ONENAND_IS_DDP()					\
+        (ONENAND_DEVICE_ID() & ONENAND_DEVICE_IS_DDP)
+
+/**
+ * onenand_page_address - [DEFAULT] Get page address
+ * @param page          the page address
+ * @param sector        the sector address
+ * @return              combined page and sector address
+ *
+ * Setup Start Address 8 Register (F107h)
+ */
+static int onenand_page_address(int page, int sector)
+{
+        /* Flash Page Address, Flash Sector Address */
+        int fpa, fsa;
+
+        fpa = page & ONENAND_FPA_MASK;
+        fsa = sector & ONENAND_FSA_MASK;
+
+        return ((fpa << ONENAND_FPA_SHIFT) | fsa);
+}
+
+/**
+ * onenand_buffer_address - [DEFAULT] Get buffer address
+ * @param dataram1      DataRAM index
+ * @param sectors       the sector address
+ * @param count         the number of sectors
+ * @return              the start buffer value
+ *
+ * Setup Start Buffer Register (F200h)
+ */
+static int onenand_buffer_address(int dataram1, int sectors, int count)
+{
+        int bsa, bsc;
+
+        /* BufferRAM Sector Address */
+        bsa = sectors & ONENAND_BSA_MASK;
+        if (dataram1)
+              bsa |= ONENAND_BSA_DATARAM1;    /* DataRAM1 */
+        else
+              bsa |= ONENAND_BSA_DATARAM0;    /* DataRAM0 */
+
+        /* BufferRAM Sector Count */
+        bsc = count & ONENAND_BSC_MASK;
+
+        return ((bsa << ONENAND_BSA_SHIFT) | bsc);
+}
+
+/**
+ * onenand_get_density - [DEFAULT] Get OneNAND density
+ * @param dev_id        OneNAND device ID
+ *
+ * Get OneNAND density from device ID
+ */
+static inline int onenand_get_density(int dev_id)
+{
+        int density = dev_id >> ONENAND_DEVICE_DENSITY_SHIFT;
+        return (density & ONENAND_DEVICE_DENSITY_MASK);
+}
+
+/**
+ * onenand_block_address - [DEFAULT] Get block address
+ * @param block         the block
+ * @return              translated block address if DDP, otherwise same
+ *
+ * Setup Start Address 1 Register (F100h)
+ */
+static int onenand_block_address(int block)
+{
+	int density, density_mask;
+
+	density = onenand_get_density(ONENAND_DEVICE_ID());
+	/* Set density mask. it is used for DDP */
+        if (ONENAND_IS_DDP())
+                density_mask = (1 << (density + 6));
+        else
+                density_mask = 0;
+
+        /* Device Flash Core select, NAND Flash Block Address */
+        if (block & density_mask)
+                return ONENAND_DDP_CHIP1 | (block ^ density_mask);
+
+        return block;
+}
+
+/**
+ * onenand_bufferram_address - [DEFAULT] Get bufferram address
+ * @param block         the block
+ * @return              set DBS value if DDP, otherwise 0
+ *
+ * Setup Start Address 2 Register (F101h) for DDP
+ */
+static int onenand_bufferram_address(int block)
+{
+        int density, density_mask;
+
+        density = onenand_get_density(ONENAND_DEVICE_ID());
+        /* Set density mask. it is used for DDP */
+        if (ONENAND_IS_DDP())
+                density_mask = (1 << (density + 6));
+        else
+                density_mask = 0;
+
+        /* Device BufferRAM Select */
+        if (block & density_mask)
+                return ONENAND_DDP_CHIP1;
+
+        return ONENAND_DDP_CHIP0;
+}
 
 #if defined(CFG_SYNC_BURST_READ) && defined(CONFIG_OMAP1610)
 static inline void set_sync_burst_read(void)
@@ -80,7 +188,6 @@ static inline void set_sync_burst_read(void)
 		;
 	SET_EMIFS_CS_CONFIG(value);
 }
-
 static inline void set_async_read(void)
 {
 	unsigned int value;
@@ -147,9 +254,10 @@ onenand_chip()
 }
 
 /* read a page with ECC */
-static inline int onenand_read_page(ulong block, ulong page, u_char *buf)
+static inline int onenand_read_page(ulong block, ulong page, u_char *buf, int dataram)
 {
 	unsigned long *base;
+	int sectors = 4, count = 4, retval;
 
 #ifndef __HAVE_ARCH_MEMCPY32
 	unsigned int offset, value;
@@ -158,26 +266,32 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf)
 	unsigned short bbmarker;
 #endif
 
-	onenand_writew(onenand_block_address(block),
-		THIS_ONENAND(ONENAND_REG_START_ADDRESS1));
+	/* Write 'DFS, FBA' of Flash */
+	retval = onenand_block_address(block);
+	onenand_writew(retval, THIS_ONENAND(ONENAND_REG_START_ADDRESS1));
 
-	onenand_writew(onenand_bufferram_address(block),
-		THIS_ONENAND(ONENAND_REG_START_ADDRESS2));
+	/* Select DataRAM for DDP */
+	retval = onenand_bufferram_address(block);
+	onenand_writew(retval, THIS_ONENAND(ONENAND_REG_START_ADDRESS2));
 
-	onenand_writew(onenand_sector_address(page),
-		THIS_ONENAND(ONENAND_REG_START_ADDRESS8));
+	/* Write 'FPA, FSA' of Flash */
+	retval = onenand_page_address(page, sectors);
+	onenand_writew(retval, THIS_ONENAND(ONENAND_REG_START_ADDRESS8));
 
-	onenand_writew(onenand_buffer_address(),
-		THIS_ONENAND(ONENAND_REG_START_BUFFER));
+	/* Write 'BSA, BSC' of DataRAM */
+        retval = onenand_buffer_address(dataram, sectors, count);
+	onenand_writew(retval, THIS_ONENAND(ONENAND_REG_START_BUFFER));
 
+	/* Interrupt clear */
 	onenand_writew(ONENAND_INT_CLEAR, THIS_ONENAND(ONENAND_REG_INTERRUPT));
 
+	/* Read command */
 	onenand_writew(ONENAND_CMD_READ, THIS_ONENAND(ONENAND_REG_COMMAND));
 
 #ifndef __HAVE_ARCH_MEMCPY32
  	p = (unsigned long *) buf;
 #endif
-	base = (unsigned long *) (ONENAND_ADDR + ONENAND_DATARAM);
+	base = (unsigned long *) (THIS_ONENAND(ONENAND_DATARAM));
 
 	while (!(READ_INTERRUPT() & ONENAND_INT_MASTER))
 		continue;
@@ -215,20 +329,35 @@ int onenand_read_block(unsigned char *buf, ulong block)
 	set_sync_burst_read();
 
 	/* NOTE: you must read page from page 1 of block 0 */
-	/* read the block page by page*/
-	for (page = ONENAND_START_PAGE;
-	    page < ONENAND_PAGES_PER_BLOCK; page++) {
-		if (onenand_read_page(block, page, buf + offset)){
-		    printf("Skipping Bad block %d", block);
+	/* read the block page by page */
+	for (page = ONENAND_START_PAGE; page < ONENAND_PAGES_PER_BLOCK; page++) {
+
+		if (onenand_read_page(block, page, buf + offset, 0)) {
+		    /* This block is bad. Skip it
+                     * and read next block */
+		    printf("Skipping Bad block %d\n", block);
 		    set_async_read();
 		    return 1;
 		}
 
 		offset += ONENAND_PAGE_SIZE;
+
+	#ifdef ONENAND_HAS_2PLANE
+		/* Is it the odd plane ? */
+		if (onenand_read_page(block + 1, page, buf + offset, 0)) {
+			/* This block is bad. Skip it
+			 * and read next block */
+			printf("Skipping Bad block %d\n", block + 1);
+			set_async_read();
+			return 1;
+		}
+
+		offset += ONENAND_PAGE_SIZE;
+	#endif
+
 	}
 
 	set_async_read();
 
 	return 0;
 }
-

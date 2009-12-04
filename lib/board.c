@@ -106,10 +106,20 @@ void start_armboot (void)
 #ifdef CFG_PRINTF
        			printf("Loading u-boot.bin from onenand\n");
 #endif
+
+#ifdef ONENAND_HAS_2PLANE
+			i = ONENAND_START_BLOCK;
+			while ( i < ONENAND_END_BLOCK ) {
+				if (!onenand_read_block(buf, i))
+					buf += 2 * ONENAND_BLOCK_SIZE;
+				i += 2;
+			}
+#else
         		for (i = ONENAND_START_BLOCK; i < ONENAND_END_BLOCK; i++){
         			if (!onenand_read_block(buf, i))
         				buf += ONENAND_BLOCK_SIZE;
         		}
+#endif
 		} else if (get_mem_type() == GPMC_NAND){
 #ifdef CFG_PRINTF
        			printf("Loading u-boot.bin from nand\n");

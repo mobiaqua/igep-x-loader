@@ -3,7 +3,8 @@
  *
  *  OneNAND Register header file
  *
- *  Copyright (C) 2005 Samsung Electronics
+ *  Copyright (C) 2005-2007 Samsung Electronics
+ *  Kyungmin Park <kyungmin.park@samsung.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -66,12 +67,16 @@
 /*
  * Device ID Register F001h (R)
  */
+#define ONENAND_DEVICE_DENSITY_MASK	(0xf)
 #define ONENAND_DEVICE_DENSITY_SHIFT	(4)
 #define ONENAND_DEVICE_IS_DDP		(1 << 3)
 #define ONENAND_DEVICE_IS_DEMUX		(1 << 2)
 #define ONENAND_DEVICE_VCC_MASK		(0x3)
 
 #define ONENAND_DEVICE_DENSITY_512Mb	(0x002)
+#define ONENAND_DEVICE_DENSITY_1Gb	(0x003)
+#define ONENAND_DEVICE_DENSITY_2Gb	(0x004)
+#define ONENAND_DEVICE_DENSITY_4Gb	(0x005)
 
 /*
  * Version ID Register F002h (R)
@@ -79,9 +84,11 @@
 #define ONENAND_VERSION_PROCESS_SHIFT	(8)
 
 /*
- * Start Address 1 F100h (R/W)
+ * Start Address 1 F100h (R/W) & Start Address 2 F101h (R/W)
  */
 #define ONENAND_DDP_SHIFT		(15)
+#define ONENAND_DDP_CHIP0		(0)
+#define ONENAND_DDP_CHIP1		(1 << ONENAND_DDP_SHIFT)
 
 /*
  * Start Address 8 F107h (R/W)
@@ -107,11 +114,15 @@
 #define ONENAND_CMD_READOOB		(0x13)
 #define ONENAND_CMD_PROG		(0x80)
 #define ONENAND_CMD_PROGOOB		(0x1A)
+#define ONENAND_CMD_2X_PROG		(0x7D)
+#define ONENAND_CMD_2X_CACHE_PROG	(0x7F)
 #define ONENAND_CMD_UNLOCK		(0x23)
 #define ONENAND_CMD_LOCK		(0x2A)
 #define ONENAND_CMD_LOCK_TIGHT		(0x2C)
+#define ONENAND_CMD_UNLOCK_ALL		(0x27)
 #define ONENAND_CMD_ERASE		(0x94)
 #define ONENAND_CMD_RESET		(0xF0)
+#define ONENAND_CMD_OTP_ACCESS		(0x65)
 #define ONENAND_CMD_READID		(0x90)
 
 /* NOTE: Those are not *REAL* commands */
@@ -121,13 +132,28 @@
  * System Configuration 1 Register F221h (R, R/W)
  */
 #define ONENAND_SYS_CFG1_SYNC_READ	(1 << 15)
-#define ONENAND_SYS_CFG1_BRL		(12)
-#define ONENAND_SYS_CFG1_BL		(9)
+#define ONENAND_SYS_CFG1_BRL_7		(7 << 12)
+#define ONENAND_SYS_CFG1_BRL_6		(6 << 12)
+#define ONENAND_SYS_CFG1_BRL_5		(5 << 12)
+#define ONENAND_SYS_CFG1_BRL_4		(4 << 12)
+#define ONENAND_SYS_CFG1_BRL_3		(3 << 12)
+#define ONENAND_SYS_CFG1_BRL_10		(2 << 12)
+#define ONENAND_SYS_CFG1_BRL_9		(1 << 12)
+#define ONENAND_SYS_CFG1_BRL_8		(0 << 12)
+#define ONENAND_SYS_CFG1_BRL_SHIFT	(12)
+#define ONENAND_SYS_CFG1_BL_32		(4 << 9)
+#define ONENAND_SYS_CFG1_BL_16		(3 << 9)
+#define ONENAND_SYS_CFG1_BL_8		(2 << 9)
+#define ONENAND_SYS_CFG1_BL_4		(1 << 9)
+#define ONENAND_SYS_CFG1_BL_CONT	(0 << 9)
+#define ONENAND_SYS_CFG1_BL_SHIFT	(9)
 #define ONENAND_SYS_CFG1_NO_ECC		(1 << 8)
 #define ONENAND_SYS_CFG1_RDY		(1 << 7)
 #define ONENAND_SYS_CFG1_INT		(1 << 6)
 #define ONENAND_SYS_CFG1_IOBE		(1 << 5)
 #define ONENAND_SYS_CFG1_RDY_CONF	(1 << 4)
+#define ONENAND_SYS_CFG1_HF		(1 << 2)
+#define ONENAND_SYS_CFG1_SYNC_WRITE	(1 << 1)
 
 /*
  * Controller Status Register F240h (R)
@@ -139,6 +165,8 @@
 #define ONENAND_CTRL_ERASE		(1 << 11)
 #define ONENAND_CTRL_ERROR		(1 << 10)
 #define ONENAND_CTRL_RSTB		(1 << 7)
+#define ONENAND_CTRL_OTP_L		(1 << 6)
+#define ONENAND_CTRL_OTP_BL		(1 << 5)
 
 /*
  * Interrupt Status Register F241h (R)
@@ -161,7 +189,13 @@
  * ECC Status Reigser FF00h (R)
  */
 #define ONENAND_ECC_1BIT		(1 << 0)
+#define ONENAND_ECC_1BIT_ALL		(0x5555)
 #define ONENAND_ECC_2BIT		(1 << 1)
 #define ONENAND_ECC_2BIT_ALL		(0xAAAA)
+
+/*
+ * One-Time Programmable (OTP)
+ */
+#define ONENAND_OTP_LOCK_OFFSET		(14)
 
 #endif	/* __ONENAND_REG_H */
