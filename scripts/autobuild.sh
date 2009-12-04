@@ -99,6 +99,21 @@ for board in ${XLOADER_BOARD}; do
 			cp x-load.bin ${TARGETDIR}/${board}/${media}
 			${SIGNGP} ${TARGETDIR}/${board}/${media}/x-load.bin
 			cp x-load.bin ${TARGETDIR}/${board}/${media}
+
+			# OneNAND double-density package (DDP) has two chips, each with
+			# their own bufferRAM. The ROM boot is not capable to select
+			# correct chip. This creates an x-load-ddp.bin.ift which can be
+			# saved using an u-boot or kernel with DDP support.
+			if [ "${media}" == "flash" ]; then
+				rm -f x-load-ddp.bin.ift
+				split -b 2K ${TARGETDIR}/${board}/${media}/x-load.bin.ift split-
+				for file in `ls split-a?`; do
+					cat $file >> x-load-ddp.bin.ift
+					cat $file >> x-load-ddp.bin.ift
+				done
+				mv x-load-ddp.bin.ift ${TARGETDIR}/${board}/${media}
+				rm -f split-a?
+			fi
 		fi
 		${MAKE} CROSS_COMPILE=${1} distclean >/dev/null 2>&1
 	done
