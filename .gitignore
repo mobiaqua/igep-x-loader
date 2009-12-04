@@ -1,0 +1,13 @@
+*.o
+*.a
+.depend
+x-load
+x-load.bin
+x-load.map
+System.map
+autobuild
+include/asm/arch
+include/asm/proc
+include/config.h
+include/config.mk
+
