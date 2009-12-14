@@ -182,16 +182,8 @@
  * Board oneNAND Info.
  */
 
-/* OneNAND is partitioned:
- * 0x00000000-0x00080000 : "X-Loader"
- * 0x00080000-0x00240000 : "U-Boot"
- * 0x00240000-0x00280000 : "U-Boot Env"
- * 0x00280000-0x00780000 : "Kernel"
- * 0x00780000-0x20000000 : "File System"
- */
-
-#define ONENAND_START_BLOCK 	4
-#define ONENAND_END_BLOCK	18
+#define ONENAND_START_BLOCK 	4	 /* 0x00080000 */
+#define ONENAND_END_BLOCK	16	 /* 0x00200000 */
 #define ONENAND_PAGE_SIZE	2048     /* 2KB */
 #define ONENAND_BLOCK_SIZE	0x20000  /* 128KB */
 #define ONENAND_HAS_2PLANE	1
