@@ -70,6 +70,7 @@ LIBS += lib/lib$(ARCH).a
 LIBS += fs/fat/libfat.a
 LIBS += disk/libdisk.a
 LIBS += drivers/libdrivers.a
+LIBS += common/libcommon.a
 .PHONY : $(LIBS)
 
 # Add GCC lib
