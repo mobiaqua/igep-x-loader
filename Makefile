@@ -155,11 +155,11 @@ overo_config :	unconfig
 omap3530beagle_config :    unconfig
 	@./mkconfig $(@:_config=) arm omap3 omap3530beagle
 
-igep0020b-sdcard_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0020b
+igep0020-sdcard_config :  unconfig
+	@./mkconfig $(@:_config=) arm omap3 igep0020
 
-igep0020b-flash_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0020b
+igep0020-flash_config :  unconfig
+	@./mkconfig $(@:_config=) arm omap3 igep0020
 
 #########################################################################
 

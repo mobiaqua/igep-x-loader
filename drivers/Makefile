@@ -48,7 +48,7 @@ ifeq ($(BOARD), overo)
 OBJS 	+= k9f1g08r0a.o
 endif
 
-ifeq ($(BOARD), igep0020b)
+ifeq ($(BOARD), igep0020)
 OBJS 	+= k9f1g08r0a.o
 endif
 
