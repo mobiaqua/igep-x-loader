@@ -262,8 +262,6 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf, int da
 #ifndef __HAVE_ARCH_MEMCPY32
 	unsigned int offset, value;
 	unsigned long *p;
-	unsigned int ctrl, ecc;
-	unsigned short bbmarker;
 #endif
 
 	/* Write 'DFS, FBA' of Flash */
