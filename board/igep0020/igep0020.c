@@ -231,37 +231,37 @@ void config_3430sdram_ddr(void)
 	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
 	u32 size, a_add_low, a_add_high;
 
-	size = SZ_256M; /*        size = get_sdr_cs_size(CS0); */
-        size /= SZ_32M;                 /* find size to offset CS1 */
-        a_add_high = (size & 3) << 8;   /* set up low field */
-        a_add_low = (size & 0x3C) >> 2; /* set up high field */
-	__raw_writel((a_add_high | a_add_low), SDRC_CS_CFG);  /* Remap CS1 to  */
+	__raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
 
 	/* CS0 SDRC Mode Register */
-	__raw_writel(SDP_SDRC_MDCFG_0_DDR, SDRC_MCFG_0);
+	__raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
 
         /* CS1 SDRC Mode Register */
-        __raw_writel(SDP_SDRC_MDCFG_1_DDR, SDRC_MCFG_1);
+        __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
 
-	/* set timing */
-	if ((get_mem_type() == GPMC_ONENAND) || (get_mem_type() == MMC_ONENAND)) {
-		__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_0, SDRC_ACTIM_CTRLA_0);
-		__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_0, SDRC_ACTIM_CTRLB_0);
-		__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_0, SDRC_ACTIM_CTRLA_1);
-		__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_0, SDRC_ACTIM_CTRLB_1);
-	}
+	/* Set timings */
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_1);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_1);
+
 	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
 	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_1);
+
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
 
 	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
 	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
 	__raw_writel(CMD_NOP, SDRC_MANUAL_1);
+
 	delay(5000);
+
 	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
 	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
+
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
 
