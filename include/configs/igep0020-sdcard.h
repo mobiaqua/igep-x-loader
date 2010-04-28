@@ -70,7 +70,8 @@
 #define PRCM_PCLK_OPP2		1	/* ARM=381MHz - VDD1=1.20v */
 
 /* Memory type */
-#define CFG_3430SDRAM_DDR	1
+//#define CONFIG_SDRAM_M65KX001AM 1	/* 1Gb, DDR x32, 4KB page */
+#define CONFIG_SDRAM_M65KX002AM 1	/* 2 dice of 2Gb, DDR x32, 4KB page */
 
 /* The actual register values are defined in u-boot- mem.h */
 /* SDRAM Bank Allocation method */

@@ -222,6 +222,49 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
  *********************************************************************/
 void config_3430sdram_ddr(void)
 {
+#ifdef CONFIG_SDRAM_M65KX001AM
+	/* M65KX001AM - 1Gb */
+	/* reset sdrc controller */
+	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
+	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
+	__raw_writel(0, SDRC_SYSCONFIG);
+
+	/* setup sdrc to ball mux */
+	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
+
+	/* __raw_writel(0x2, SDRC_CS_CFG); */
+
+	/* CS0 SDRC Mode Register */
+	__raw_writel(MK65KX001AM_SDRC_MCDCFG, SDRC_MCFG_0);
+
+	/* Set timings */
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
+
+	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
+
+	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
+
+	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
+	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
+
+	delay(5000);
+
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+
+	/* set mr0 */
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
+
+	/* set up dll */
+	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
+	delay(0x2000);	/* give time to lock */
+
+#else
+	/* M65KX002AM - 2 dice of 2Gb */
 	/* reset sdrc controller */
 	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
 	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
@@ -272,6 +315,7 @@ void config_3430sdram_ddr(void)
 	/* set up dll */
 	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
 	delay(0x2000);	/* give time to lock */
+#endif
 }
 
 /*************************************************************
