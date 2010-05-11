@@ -48,10 +48,6 @@ ifeq ($(BOARD), overo)
 OBJS 	+= k9f1g08r0a.o
 endif
 
-ifeq ($(BOARD), igep0020)
-OBJS 	+= k9f1g08r0a.o
-endif
-
 ifeq ($(BOARD), omap2420h4) 
 OBJS 	+= k9k1216.o
 endif

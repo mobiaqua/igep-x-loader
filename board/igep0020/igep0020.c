@@ -104,48 +104,6 @@ u32 get_sysboot_value(void)
 u32 get_mem_type(void)
 {
 	return GPMC_ONENAND;
-/*
-	u32   mem_type = get_sysboot_value();
-	switch (mem_type) {
-	case 0:
-	case 2:
-	case 4:
-	case 16:
-	case 22:
-		return GPMC_ONENAND;
-
-	case 1:
-	case 12:
-	case 15:
-	case 21:
-	case 27:
-		return GPMC_NAND;
-
-	case 3:
-	case 6:
-		return MMC_ONENAND;
-
-	case 8:
-	case 11:
-	case 14:
-	case 20:
-	case 26:
-		return GPMC_MDOC;
-
-	case 17:
-	case 18:
-	case 24:
-		return MMC_NAND;
-
-	case 7:
-	case 10:
-	case 13:
-	case 19:
-	case 25:
-	default:
-		return GPMC_NOR;
-	}
-*/
 }
 
 /******************************************
@@ -164,27 +122,6 @@ u32 get_cpu_rev(void)
 	else
 		return CPU_3430_ES2;
 
-}
-
-/******************************************
- * cpu_is_3410(void) - returns true for 3410
- ******************************************/
-u32 cpu_is_3410(void)
-{
-	int status;
-	if (get_cpu_rev() < CPU_3430_ES2) {
-		return 0;
-	} else {
-		/* read scalability status and return 1 for 3410*/
-		status = __raw_readl(CONTROL_SCALABLE_OMAP_STATUS);
-		/* Check whether MPU frequency is set to 266 MHz which
-		 * is nominal for 3410. If yes return true else false
-		 */
-		if (((status >> 8) & 0x3) == 0x2)
-			return 1;
-		else
-			return 0;
-	}
 }
 
 /*****************************************************************
@@ -218,9 +155,9 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
 }
 
 /*********************************************************************
- * config_3430sdram_ddr() - Init DDR on 3430SDP dev board.
+ * config_3430sdram_ddr() - Init DDR.
  *********************************************************************/
-void config_3430sdram_ddr(void)
+void config_sdram_ddr(void)
 {
 #ifdef CONFIG_SDRAM_M65KX001AM
 	/* M65KX001AM - 1Gb */
@@ -580,7 +517,7 @@ void s_init(void)
 	delay(100);
 	prcm_init();
 	per_clocks_enable();
-	config_3430sdram_ddr();
+	config_sdram_ddr();
 }
 
 /*******************************************************
@@ -851,8 +788,8 @@ void set_muxconf_regs(void)
 }
 
 /**********************************************************
- * Routine: nand+_init
- * Description: Set up nand for nand and jffs2 commands
+ * Routine: nand_init
+ * Description: Set up flash, NAND and OneNAND
  *********************************************************/
 
 int nand_init(void)
@@ -863,34 +800,11 @@ int nand_init(void)
 	__raw_writel(0, GPMC_TIMEOUT_CONTROL);/* timeout disable */
 
 	/* Set the GPMC Vals, NAND is mapped at CS0, oneNAND at CS0.
-	 *  We configure only GPMC CS0 with required values. Configiring other devices
+	 *  We configure only GPMC CS0 with required values. Configuring other devices
 	 *  at other CS is done in u-boot. So we don't have to bother doing it here.
 	 */
 	__raw_writel(0 , GPMC_CONFIG7 + GPMC_CONFIG_CS0);
 	delay(1000);
-
-	if ((get_mem_type() == GPMC_NAND) || (get_mem_type() == MMC_NAND)) {
-		__raw_writel(M_NAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
-		__raw_writel(M_NAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
-		__raw_writel(M_NAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
-		__raw_writel(M_NAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
-		__raw_writel(M_NAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
-		__raw_writel(M_NAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
-
-		/* Enable the GPMC Mapping */
-		__raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
-			     ((NAND_BASE_ADR>>24) & 0x3F) |
-			     (1<<6)),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
-		delay(2000);
-
-		if (nand_chip()) {
-#ifdef CFG_PRINTF
-			printf("Unsupported Chip!\n");
-#endif
-			return 1;
-		}
-
-	}
 
 	if ((get_mem_type() == GPMC_ONENAND) || (get_mem_type() == MMC_ONENAND)) {
 		__raw_writel(ONENAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
@@ -907,9 +821,7 @@ int nand_init(void)
 		delay(2000);
 
 		if (onenand_chip()) {
-#ifdef CFG_PRINTF
 			printf("OneNAND Unsupported !\n");
-#endif
 			return 1;
 		}
 	}
