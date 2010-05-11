@@ -103,6 +103,7 @@ void start_armboot (void)
 
 	if (buf == (uchar *)CFG_LOADADDR) {
 		/* if no u-boot on mmc, try onenand or nand, depending upon sysboot */
+#ifdef CONFIG_ONENAND
 		if (get_mem_type() == GPMC_ONENAND){
 #ifdef CFG_PRINTF
        			printf("Loading u-boot.bin from onenand\n");
@@ -121,7 +122,12 @@ void start_armboot (void)
         				buf += ONENAND_BLOCK_SIZE;
         		}
 #endif
-		} else if (get_mem_type() == GPMC_NAND){
+
+		}
+#endif
+
+#ifdef CONFIG_NAND
+		if (get_mem_type() == GPMC_NAND) {
 #ifdef CFG_PRINTF
        			printf("Loading u-boot.bin from nand\n");
 #endif
@@ -130,6 +136,7 @@ void start_armboot (void)
         				buf += NAND_BLOCK_SIZE; /* advance buf ptr */
         		}
 		}
+#endif
 	}
 
 	/* if u-boot not found on mmc or
