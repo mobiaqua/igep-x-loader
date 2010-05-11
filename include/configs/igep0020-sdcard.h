@@ -80,8 +80,6 @@
 #define SDRC_R_B_C		1
 
 #define NAND_BASE_ADR	NAND_BASE
-#define ONENAND_BASE	ONENAND_MAP
-#define ONENAND_ADDR	ONENAND_BASE
 
 #define OMAP34XX_GPMC_CS0_SIZE GPMC_SIZE_128M
 
@@ -179,9 +177,13 @@
 #define NAND_DISABLE_CE()
 #define NAND_ENABLE_CE()
 
-/*-----------------------------------------------------------------------
+/*
  * Board oneNAND Info.
  */
+#define CONFIG_ONENAND
+
+#define ONENAND_BASE	ONENAND_MAP
+#define ONENAND_ADDR	ONENAND_BASE
 
 #define ONENAND_START_BLOCK 	4	 /* 0x00080000 */
 #define ONENAND_END_BLOCK	16	 /* 0x00200000 */
