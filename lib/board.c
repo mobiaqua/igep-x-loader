@@ -35,6 +35,10 @@
 #include <fat.h>
 #include <asm/arch/mem.h>
 
+#ifdef CONFIG_ONENAND
+#include <linux/mtd/onenand.h>
+#endif
+
 const char version_string[] =
 	"Texas Instruments X-Loader 1.4.2-2 (" __DATE__ " - " __TIME__ ")";
 
@@ -77,6 +81,9 @@ void start_armboot (void)
 	uchar *buf;
 	int *first_instruction;
 	block_dev_desc_t *dev_desc = NULL;
+#ifdef CONFIG_ONENAND
+	unsigned int onenand_features;
+#endif
 
    	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
@@ -108,21 +115,21 @@ void start_armboot (void)
 #ifdef CFG_PRINTF
        			printf("Loading u-boot.bin from onenand\n");
 #endif
+			onenand_features = onenand_check_features();
+			if (ONENAND_IS_2PLANE(onenand_features)) {
 
-#ifdef ONENAND_HAS_2PLANE
-			i = ONENAND_START_BLOCK;
-			while ( i < ONENAND_END_BLOCK ) {
-				if (!onenand_read_block(buf, i))
-					buf += 2 * ONENAND_BLOCK_SIZE;
-				i += 2;
+				i = ONENAND_START_BLOCK;
+				while ( i < ONENAND_END_BLOCK ) {
+					if (!onenand_read_block(buf, i))
+						buf += 2 * ONENAND_BLOCK_SIZE;
+					i += 2;
 			}
-#else
+			} else {
         		for (i = ONENAND_START_BLOCK; i < ONENAND_END_BLOCK; i++){
         			if (!onenand_read_block(buf, i))
         				buf += ONENAND_BLOCK_SIZE;
         		}
-#endif
-
+			}
 		}
 #endif
 
