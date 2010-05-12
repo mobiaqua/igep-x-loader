@@ -32,6 +32,8 @@
 #include <asm/arch/sys_info.h>
 #include <asm/arch/clocks.h>
 #include <asm/arch/mem.h>
+#include <linux/mtd/onenand_regs.h>
+#include <linux/mtd/onenand.h>
 
 /* Used to index into DPLL parameter tables */
 struct dpll_param {
@@ -66,15 +68,6 @@ static inline void delay(unsigned long loops)
 
 void udelay (unsigned long usecs) {
 	delay(usecs);
-}
-
-/*****************************************
- * Routine: board_init
- * Description: Early hardware init.
- *****************************************/
-int board_init(void)
-{
-	return 0;
 }
 
 /*************************************************************
@@ -152,107 +145,6 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
 		if (i == bound)
 			return 0;
 	} while (1);
-}
-
-/*********************************************************************
- * config_3430sdram_ddr() - Init DDR.
- *********************************************************************/
-void config_sdram_ddr(void)
-{
-#ifdef CONFIG_SDRAM_M65KX001AM
-	/* M65KX001AM - 1Gb */
-	/* reset sdrc controller */
-	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
-	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
-	__raw_writel(0, SDRC_SYSCONFIG);
-
-	/* setup sdrc to ball mux */
-	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
-
-	/* __raw_writel(0x2, SDRC_CS_CFG); */
-
-	/* CS0 SDRC Mode Register */
-	__raw_writel(MK65KX001AM_SDRC_MCDCFG, SDRC_MCFG_0);
-
-	/* Set timings */
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
-
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
-
-	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
-
-	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
-	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
-
-	delay(5000);
-
-	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
-
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-
-	/* set mr0 */
-	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
-
-	/* set up dll */
-	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
-	delay(0x2000);	/* give time to lock */
-
-#else
-	/* M65KX002AM - 2 dice of 2Gb */
-	/* reset sdrc controller */
-	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
-	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
-	__raw_writel(0, SDRC_SYSCONFIG);
-
-	/* setup sdrc to ball mux */
-	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
-	u32 size, a_add_low, a_add_high;
-
-	__raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
-
-	/* CS0 SDRC Mode Register */
-	__raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
-
-        /* CS1 SDRC Mode Register */
-        __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
-
-	/* Set timings */
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_1);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_1);
-
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_1);
-
-	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
-
-	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
-	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
-	__raw_writel(CMD_NOP, SDRC_MANUAL_1);
-
-	delay(5000);
-
-	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
-	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
-
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
-
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
-
-	/* set mr0 */
-	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
-	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_1);
-
-	/* set up dll */
-	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
-	delay(0x2000);	/* give time to lock */
-#endif
 }
 
 /*************************************************************
@@ -497,27 +389,190 @@ void try_unlock_memory(void)
 	return;
 }
 
+/*********************************************************************
+ * config_sdram_m65kx001am() - 1Gb, DDR x32 I/O, 4KB page
+ *********************************************************************/
+void config_sdram_m65kx001am(void)
+{
+	/* M65KX001AM - 1Gb */
+	/* reset sdrc controller */
+	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
+	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
+	__raw_writel(0, SDRC_SYSCONFIG);
+
+	/* setup sdrc to ball mux */
+	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
+
+	/* __raw_writel(0x2, SDRC_CS_CFG); */
+
+	/* CS0 SDRC Mode Register */
+	__raw_writel(MK65KX001AM_SDRC_MCDCFG, SDRC_MCFG_0);
+
+	/* Set timings */
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
+
+	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
+
+	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
+
+	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
+	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
+
+	delay(5000);
+
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+
+	/* set mr0 */
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
+
+	/* set up dll */
+	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
+	delay(0x2000);	/* give time to lock */
+}
+
+/*********************************************************************
+ * config_sdram_m65kx002am() - 2 dice of 2Gb, DDR x32 I/O, 4KB page
+ *********************************************************************/
+void config_sdram_m65kx002am(void)
+{
+	/* M65KX002AM - 2 dice of 2Gb */
+	/* reset sdrc controller */
+	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
+	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
+	__raw_writel(0, SDRC_SYSCONFIG);
+
+	/* setup sdrc to ball mux */
+	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
+
+	__raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
+
+	/* CS0 SDRC Mode Register */
+	__raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
+
+        /* CS1 SDRC Mode Register */
+        __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
+
+	/* Set timings */
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_1);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_1);
+
+	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
+	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_1);
+
+	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
+
+	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
+	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
+	__raw_writel(CMD_NOP, SDRC_MANUAL_1);
+
+	delay(5000);
+
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
+	/* set mr0 */
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_1);
+
+	/* set up dll */
+	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
+	delay(0x2000);	/* give time to lock */
+}
+
+/*********************************************************************
+ * config_onenand_nand0xgr4wxa() - 4-Gbit DDP or 2-Gbit OneNAND Flash
+ *********************************************************************/
+void config_onenand_nand0xgr4wxa(void)
+{
+	/* global settings */
+	__raw_writel(0x10, GPMC_SYSCONFIG);	/* smart idle */
+	__raw_writel(0x0, GPMC_IRQENABLE);	/* isr's sources masked */
+	__raw_writel(0, GPMC_TIMEOUT_CONTROL);/* timeout disable */
+
+	/* Set the GPMC Vals, NAND is mapped at CS0, oneNAND at CS0.
+	 *  We configure only GPMC CS0 with required values. Configuring other devices
+	 *  at other CS is done in u-boot. So we don't have to bother doing it here.
+	 */
+	__raw_writel(0 , GPMC_CONFIG7 + GPMC_CONFIG_CS0);
+	delay(1000);
+
+	__raw_writel(ONENAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
+	__raw_writel(ONENAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
+	__raw_writel(ONENAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
+	__raw_writel(ONENAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
+	__raw_writel(ONENAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
+	__raw_writel(ONENAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
+
+	/* Enable the GPMC Mapping */
+	__raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
+		     ((ONENAND_BASE>>24) & 0x3F) |
+		     (1<<6)),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
+	delay(2000);
+}
+
+/**********************************************************
+ * Routine: 
+ * Description: Configure MultiChip Package (MCP)
+ *  -------------- -------------- ------------
+ * | MCP PART. N. |   ONENAND    |  LPSDRAM   |
+ * | M39B0RB0A0N1 | NAND02GR4E0A | M65KD001AM |
+ * | M39B0RB0A0N1 | NAND02GR4E0A | M65KD001AM |
+ *  -------------- -------------- ------------
+ **********************************************************/
+void config_multichip_package()
+{
+	config_onenand_nand0xgr4wxa();
+
+	switch (ONENAND_DEVICE_ID()) {
+	case ONENAND_NAND02GR4E_DEV_ID:
+		config_sdram_m65kx001am();
+		break;
+	case ONENAND_NAND04GR4E_DEV_ID:
+		config_sdram_m65kx002am();
+		break;
+	default:
+		board_hang();
+		break;
+	}
+}
+
 /**********************************************************
  * Routine: s_init
  * Description: Does early system init of muxing and clocks.
  * - Called at time when only stack is available.
  **********************************************************/
-
 void s_init(void)
 {
 	watchdog_init();
-#ifdef CONFIG_3430_AS_3410
-	/* setup the scalability control register for
-	 * 3430 to work in 3410 mode
-	 */
-	__raw_writel(0x5ABF, CONTROL_SCALABLE_OMAP_OCP);
-#endif
+
 	try_unlock_memory();
 	set_muxconf_regs();
 	delay(100);
 	prcm_init();
 	per_clocks_enable();
-	config_sdram_ddr();
+	config_multichip_package();
+}
+
+/*****************************************
+ * Routine: board_init
+ * Description: Early hardware init.
+ *****************************************/
+int board_init(void)
+{
+	return 0;
 }
 
 /*******************************************************
@@ -791,40 +846,12 @@ void set_muxconf_regs(void)
  * Routine: nand_init
  * Description: Set up flash, NAND and OneNAND
  *********************************************************/
-
 int nand_init(void)
 {
-	/* global settings */
-	__raw_writel(0x10, GPMC_SYSCONFIG);	/* smart idle */
-	__raw_writel(0x0, GPMC_IRQENABLE);	/* isr's sources masked */
-	__raw_writel(0, GPMC_TIMEOUT_CONTROL);/* timeout disable */
-
-	/* Set the GPMC Vals, NAND is mapped at CS0, oneNAND at CS0.
-	 *  We configure only GPMC CS0 with required values. Configuring other devices
-	 *  at other CS is done in u-boot. So we don't have to bother doing it here.
-	 */
-	__raw_writel(0 , GPMC_CONFIG7 + GPMC_CONFIG_CS0);
-	delay(1000);
-
-	if ((get_mem_type() == GPMC_ONENAND) || (get_mem_type() == MMC_ONENAND)) {
-		__raw_writel(ONENAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
-		__raw_writel(ONENAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
-		__raw_writel(ONENAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
-		__raw_writel(ONENAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
-		__raw_writel(ONENAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
-		__raw_writel(ONENAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
-
-		/* Enable the GPMC Mapping */
-		__raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
-			     ((ONENAND_BASE>>24) & 0x3F) |
-			     (1<<6)),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
-		delay(2000);
-
-		if (onenand_chip()) {
-			printf("OneNAND Unsupported !\n");
-			return 1;
-		}
-	}
+#ifdef DEBUG
+	onenand_check_maf(ONENAND_MANUF_ID());
+	onenand_print_device_info(ONENAND_DEVICE_ID(), ONENAND_VERSION_ID());
+#endif
 	return 0;
 }
 

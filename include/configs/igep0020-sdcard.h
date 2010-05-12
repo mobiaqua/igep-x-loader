@@ -117,7 +117,8 @@
 /*
  * Board oneNAND Info.
  */
-#define CONFIG_ONENAND
+#define CONFIG_ONENAND                  1
+#define CONFIG_MTD_ONENAND_2X_PROGRAM   1
 
 #define ONENAND_BASE	ONENAND_MAP
 #define ONENAND_ADDR	ONENAND_BASE
@@ -126,7 +127,6 @@
 #define ONENAND_END_BLOCK	16	 /* 0x00200000 */
 #define ONENAND_PAGE_SIZE	2048     /* 2KB */
 #define ONENAND_BLOCK_SIZE	0x20000  /* 128KB */
-#define ONENAND_HAS_2PLANE	1
 
 #endif /* __CONFIG_H */
 
