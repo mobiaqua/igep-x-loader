@@ -25,38 +25,8 @@
 
 #include <asm/string.h>
 
-#include "onenand_regs.h"
-
-#define onenand_readw(a)	(*(volatile unsigned short *)(a))
-#define onenand_writew(v, a)	((*(volatile unsigned short *)(a)) = (u16) (v))
-
-#define SAMSUNG_MFR_ID		0xEC
-#define NUMONYX_MFR_ID		0x20
-#define KFM1G16Q2A_DEV_ID	0x30
-#define KFN2G16Q2A_DEV_ID	0x40
-#define NAND01GR4E_DEV_ID	0x30
-#define NAND02GR4E_DEV_ID	0x40
-#define NAND04GR4E_DEV_ID	0x58
-
-#define THIS_ONENAND(a)		(ONENAND_ADDR + (a))
-
-#define READ_INTERRUPT()						\
-	onenand_readw(THIS_ONENAND(ONENAND_REG_INTERRUPT))
-
-#define READ_CTRL_STATUS()						\
-	onenand_readw(THIS_ONENAND(ONENAND_REG_CTRL_STATUS))
-
-#define READ_ECC_STATUS()						\
-	onenand_readw(THIS_ONENAND(ONENAND_REG_ECC_STATUS))
-
-#define SET_EMIFS_CS_CONFIG(v)					\
-	(*(volatile unsigned long *)(OMAP_EMIFS_CS_CONFIG) = (v))
-
-#define ONENAND_DEVICE_ID()				\
-	(*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_DEVICE_ID)))
-
-#define ONENAND_IS_DDP()					\
-        (ONENAND_DEVICE_ID() & ONENAND_DEVICE_IS_DDP)
+#include <linux/mtd/onenand_regs.h>
+#include <linux/mtd/onenand.h>
 
 /**
  * onenand_page_address - [DEFAULT] Get page address
@@ -215,42 +185,112 @@ static inline void set_async_read(void)
 #define set_async_read(...)		do { } while (0)
 #endif
 
-int
-onenand_chip()
+/**
+ * onenand_check_features - Check and set OneNAND features
+ * @param mtd		MTD data structure
+ *
+ * Check and set OneNAND features
+ * - lock scheme
+ * - two plane
+ */
+unsigned int onenand_check_features()
 {
-	unsigned short mf_id, dev_id;
-	mf_id = (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_MANUFACTURER_ID)));
-	dev_id = (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_DEVICE_ID)));
+	unsigned int density, process, options = 0;
 
-	if(mf_id == SAMSUNG_MFR_ID) {
-		if (dev_id == KFM1G16Q2A_DEV_ID) {
-		printf("Detected Samsung MuxOneNAND1G Flash \r\n");
-		return 0;
-		} else if (dev_id == KFN2G16Q2A_DEV_ID) {
-			printf("Detected Samsung MuxOneNAND2G Flash \r\n");
-                        return 0;
-		} else {
-			printf(" ONENAND Flash unsupported\r\n");
-                        return 1;
-		}
-	} else if(mf_id == NUMONYX_MFR_ID) {
-		if (dev_id == NAND01GR4E_DEV_ID) {
-			printf("Detected Numonyx OneNAND 1G Flash \r\n");
-			return 0;
-		} else if (dev_id == NAND02GR4E_DEV_ID) {
-			printf("Detected Numonyx OneNAND 2G Flash \r\n");
-			return 0;
-		} else if (dev_id == NAND04GR4E_DEV_ID) {
-			printf("Detected Numonyx OneNAND 4G Flash \r\n");
-                        return 0;
-		} else {
-                        printf(" ONENAND Flash unsupported\r\n");
-                        return 1;
-		}
-	} else {
-		printf("ONENAND Flash Unsupported\r\n");
-		return 1;
+	/* Lock scheme depends on density and process */
+	density = onenand_get_density(ONENAND_DEVICE_ID());
+	process = ONENAND_VERSION_ID() >> ONENAND_VERSION_PROCESS_SHIFT;
+
+	/* Lock scheme */
+	switch (density) {
+	case ONENAND_DEVICE_DENSITY_4Gb:
+		options |= ONENAND_HAS_2PLANE;
+
+	case ONENAND_DEVICE_DENSITY_2Gb:
+		/* 2Gb DDP does not have 2 plane */
+		if (!ONENAND_IS_DDP())
+			options |= ONENAND_HAS_2PLANE;
+		options |= ONENAND_HAS_UNLOCK_ALL;
+
+	case ONENAND_DEVICE_DENSITY_1Gb:
+		/* A-Die has all block unlock */
+		if (process)
+			options |= ONENAND_HAS_UNLOCK_ALL;
+		break;
+
+	default:
+		/* Some OneNAND has continuous lock scheme */
+		if (!process)
+			options |= ONENAND_HAS_CONT_LOCK;
+		break;
 	}
+
+	if (ONENAND_IS_MLC())
+		options &= ~ONENAND_HAS_2PLANE;
+
+	if (FLEXONENAND()) {
+		options &= ~ONENAND_HAS_CONT_LOCK;
+		options |= ONENAND_HAS_UNLOCK_ALL;
+	}
+
+	return options;
+}
+
+/**
+ * onenand_print_device_info - Print device & version ID
+ * @param device        device ID
+ * @param version	version ID
+ *
+ * Print device & version ID
+ */
+void onenand_print_device_info(int device, int version)
+{
+	int vcc, demuxed, ddp, density, flexonenand;
+
+        vcc = device & ONENAND_DEVICE_VCC_MASK;
+        demuxed = device & ONENAND_DEVICE_IS_DEMUX;
+        ddp = device & ONENAND_DEVICE_IS_DDP;
+        density = onenand_get_density(device);
+	flexonenand = device & DEVICE_IS_FLEXONENAND;
+	printf("%s%sOneNAND%s %dMB %sV 16-bit (0x%02x)\n",
+		demuxed ? "" : "Muxed ",
+		flexonenand ? "Flex-" : "",
+                ddp ? "(DDP)" : "",
+                (16 << density),
+                vcc ? "2.65/3.3" : "1.8",
+                device);
+	printf("OneNAND version = 0x%04x\n", version);
+}
+
+static const struct onenand_manufacturers onenand_manuf_ids[] = {
+	{ONENAND_MFR_SAMSUNG, "Samsung"},
+	{ONENAND_MFR_NUMONYX, "Numonyx"},
+};
+
+/**
+ * onenand_check_maf - Check manufacturer ID
+ * @param manuf         manufacturer ID
+ *
+ * Check manufacturer ID
+ */
+int onenand_check_maf(int manuf)
+{
+	int size = sizeof(onenand_manuf_ids)/sizeof(onenand_manuf_ids[0]);
+	char *name;
+        int i;
+
+	for (i = 0; i < size; i++)
+                if (manuf == onenand_manuf_ids[i].id)
+                        break;
+
+	if (i < size)
+		name = onenand_manuf_ids[i].name;
+	else
+		name = "Unknown";
+
+	printf("OneNAND Manufacturer: %s (0x%0x)\n", name, manuf);
+
+	return (i == size);
 }
 
 /* read a page with ECC */
@@ -312,19 +352,19 @@ static inline int onenand_read_page(ulong block, ulong page, u_char *buf, int da
 	return 0;
 }
 
-#define ONENAND_START_PAGE		0
-#define ONENAND_PAGES_PER_BLOCK		64
-
 /**
  * onenand_read_block - Read a block data to buf skipping bad blocks
  * @return 0 on sucess
- */ 
+ */
 
 int onenand_read_block(unsigned char *buf, ulong block)
 {
 	int page, offset = 0;
+	unsigned int options;
 
 	set_sync_burst_read();
+
+	options = onenand_check_features();
 
 	/* NOTE: you must read page from page 1 of block 0 */
 	/* read the block page by page */
@@ -340,19 +380,19 @@ int onenand_read_block(unsigned char *buf, ulong block)
 
 		offset += ONENAND_PAGE_SIZE;
 
-	#ifdef ONENAND_HAS_2PLANE
-		/* Is it the odd plane ? */
-		if (onenand_read_page(block + 1, page, buf + offset, 0)) {
-			/* This block is bad. Skip it
-			 * and read next block */
-			printf("Skipping Bad block %d\n", block + 1);
-			set_async_read();
-			return 1;
+		if (ONENAND_IS_2PLANE(options)) {
+
+			/* Is it the odd plane ? */
+			if (onenand_read_page(block + 1, page, buf + offset, 0)) {
+				/* This block is bad. Skip it
+				 * and read next block */
+				printf("Skipping Bad block %d\n", block + 1);
+				set_async_read();
+				return 1;
+			}
+
+			offset += ONENAND_PAGE_SIZE;
 		}
-
-		offset += ONENAND_PAGE_SIZE;
-	#endif
-
 	}
 
 	set_async_read();
