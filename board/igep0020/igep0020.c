@@ -611,9 +611,17 @@ void watchdog_init(void)
 	sr32(CM_ICLKEN_WKUP, 5, 1, 1);
 	wait_on_value(BIT5, 0x20, CM_IDLEST_WKUP, 5);	/* some issue here */
 
+#ifdef CONFIG_WATCHDOG
+	/* Enable WD2 watchdog */
+	__raw_writel(WD_UNLOCK3, WD2_BASE + WSPR);
+	wait_for_command_complete(WD2_BASE);
+	__raw_writel(WD_UNLOCK4, WD2_BASE + WSPR);
+#else
+	/* Disable WD2 watchdog */
 	__raw_writel(WD_UNLOCK1, WD2_BASE + WSPR);
 	wait_for_command_complete(WD2_BASE);
 	__raw_writel(WD_UNLOCK2, WD2_BASE + WSPR);
+#endif
 }
 
 /**********************************************
