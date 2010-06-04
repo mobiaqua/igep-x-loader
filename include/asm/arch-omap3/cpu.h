@@ -168,6 +168,8 @@
 #define WSPR			0x48     /* rw */
 #define WD_UNLOCK1		0xAAAA
 #define WD_UNLOCK2		0x5555
+#define WD_UNLOCK3		0xBBBB
+#define WD_UNLOCK4		0x4444
 
 /* PRCM */
 #define CM_FCLKEN_IVA2      0x48004000
