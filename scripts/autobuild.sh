@@ -11,7 +11,7 @@
 #
 
 # XLOADER variables
-XLOADER_BOARD="igep0020"
+XLOADER_BOARD="igep0020 igep0030"
 XLOADER_MEDIA="sdcard flash"
 SIGNGP="contrib/signGP"
 

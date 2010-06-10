@@ -162,6 +162,12 @@ igep0020-sdcard_config :  unconfig
 igep0020-flash_config :  unconfig
 	@./mkconfig $(@:_config=) arm omap3 igep0020
 
+igep0030-sdcard_config :  unconfig
+	@./mkconfig $(@:_config=) arm omap3 igep0030
+
+igep0030-flash_config :  unconfig
+	@./mkconfig $(@:_config=) arm omap3 igep0030
+
 #########################################################################
 
 clean:
