@@ -432,3 +432,51 @@ get_per_dpll_param:
 	adr r0, per_dpll_param
 	mov pc, lr
 
+/*
+ * Tables for 36x/37x devices
+ */
+mpu_36x_dpll_param:
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+
+iva_36x_dpll_param:
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+
+core_36x_dpll_param:
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+
+per_36x_dpll_param:
+/*    SYSCLK    M       N       M2      M3      M4      M5      M6      m2DIV */
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+
+.globl get_36x_mpu_dpll_param
+get_36x_mpu_dpll_param:
+	adr	r0, mpu_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_iva_dpll_param
+get_36x_iva_dpll_param:
+	adr	r0, iva_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_core_dpll_param
+get_36x_core_dpll_param:
+	adr	r0, core_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_per_dpll_param
+get_36x_per_dpll_param:
+	adr	r0, per_36x_dpll_param
+ 	mov	pc, lr
+

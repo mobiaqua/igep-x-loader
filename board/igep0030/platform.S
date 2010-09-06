@@ -1,7 +1,8 @@
 /*
  * Board specific setup info
  *
- * (C) Copyright 2010, ISEE 2007 SL
+ * (C) Copyright 2009
+ * Integration Software and Electronics Engineering, <www.iseebcn.com>
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -196,43 +197,63 @@ SRAM_STACK:
 mpu_dpll_param:
 /* 12MHz */
 /* ES1 */
-.word 0x0FE,0x07,0x05,0x01
+.word 0x0FE
+.word 0x07
+.word 0x05
+.word 0x01
 /* ES2 */
-.word 0x0FA,0x05,0x07,0x01
-/* 3410 */
-.word 0x085,0x05,0x07,0x01
+.word 0x0FA
+.word 0x05
+.word 0x07
+.word 0x01
 
 /* 13MHz */
 /* ES1 */
-.word 0x17D,0x0C,0x03,0x01
+.word 0x17D
+.word 0x0C
+.word 0x03
+.word 0x01
 /* ES2 */
-.word 0x1F4,0x0C,0x03,0x01
-/* 3410 */
-.word 0x10A,0x0C,0x03,0x01
+.word 0x1F4
+.word 0x0C
+.word 0x03
+.word 0x01
 
 /* 19.2MHz */
 /* ES1 */
-.word 0x179,0x12,0x04,0x01
+.word 0x179
+.word 0x12
+.word 0x04
+.word 0x01
 /* ES2 */
-.word 0x271,0x17,0x03,0x01
-/* 3410 */
-.word 0x14C,0x17,0x03,0x01
+.word 0x271
+.word 0x17
+.word 0x03
+.word 0x01
 
 /* 26MHz */
 /* ES1 */
-.word 0x17D,0x19,0x03,0x01
+.word 0x17D
+.word 0x19
+.word 0x03
+.word 0x01
 /* ES2 */
-.word 0x0FA,0x0C,0x07,0x01
-/* 3410 */
-.word 0x085,0x0C,0x07,0x01
+.word 0x0FA
+.word 0x0C
+.word 0x07
+.word 0x01
 
 /* 38.4MHz */
 /* ES1 */
-.word 0x1FA,0x32,0x03,0x01
+.word 0x1FA
+.word 0x32
+.word 0x03
+.word 0x01
 /* ES2 */
-.word 0x271,0x2F,0x03,0x01
-/* 3410 */
-.word 0x14C,0x2F,0x03,0x01
+.word 0x271
+.word 0x2F
+.word 0x03
+.word 0x01
 
 
 .globl get_mpu_dpll_param
@@ -243,43 +264,63 @@ get_mpu_dpll_param:
 iva_dpll_param:
 /* 12MHz */
 /* ES1 */
-.word 0x07D,0x05,0x07,0x01
+.word 0x07D
+.word 0x05
+.word 0x07
+.word 0x01
 /* ES2 */
-.word 0x0B4,0x05,0x07,0x01
-/* 3410 */
-.word 0x085,0x05,0x07,0x01
+.word 0x0B4
+.word 0x05
+.word 0x07
+.word 0x01
 
 /* 13MHz */
 /* ES1 */
-.word 0x0FA,0x0C,0x03,0x01
+.word 0x0FA
+.word 0x0C
+.word 0x03
+.word 0x01
 /* ES2 */
-.word 0x168,0x0C,0x03,0x01
-/* 3410 */
-.word 0x10A,0x0C,0x03,0x01
+.word 0x168
+.word 0x0C
+.word 0x03
+.word 0x01
 
 /* 19.2MHz */
 /* ES1 */
-.word 0x082,0x09,0x07,0x01
+.word 0x082
+.word 0x09
+.word 0x07
+.word 0x01
 /* ES2 */
-.word 0x0E1,0x0B,0x06,0x01
-/* 3410 */
-.word 0x14C,0x17,0x03,0x01
+.word 0x0E1
+.word 0x0B
+.word 0x06
+.word 0x01
 
 /* 26MHz */
 /* ES1 */
-.word 0x07D,0x0C,0x07,0x01
+.word 0x07D
+.word 0x0C
+.word 0x07
+.word 0x01
 /* ES2 */
-.word 0x0B4,0x0C,0x07,0x01
-/* 3410 */
-.word 0x085,0x0C,0x07,0x01
+.word 0x0B4
+.word 0x0C
+.word 0x07
+.word 0x01
 
 /* 38.4MHz */
 /* ES1 */
-.word 0x13F,0x30,0x03,0x01
+.word 0x13F
+.word 0x30
+.word 0x03
+.word 0x01
 /* ES2 */
-.word 0x0E1,0x17,0x06,0x01
-/* 3410 */
-.word 0x14C,0x2F,0x03,0x01
+.word 0x0E1
+.word 0x17
+.word 0x06
+.word 0x01
 
 
 .globl get_iva_dpll_param
@@ -291,43 +332,63 @@ get_iva_dpll_param:
 core_dpll_param:
 /* 12MHz */
 /* ES1 */
-.word M_12_ES1,M_12_ES1,FSL_12_ES1,M2_12_ES1
+.word 0x19F
+.word 0x0E
+.word 0x03
+.word 0x01
 /* ES2 */
-.word M_12,N_12,FSEL_12,M2_12
-/* 3410 */
-.word M_12,N_12,FSEL_12,M2_12
+.word 0x0A6
+.word 0x05
+.word 0x07
+.word 0x01
 
 /* 13MHz */
 /* ES1 */
-.word M_13_ES1,N_13_ES1,FSL_13_ES1,M2_13_ES1
+.word 0x1B2
+.word 0x10
+.word 0x03
+.word 0x01
 /* ES2 */
-.word M_13,N_13,FSEL_13,M2_13
-/* 3410 */
-.word M_13,N_13,FSEL_13,M2_13
+.word 0x14C
+.word 0x0C
+.word 0x03
+.word 0x01
 
 /* 19.2MHz */
 /* ES1 */
-.word M_19p2_ES1,N_19p2_ES1,FSL_19p2_ES1,M2_19p2_ES1
+.word 0x19F
+.word 0x17
+.word 0x03
+.word 0x01
 /* ES2 */
-.word M_19p2,N_19p2,FSEL_19p2,M2_19p2
-/* 3410 */
-.word M_19p2,N_19p2,FSEL_19p2,M2_19p2
+.word 0x19F
+.word 0x17
+.word 0x03
+.word 0x01
 
 /* 26MHz */
 /* ES1 */
-.word M_26_ES1,N_26_ES1,FSL_26_ES1,M2_26_ES1
+.word 0x1B2
+.word 0x21
+.word 0x03
+.word 0x01
 /* ES2 */
-.word M_26,N_26,FSEL_26,M2_26
-/* 3410 */
-.word M_26,N_26,FSEL_26,M2_26
+.word 0x0A6
+.word 0x0C
+.word 0x07
+.word 0x01
 
 /* 38.4MHz */
 /* ES1 */
-.word M_38p4_ES1,N_38p4_ES1,FSL_38p4_ES1,M2_38p4_ES1
+.word 0x19F
+.word 0x2F
+.word 0x03
+.word 0x01
 /* ES2 */
-.word M_38p4,N_38p4,FSEL_38p4,M2_38p4
-/* 3410 */
-.word M_38p4,N_38p4,FSEL_38p4,M2_38p4
+.word 0x19F
+.word 0x2F
+.word 0x03
+.word 0x01
 
 .globl get_core_dpll_param
 get_core_dpll_param:
@@ -337,22 +398,85 @@ get_core_dpll_param:
 /* PER DPLL values are same for both ES1 and ES2 */
 per_dpll_param:
 /* 12MHz */
-.word 0xD8,0x05,0x07,0x09
+.word 0xD8
+.word 0x05
+.word 0x07
+.word 0x09
 
 /* 13MHz */
-.word 0x1B0,0x0C,0x03,0x09
+.word 0x1B0
+.word 0x0C
+.word 0x03
+.word 0x09
 
 /* 19.2MHz */
-.word 0xE1,0x09,0x07,0x09
+.word 0xE1
+.word 0x09
+.word 0x07
+.word 0x09
 
 /* 26MHz */
-.word 0xD8,0x0C,0x07,0x09
+.word 0xD8
+.word 0x0C
+.word 0x07
+.word 0x09
 
 /* 38.4MHz */
-.word 0xE1,0x13,0x07,0x09
+.word 0xE1
+.word 0x13
+.word 0x07
+.word 0x09
 
 .globl get_per_dpll_param
 get_per_dpll_param:
 	adr r0, per_dpll_param
 	mov pc, lr
+
+/*
+ * Tables for 36x/37x devices
+ */
+mpu_36x_dpll_param:
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+.word 300, 12, 0, 1
+
+iva_36x_dpll_param:
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+.word 10, 0, 0, 1
+
+core_36x_dpll_param:
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+.word 200, 12, 0, 1
+
+per_36x_dpll_param:
+/*    SYSCLK    M       N       M2      M3      M4      M5      M6      m2DIV */
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+.word 26000,    432,    12,     9,      16,     9,      4,      3,      1
+
+.globl get_36x_mpu_dpll_param
+get_36x_mpu_dpll_param:
+	adr	r0, mpu_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_iva_dpll_param
+get_36x_iva_dpll_param:
+	adr	r0, iva_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_core_dpll_param
+get_36x_core_dpll_param:
+	adr	r0, core_36x_dpll_param
+	mov	pc, lr
+
+.globl get_36x_per_dpll_param
+get_36x_per_dpll_param:
+	adr	r0, per_36x_dpll_param
+ 	mov	pc, lr
 
