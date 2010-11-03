@@ -32,6 +32,7 @@
 #include <asm/arch/sys_info.h>
 #include <asm/arch/clocks.h>
 #include <asm/arch/mem.h>
+#include <asm/arch/gpio.h>
 #include <linux/mtd/onenand_regs.h>
 #include <linux/mtd/onenand.h>
 
@@ -859,6 +860,10 @@ int board_init(void)
  ********************************************************/
 int misc_init_r(void)
 {
+	omap_request_gpio(27);
+	omap_set_gpio_direction(27, 0);
+	omap_set_gpio_dataout(27, 1);
+
 	return 0;
 }
 
