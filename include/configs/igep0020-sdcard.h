@@ -128,5 +128,13 @@
 #define ONENAND_PAGE_SIZE	2048     /* 2KB */
 #define ONENAND_BLOCK_SIZE	0x20000  /* 128KB */
 
+#define CONFIG_NR_DRAM_BANKS        2
+
+/* Memory work */
+#define XLOADER_CFG_GLOBAL_PTR      0x90000000
+#define XLOADER_KERNEL_PARAMS       0x80000100                  /* Kernel params */
+#define XLOADER_KERNEL_MEMORY       XLOADER_CFG_GLOBAL_PTR /* + (4 * 1024) */
+#define XLOADER_CFG_FILE            XLOADER_KERNEL_MEMORY + (32 * 1024)      /* Configuration file : Reserved 32K */
+
 #endif /* __CONFIG_H */
 

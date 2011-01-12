@@ -63,9 +63,52 @@
 #define OMAP24XX_GPIO_CLEARDATAOUT	0x0090
 #define OMAP24XX_GPIO_SETDATAOUT	0x0094
 
+#define GPIO0				(0x1 << 0)
+#define GPIO1				(0x1 << 1)
+#define GPIO2				(0x1 << 2)
+#define GPIO3				(0x1 << 3)
+#define GPIO4				(0x1 << 4)
+#define GPIO5				(0x1 << 5)
+#define GPIO6				(0x1 << 6)
+#define GPIO7				(0x1 << 7)
+#define GPIO8				(0x1 << 8)
+#define GPIO9				(0x1 << 9)
+#define GPIO10				(0x1 << 10)
+#define GPIO11				(0x1 << 11)
+#define GPIO12				(0x1 << 12)
+#define GPIO13				(0x1 << 13)
+#define GPIO14				(0x1 << 14)
+#define GPIO15				(0x1 << 15)
+#define GPIO16				(0x1 << 16)
+#define GPIO17				(0x1 << 17)
+#define GPIO18				(0x1 << 18)
+#define GPIO19				(0x1 << 19)
+#define GPIO20				(0x1 << 20)
+#define GPIO21				(0x1 << 21)
+#define GPIO22				(0x1 << 22)
+#define GPIO23				(0x1 << 23)
+#define GPIO24				(0x1 << 24)
+#define GPIO25				(0x1 << 25)
+#define GPIO26				(0x1 << 26)
+#define GPIO27				(0x1 << 27)
+#define GPIO28				(0x1 << 28)
+#define GPIO29				(0x1 << 29)
+#define GPIO30				(0x1 << 30)
+#define GPIO31				(0x1 << 31)
+
+
 struct gpio_bank {
 	void *base;
 	int method;
+};
+
+struct gpio {
+	unsigned char res1[0x34];
+	unsigned int oe;		/* 0x34 */
+	unsigned int datain;		/* 0x38 */
+	unsigned char res2[0x54];
+	unsigned int cleardataout;	/* 0x90 */
+	unsigned int setdataout;	/* 0x94 */
 };
 
 #define METHOD_GPIO_24XX	4

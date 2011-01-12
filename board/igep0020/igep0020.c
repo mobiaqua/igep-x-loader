@@ -36,6 +36,7 @@
 #include <linux/mtd/onenand_regs.h>
 #include <linux/mtd/onenand.h>
 
+
 /* Used to index into DPLL parameter tables */
 struct dpll_param {
 	unsigned int m;
@@ -803,7 +804,7 @@ void config_onenand_nand0xgr4wxa(void)
 }
 
 /**********************************************************
- * Routine: 
+ * Routine:
  * Description: Configure MultiChip Package (MCP)
  *  -------------- -------------- ------------
  * | MCP PART. N. |   ONENAND    |  LPSDRAM   |
@@ -1121,6 +1122,7 @@ void per_clocks_enable(void)
 	MUX_VAL(CP(ETK_D15),        (IEN  | PTD | DIS | M4)) /*GPIO_29 */\
 	MUX_VAL(CP(sdrc_cke0),      (IDIS | PTU | EN  | M0)) /*sdrc_cke0 */\
 	MUX_VAL(CP(sdrc_cke1),      (IDIS | PTD | DIS | M7)) /*sdrc_cke1 not used*/
+
 
 /**********************************************************
  * Routine: set_muxconf_regs

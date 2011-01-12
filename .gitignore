@@ -10,4 +10,4 @@ include/asm/arch
 include/asm/proc
 include/config.h
 include/config.mk
-
+x-load.bin.ift

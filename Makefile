@@ -61,7 +61,7 @@ endif
 #########################################################################
 # X-LOAD objects....order is important (i.e. start must be first)
 
-OBJS  = cpu/$(CPU)/start.o
+OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o
  
 
 LIBS += board/$(BOARDDIR)/lib$(BOARD).a

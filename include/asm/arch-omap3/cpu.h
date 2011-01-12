@@ -49,7 +49,7 @@
 #define GP_DEVICE		0x3
 
 /* We are not concerned with BIT5 as it only determines
- *  the prirotiy between memory or perpheral booting 
+ *  the prirotiy between memory or perpheral booting
  */
 #define SYSBOOT_MASK		(BIT0|BIT1|BIT2|BIT3|BIT4)
 

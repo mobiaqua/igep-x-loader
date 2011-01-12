@@ -80,6 +80,8 @@
 #define LS_DIR	1
 #define LS_ROOT	2
 
+//#define DEBUG
+
 #ifdef DEBUG
 #define FAT_DPRINT(args...)	printf(args)
 #else

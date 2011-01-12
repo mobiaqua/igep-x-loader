@@ -93,6 +93,11 @@ void start_armboot (void)
 
 	misc_init_r();
 
+    if (mmc_init(1)) {
+        printf("boot_linux error: %d\n", boot_linux());
+    }
+    while(1);
+
 	buf =  (uchar*) CFG_LOADADDR;
 
 #ifdef CONFIG_MMC
