@@ -524,6 +524,7 @@ typedef enum {
 #define POP_ONEN_BASE		ONENAND_MAP
 #define DBG_MPDB_BASE		DEBUG_BASE
 
+// Ethernet NetConfig
 #define NET_GPMC_CONFIG1	0x00001000
 #define NET_GPMC_CONFIG2	0x001e1e01
 #define NET_GPMC_CONFIG3	0x00080300

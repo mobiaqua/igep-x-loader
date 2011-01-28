@@ -24,6 +24,7 @@
 
 #ifndef _OMAP34XX_CPU_H
 #define  _OMAP34XX_CPU_H
+
 #include <asm/arch/omap3430.h>
 
 /* Register offsets of common modules */

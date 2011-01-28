@@ -1,6 +1,8 @@
 /*
+ * Copyright (C) 2010 ISEE
+ * Manel Caro, ISEE, mcaro@iseebcn.com.
+ * 
  * Copyright (C) 2005 Texas Instruments.
- *
  * (C) Copyright 2004
  * Jian Zhang, Texas Instruments, jzhang@ti.com.
  *
@@ -40,7 +42,7 @@
 #endif
 
 const char version_string[] =
-	"Texas Instruments X-Loader 1.4.4-1 (" __DATE__ " - " __TIME__ ")";
+	"ISEE - iGEP - X-Loader 2.0.0-1 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {
@@ -84,19 +86,22 @@ void start_armboot (void)
 #ifdef CONFIG_ONENAND
 	unsigned int onenand_features;
 #endif
-
+	/* Execute init_sequence */
    	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
 			hang ();
 		}
 	}
 
+	/* Execute board specific misc init */
 	misc_init_r();
 
-    if (mmc_init(1)) {
-        printf("boot_linux error: %d\n", boot_linux());
-    }
-    while(1);
+    	/* First try to load the Linux Kernel from MMC */
+	if (mmc_init(1)) {
+        	printf("boot_linux error: %d\n", boot_linux());
+    	}
+
+    	while(1);
 
 	buf =  (uchar*) CFG_LOADADDR;
 

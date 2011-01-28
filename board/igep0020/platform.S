@@ -436,7 +436,7 @@ get_per_dpll_param:
  * Tables for 36x/37x devices
  */
 mpu_36x_dpll_param:
-.word 300, 12, 0, 1
+.word 500, 12, 0, 1
 .word 300, 12, 0, 1
 .word 300, 12, 0, 1
 .word 300, 12, 0, 1

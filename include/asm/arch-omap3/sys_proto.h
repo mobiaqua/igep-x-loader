@@ -27,7 +27,7 @@ void per_clocks_enable(void);
 void memif_init(void);
 void sdrc_init(void);
 void do_sdrc_init(u32,u32);
-void gpmc_init(void);
+// void gpmc_init(void);
 
 void ether_init(void);
 void watchdog_init(void);

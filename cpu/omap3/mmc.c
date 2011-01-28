@@ -491,7 +491,9 @@ unsigned char configure_mmc(mmc_card_data *mmc_card_cur)
 	trans_unit >>= 0;
 	trans_fact >>= 3;
 
-	trans_clk = mmc_transspeed_val[trans_fact - 1][trans_unit] * 2;
+	// trans_clk = mmc_transspeed_val[trans_fact - 1][trans_unit] * 2;
+	// trans_clk = mmc_transspeed_val[trans_fact - 1][trans_unit];
+	trans_clk = 3;
 	ret_val = mmc_clock_config(CLK_MISC, trans_clk);
 
 	if (ret_val != 1)
@@ -545,7 +547,7 @@ int mmc_init(int verbose)
 		fat_register_device(&mmc_blk_dev, 1);
 		return 1;
 	}
-	else 
+	else
 		return 0;
 }
 
