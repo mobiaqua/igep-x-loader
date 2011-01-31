@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 ISEE
+ * Manel Caro, ISEE, <mcaro@iseebcn.com>
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -24,17 +25,22 @@
 #include <config.h>
 #include <setup.h>
 
-// #define DECLARE_GLOBAL_DATA_PTR     register volatile gd_t *gd asm ("r8")
+#define SZ_1K				1024
+#define SZ_2K				2 * SZ_1K
+#define SZ_16K				16 * SZ_1K
+#define KERNEL_MAX_CMDLINE		4 * SZ_1K
 
+/* Internal Memory layout */
 typedef struct Linux_Memory_Layout {
     char* kbase_address;                // It must be the dest kernel address
     int k_size;                         // 0 = and return here the size
     char* kImage_rd_address;            // Return here the rd image if it is found
     int rdImage_size;                   // Initial Ram disk size
     int kcmdposs;                       // Internal command counter
-    char kcmdline[4* 1024];            // Kernel command line
+    char kcmdline[KERNEL_MAX_CMDLINE];  // Kernel command line
 } l_my;
 
+/* Linux Images */
 const char* LinuxImageNames [] = {
         "zimage",
         "bzimage",
@@ -42,25 +48,29 @@ const char* LinuxImageNames [] = {
         0,
 };
 
-#define SZ_16K              16 * 1024
 #define MEM_PADD_BLOCKS     4           // Add 4 * 16K blocks
 
+/* 
+ * Internal Global Variables : It Resides in the SDRAM not in the internal RAM 
+ * at this stage the SDRAM must be Initialized and ready for use it. 
+*/
 static struct Linux_Memory_Layout* LMemoryLayout = (struct Linux_Memory_Layout*) XLOADER_KERNEL_MEMORY;
 static struct tag *kparams = (struct tag *) XLOADER_KERNEL_PARAMS;
 static struct tag *params = (struct tag *) XLOADER_KERNEL_PARAMS;
 
+/* Initialize */
 static void init_memory_layout (void)
 {
-    // Initialize
+    // Initialize Linux Memory Layout struct
     LMemoryLayout->kbase_address = 0;
     LMemoryLayout->k_size = 0;
     LMemoryLayout->kImage_rd_address = 0;
     LMemoryLayout->rdImage_size = 0;
     LMemoryLayout->kcmdposs = 0;
     LMemoryLayout->kcmdline[0] = '\0';
-    // memset(LMemoryLayout->kcmdline, 0, 16 * 1024);
 }
 
+/* add_cmd_param : Add new kernel command line param to the internal buffer */
 void add_cmd_param (const char* param_name, const char* param_value)
 {
     int pName_len;
@@ -79,6 +89,7 @@ void add_cmd_param (const char* param_name, const char* param_value)
     LMemoryLayout->kcmdline [LMemoryLayout->kcmdposs+1] = '\0';
 }
 
+/* setup_start_tag : Initialize the kernel command line variable list */
 static void setup_start_tag (void)
 {
 	params->hdr.tag = ATAG_CORE;
@@ -89,9 +100,12 @@ static void setup_start_tag (void)
 	params = tag_next (params);
 }
 
-//#ifdef CONFIG_SETUP_MEMORY_TAGS
+/* setup the map memory setup for the kernel */
 static void setup_memory_tags (void)
 {
+    /* TODO: Setup the memory, actually it's configured for 
+     * use 512 MBytes and it's map into CS0 and CS1 
+     */
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
     params->u.mem.start = OMAP34XX_SDRC_CS0;
@@ -103,26 +117,11 @@ static void setup_memory_tags (void)
     params->u.mem.size = 256 * 1024 * 1024;
     params = tag_next (params);
 }
-// #endif /* CONFIG_SETUP_MEMORY_TAGS */
 
+/* setup_commandline_tag: Set the command line kernel variable in the var list */
 static void setup_commandline_tag ()
 {
-	// char *p = commandline;
-
-	if (!LMemoryLayout->kcmdline)
-		return;
-
-	/* eat leading white space */
-	// for (p = commandline; *p == ' '; p++);
-
-	/* skip non-existent command lines so the kernel will still
-	 * use its default command line.
-	 */
-	//if (*p == '\0')
-		// return;
-
-    //printf("strlen cmdline: %d 0x%x\n", strlen(commandline), commandline);
-
+	if (!LMemoryLayout->kcmdline) return;
 	params->hdr.tag = ATAG_CMDLINE;
 	params->hdr.size = (sizeof (struct tag_header) + strlen (LMemoryLayout->kcmdline) + 1 + 4) >> 2;
 	strcpy (params->u.cmdline.cmdline, LMemoryLayout->kcmdline);
@@ -175,7 +174,7 @@ void setup_revision_tag(struct tag **in_params)
 }
 #endif  /* CONFIG_REVISION_TAG */
 
-
+/* setup_end_tag : terminate the var kernel list */
 static void setup_end_tag (void)
 {
 	params->hdr.tag = ATAG_NONE;
@@ -187,63 +186,93 @@ static void setup_end_tag (void)
 *  Out: kernel image size, copied to base_address
 *       rdImage copied rear the linux kernel image
 *       rdImage_size size of rd Image
+*  result:	 -1 = kbase_address it's not configured
+*  		0 = kernel not found in mmc
+*		1 = kernel found
 */
 int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
 {
-    // Variables
-    int size = -1;
-    int found = 0;
-    int count = 0;
-    const char* linuxName = LinuxImageNames[0];
+    	int size = -1;
+    	int found = 0;
+    	int count = 0;
+    	const char* linuxName = LinuxImageNames[0];
+    	
+	/* Check if the kbase_address it'sprovided (PREREQUISITE) */
+	if(!myImage->kbase_address) return -1;
 
-    if(!myImage->kbase_address) return -1;
-
-    while(linuxName && !found){
-        printf("try load kernel %s\n", linuxName);
-        size = file_fat_read(linuxName, myImage->kbase_address , 0);
-        if(size > 0){
-            printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
-            myImage->k_size = size;
-            if(!myImage->kImage_rd_address){    // Calculate the initrd address
-                myImage->kImage_rd_address = myImage->k_size + (MEM_PADD_BLOCKS * SZ_16K) + myImage->kbase_address;
-            }
-            size = file_fat_read("initrd", myImage->kImage_rd_address, 0);
-            if(size > 0){
-                myImage->rdImage_size = size;
-            }
-            // found = 1;
-            printf("kernel %s found\n", linuxName);
-            return 1;
-        }
-        else {
-            printf("load kernel %s failed\n", linuxName);
-        }
-        linuxName = LinuxImageNames[++count];
+	while(linuxName && !found){
+#ifdef __DEBUG__
+		printf("try load kernel %s from mmc\n", linuxName);
+#endif
+		/* Try load the linuxName [n] Image into kbase_address */
+		size = file_fat_read(linuxName, myImage->kbase_address , 0);
+        	/* If size > 0 then the image was loaded ok */
+		if(size > 0){
+#ifdef __DEBUG__
+            		printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
+#endif           
+			/* Update the size variable */
+			myImage->k_size = size;
+			/* if the ram disk dest address it's not supplied then calculate the address */
+            		if(!myImage->kImage_rd_address){
+				// Put the RD address rear the kernel address with MEM_PADD_BLOCKS for padding
+                		myImage->kImage_rd_address = myImage->k_size + (MEM_PADD_BLOCKS * SZ_16K) + myImage->kbase_address;
+            		}
+			/* try to load the RAM disk into kImage_rd_address */
+			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea 
+			 * to permit supply a different names for it */
+            		size = file_fat_read("initrd", myImage->kImage_rd_address, 0);
+            		/* Update Information if we get the ram disk image into memory */
+			if(size > 0){
+                		myImage->rdImage_size = size;
+            		}
+#ifdef __DEBUG__
+            		printf("kernel %s found first stage done\n", linuxName);
+#endif
+            		return 1;
+        	}
+#ifdef __DEBUG__
+        	else {
+            		printf("load kernel %s failed\n", linuxName);
+        	}
+#endif
+		/* Try the next kernel image name */
+        	linuxName = LinuxImageNames[++count];
     }
     return found;
 }
 
+/* cfg_handler : Ini file variables from ini file parser */
 int cfg_handler ( void* usr_ptr, const char* section, const char* key, const char* value)
 {
     unsigned int v;
     int res;
+#ifdef __DEBUG__
     printf("section: %s key: %s value: %s\n", section, key, value);
+#endif
+    /* SECTION: kernel */
     if(!strcmp(section, "kernel")){
         if(!strcmp(key, "kaddress")){
+            /* PARAM: kaddress : Destination kernel copy address */
             sscanf(value, "0x%x", &v);
             LMemoryLayout->kbase_address = (char*) v;
-            // printf("section: %s key: %s value: %s converted 0x%x\n", section, key, value, v);
         }else if(!strcmp(key, "rdaddress")){
-            sscanf(value, "0x%x", &v);
+            /* PARAM: rdaddress : Destination initrd copy address */
+	    sscanf(value, "0x%x", &v);
             LMemoryLayout->kImage_rd_address = (char*) v;
         }
     }
+    /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
+	/* All variables in this section should be a kernel parameters */
         add_cmd_param(key, value);
     }
     return 1;
 }
 
+/* --- ARMv7 Kernel Boot Prerequisites --- */
+
+/* cache_flush */
 static void cache_flush(void)
 {
 	asm ("mcr p15, 0, %0, c7, c5, 0": :"r" (0));
@@ -265,16 +294,21 @@ int disable_interrupts (void)
 	return (old & 0x80) == 0;
 }
 
+/* Prepare the system for kernel boot */
 void cleanup_before_linux (void)
 {
-    unsigned int i;
-    disable_interrupts();
+	unsigned int i;
+    	
+	/* disable all interrupts */
+	disable_interrupts();
 
+	/* disable I and D caches */
 	icache_disable();
 	dcache_disable();
+	/* flush cache */
 	cache_flush();
 
-#ifdef __notdef
+#ifdef __notdef 
 #ifndef CONFIG_L2_OFF
 	/* turn off L2 cache */
 	l2_cache_disable();
@@ -292,28 +326,51 @@ void cleanup_before_linux (void)
 #endif
 }
 
-int boot_linux ()
+/* Main Linux boot 
+*  If all it's ok this function never returns because at latest it 
+*  Jump directly to the kernel image.
+*/
+int boot_linux (/*int machine_id*/)
 {
     int bootr = -1;
     int machine_id = 2344;
-    void	(*theKernel)(int zero, int arch, uint params);
+    void (*theKernel)(int zero, int arch, uint params);
 
+#ifdef __DEBUG__
     printf("Init Memory Layout\n");
+#endif
+    /* initialize internal variables */
     init_memory_layout();
+#ifdef __DEBUG__
     printf("Parse configuration file\n");
+#endif
+    /* parse configuration file, actually only a ini file be supported */
+    /* TODO: Set variable the configuartion file name, add other file formats  */
     if(ini_parse("igep.ini", cfg_handler, (void*) LMemoryLayout) >= 0){
+#ifdef __DEBUG__
         printf("Try load kernel\n");
+#endif
+	/* If parse it's ok, it's a good moment for load 
+        the kernel image from the mmc card */
         bootr = load_kernel_from_mmc(LMemoryLayout);
+	/* if bootr it's > 0 then we get right the kernel image */
         if(bootr > 0){
+	    /* prepare the kernel command line list */
             setup_start_tag();
             setup_memory_tags();
+#ifdef __DEBUG__
             printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
-            setup_commandline_tag();
+#endif
+	    setup_commandline_tag();
             setup_end_tag();
-            printf("kernel boot: 0x%x 0x%x\n", LMemoryLayout->kbase_address,  kparams);
-            cleanup_before_linux();
+#ifdef __DEBUG__            
+	    printf("kernel boot: 0x%x 0x%x\n", LMemoryLayout->kbase_address,  kparams);
+#endif
+	    /* Prepare the system for kernel boot */
+	    cleanup_before_linux();
             theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
-            theKernel (0, machine_id, kparams);
+            /* boot ! = GREAT ;) */
+	    theKernel (0, machine_id, kparams);
         }else{
             if(bootr < 0)
                 printf("Invalid load kernel address\n");
