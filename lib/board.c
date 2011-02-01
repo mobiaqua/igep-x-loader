@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2010 ISEE
  * Manel Caro, ISEE, mcaro@iseebcn.com.
- * 
+ *
  * Copyright (C) 2005 Texas Instruments.
  * (C) Copyright 2004
  * Jian Zhang, Texas Instruments, jzhang@ti.com.
@@ -99,9 +99,9 @@ void start_armboot (void)
     	/* First try to load the Linux Kernel from MMC */
 	if (mmc_init(1)) {
         	printf("boot_linux error: %d\n", boot_linux());
-    	}
+    }
 
-    	while(1);
+    while(1);
 
 	buf =  (uchar*) CFG_LOADADDR;
 
