@@ -37,6 +37,8 @@ typedef struct Linux_Memory_Layout {
     char* kImage_rd_address;            // Return here the rd image if it is found
     int rdImage_size;                   // Initial Ram disk size
     int kcmdposs;                       // Internal command counter
+    struct tag_revision revision;       // Revision ID
+    struct tag_serialnr serial;         // Serial ID
     char kcmdline[KERNEL_MAX_CMDLINE];  // Kernel command line
 } l_my;
 
@@ -50,9 +52,9 @@ const char* LinuxImageNames [] = {
 
 #define MEM_PADD_BLOCKS     4           // Add 4 * 16K blocks
 
-/* 
- * Internal Global Variables : It Resides in the SDRAM not in the internal RAM 
- * at this stage the SDRAM must be Initialized and ready for use it. 
+/*
+ * Internal Global Variables : It Resides in the SDRAM not in the internal RAM
+ * at this stage the SDRAM must be Initialized and ready for use it.
 */
 static struct Linux_Memory_Layout* LMemoryLayout = (struct Linux_Memory_Layout*) XLOADER_KERNEL_MEMORY;
 static struct tag *kparams = (struct tag *) XLOADER_KERNEL_PARAMS;
@@ -67,6 +69,9 @@ static void init_memory_layout (void)
     LMemoryLayout->kImage_rd_address = 0;
     LMemoryLayout->rdImage_size = 0;
     LMemoryLayout->kcmdposs = 0;
+    LMemoryLayout->revision.rev = 0;
+    LMemoryLayout->serial.low = 0;
+    LMemoryLayout->serial.high = 0;
     LMemoryLayout->kcmdline[0] = '\0';
 }
 
@@ -103,8 +108,8 @@ static void setup_start_tag (void)
 /* setup the map memory setup for the kernel */
 static void setup_memory_tags (void)
 {
-    /* TODO: Setup the memory, actually it's configured for 
-     * use 512 MBytes and it's map into CS0 and CS1 
+    /* TODO: Setup the memory, actually it's configured for
+     * use 512 MBytes and it's map into CS0 and CS1
      */
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
@@ -144,35 +149,26 @@ static void setup_initrd_tag (ulong initrd_start, ulong initrd_end)
 }
 #endif /* CONFIG_INITRD_TAG */
 
-#ifdef CONFIG_SERIAL_TAG
-void setup_serial_tag (struct tag **tmp)
+// #ifdef CONFIG_SERIAL_TAG
+void setup_serial_tag ()
 {
-	struct tag *params = *tmp;
-	struct tag_serialnr serialnr;
-	void get_board_serial(struct tag_serialnr *serialnr);
-
-	get_board_serial(&serialnr);
 	params->hdr.tag = ATAG_SERIAL;
 	params->hdr.size = tag_size (tag_serialnr);
-	params->u.serialnr.low = serialnr.low;
-	params->u.serialnr.high= serialnr.high;
+	params->u.serialnr.low = LMemoryLayout->serial.low;
+	params->u.serialnr.high= LMemoryLayout->serial.high;
 	params = tag_next (params);
-	*tmp = params;
 }
-#endif
+//#endif
 
-#ifdef CONFIG_REVISION_TAG
-void setup_revision_tag(struct tag **in_params)
+//#ifdef CONFIG_REVISION_TAG
+void setup_revision_tag ()
 {
-	u32 rev = 0;
-	/* u32 get_board_rev(void); */
-	/* rev = get_board_rev() */;
 	params->hdr.tag = ATAG_REVISION;
 	params->hdr.size = tag_size (tag_revision);
-	params->u.revision.rev = rev;
+	params->u.revision.rev = LMemoryLayout->revision.rev;
 	params = tag_next (params);
 }
-#endif  /* CONFIG_REVISION_TAG */
+//#endif  /* CONFIG_REVISION_TAG */
 
 /* setup_end_tag : terminate the var kernel list */
 static void setup_end_tag (void)
@@ -196,7 +192,7 @@ int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
     	int found = 0;
     	int count = 0;
     	const char* linuxName = LinuxImageNames[0];
-    	
+
 	/* Check if the kbase_address it'sprovided (PREREQUISITE) */
 	if(!myImage->kbase_address) return -1;
 
@@ -210,7 +206,7 @@ int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
 		if(size > 0){
 #ifdef __DEBUG__
             		printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
-#endif           
+#endif
 			/* Update the size variable */
 			myImage->k_size = size;
 			/* if the ram disk dest address it's not supplied then calculate the address */
@@ -219,7 +215,7 @@ int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
                 		myImage->kImage_rd_address = myImage->k_size + (MEM_PADD_BLOCKS * SZ_16K) + myImage->kbase_address;
             		}
 			/* try to load the RAM disk into kImage_rd_address */
-			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea 
+			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea
 			 * to permit supply a different names for it */
             		size = file_fat_read("initrd", myImage->kImage_rd_address, 0);
             		/* Update Information if we get the ram disk image into memory */
@@ -258,13 +254,25 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             LMemoryLayout->kbase_address = (char*) v;
         }else if(!strcmp(key, "rdaddress")){
             /* PARAM: rdaddress : Destination initrd copy address */
-	    sscanf(value, "0x%x", &v);
+            sscanf(value, "0x%x", &v);
             LMemoryLayout->kImage_rd_address = (char*) v;
+        }
+        else if(!strcmp(key, "revision")){
+            sscanf(value, "%u", &v);
+            LMemoryLayout->revision.rev = v;
+        }
+        else if(!strcmp(key, "serial.low")){
+            sscanf(value, "%u", &v);
+            LMemoryLayout->serial.low = v;
+        }
+        else if(!strcmp(key, "serial.high")){
+            sscanf(value, "%u", &v);
+            LMemoryLayout->serial.high = v;
         }
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
-	/* All variables in this section should be a kernel parameters */
+        /* All variables in this section should be a kernel parameters */
         add_cmd_param(key, value);
     }
     return 1;
@@ -298,7 +306,7 @@ int disable_interrupts (void)
 void cleanup_before_linux (void)
 {
 	unsigned int i;
-    	
+
 	/* disable all interrupts */
 	disable_interrupts();
 
@@ -308,7 +316,7 @@ void cleanup_before_linux (void)
 	/* flush cache */
 	cache_flush();
 
-#ifdef __notdef 
+#ifdef __notdef
 #ifndef CONFIG_L2_OFF
 	/* turn off L2 cache */
 	l2_cache_disable();
@@ -326,8 +334,8 @@ void cleanup_before_linux (void)
 #endif
 }
 
-/* Main Linux boot 
-*  If all it's ok this function never returns because at latest it 
+/* Main Linux boot
+*  If all it's ok this function never returns because at latest it
 *  Jump directly to the kernel image.
 */
 int boot_linux (/*int machine_id*/)
@@ -350,7 +358,7 @@ int boot_linux (/*int machine_id*/)
 #ifdef __DEBUG__
         printf("Try load kernel\n");
 #endif
-	/* If parse it's ok, it's a good moment for load 
+	/* If parse it's ok, it's a good moment for load
         the kernel image from the mmc card */
         bootr = load_kernel_from_mmc(LMemoryLayout);
 	/* if bootr it's > 0 then we get right the kernel image */
@@ -358,12 +366,14 @@ int boot_linux (/*int machine_id*/)
 	    /* prepare the kernel command line list */
             setup_start_tag();
             setup_memory_tags();
+            setup_serial_tag();
+            setup_revision_tag();
 #ifdef __DEBUG__
             printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
 #endif
-	    setup_commandline_tag();
+            setup_commandline_tag();
             setup_end_tag();
-#ifdef __DEBUG__            
+#ifdef __DEBUG__
 	    printf("kernel boot: 0x%x 0x%x\n", LMemoryLayout->kbase_address,  kparams);
 #endif
 	    /* Prepare the system for kernel boot */
