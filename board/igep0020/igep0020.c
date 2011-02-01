@@ -891,7 +891,6 @@ int misc_init_r(void)
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
 	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
-
 	return 0;
 }
 
