@@ -525,12 +525,43 @@ typedef enum {
 #define DBG_MPDB_BASE		DEBUG_BASE
 
 // Ethernet NetConfig
+// DM3730 L3 = 200 Mhz -> 1/t = 5 ns
 #define NET_GPMC_CONFIG1	0x00001000
-#define NET_GPMC_CONFIG2	0x001e1e01
+
+// #define NET_GPMC_CONFIG2	0x001e1e01
+// CS chipselect control time
+// CS ON time = 1 cyle
+// CS RD OFF time = 9 cyles
+// CS WR OFF time = 9 cycles
+#define NET_GPMC_CONFIG2	0x00090901
+
+// #define NET_GPMC_CONFIG3	0x00080300
+// nADV control time
+// Adv ON time = 0 cycles
+// Adv OFF RD time = 3 cycles
+// Adv OFF WR time = 8 cycles
 #define NET_GPMC_CONFIG3	0x00080300
-#define NET_GPMC_CONFIG4	0x1c091c09
-#define NET_GPMC_CONFIG5	0x04181f1f
-#define NET_GPMC_CONFIG6	0x00000FCF
+
+// #define NET_GPMC_CONFIG4	0x1c091c09
+// WR & RD Control time
+// OE on time = 1 cycles
+// OE OFF time = 9 cycles
+// WE on time = 1 cyles
+// WE off time = 9 cycles
+#define NET_GPMC_CONFIG4	0x09010901
+
+// #define NET_GPMC_CONFIG5	0x04181f1f
+// RD AccessTime and Cycle Time
+// RDCYCLETIME = 10 cycles
+// WRCYCLETIME = 10 cycles
+// RDACCESSTIME = 8 cycles
+// PAGE Burst Access time = 3 cycles
+#define NET_GPMC_CONFIG5	0x03080A0A
+
+// #define NET_GPMC_CONFIG6	0x00000FCF ??
+// #define NET_GPMC_CONFIG6	0x88000FCF
+#define NET_GPMC_CONFIG6	0x880002C7
+
 #define NET_GPMC_CONFIG7	0x00000f6c
 
 #endif /* endif _OMAP34XX_MEM_H_ */
