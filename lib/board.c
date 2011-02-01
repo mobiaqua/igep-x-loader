@@ -96,7 +96,7 @@ void start_armboot (void)
 	/* Execute board specific misc init */
 	misc_init_r();
 
-    	/* First try to load the Linux Kernel from MMC */
+    /* First try to load the Linux Kernel from MMC */
 	if (mmc_init(1)) {
         	printf("boot_linux error: %d\n", boot_linux());
     }

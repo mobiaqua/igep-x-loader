@@ -25,10 +25,11 @@
 #include <config.h>
 #include <setup.h>
 
-#define SZ_1K				1024
-#define SZ_2K				2 * SZ_1K
-#define SZ_16K				16 * SZ_1K
-#define KERNEL_MAX_CMDLINE		4 * SZ_1K
+#define SZ_1K				        1024
+#define SZ_2K				        2 * SZ_1K
+#define SZ_16K				        16 * SZ_1K
+#define SZ_1M                       SZ_1K * SZ_1K
+#define KERNEL_MAX_CMDLINE		    4 * SZ_1K
 
 /* Internal Memory layout */
 typedef struct Linux_Memory_Layout {
@@ -114,12 +115,12 @@ static void setup_memory_tags (void)
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
     params->u.mem.start = OMAP34XX_SDRC_CS0;
-    params->u.mem.size = 256 * 1024 * 1024;
+    params->u.mem.size = 256 * SZ_1M;
     params = tag_next (params);
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
     params->u.mem.start = OMAP34XX_SDRC_CS1;
-    params->u.mem.size = 256 * 1024 * 1024;
+    params->u.mem.size = 256 * SZ_1M;
     params = tag_next (params);
 }
 
