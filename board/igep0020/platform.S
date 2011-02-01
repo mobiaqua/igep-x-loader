@@ -442,7 +442,7 @@ mpu_36x_dpll_param:
 .word 300, 12, 0, 1
 
 iva_36x_dpll_param:
-.word 10, 0, 0, 1
+.word 400, 12, 0, 1
 .word 10, 0, 0, 1
 .word 10, 0, 0, 1
 .word 10, 0, 0, 1
