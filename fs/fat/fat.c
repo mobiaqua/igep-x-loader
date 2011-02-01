@@ -184,7 +184,7 @@ static int
 compare_sign(char *str1, char *str2)
 {
 	char *end = str1+SIGNLEN;
-	
+
 	while (str1 != end) {
 		if (*str1 != *str2) {
 			return -1;
@@ -603,7 +603,7 @@ read_bootsectandvi(boot_sector *bs, volume_info *volinfo, int *fatsize)
 	__u8 block[FS_BLOCK_SIZE];
 	volume_info *vistart;
 
-	printf("Reading boot sector\n");
+	// printf("Reading boot sector\n");
 
 	if (disk_read(0, 1, block) < 0) {
 		FAT_DPRINT("Error: reading block\n");
