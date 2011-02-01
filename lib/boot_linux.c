@@ -205,7 +205,7 @@ int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
         	/* If size > 0 then the image was loaded ok */
 		if(size > 0){
 #ifdef __DEBUG__
-            		printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
+            printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
 #endif
 			/* Update the size variable */
 			myImage->k_size = size;
