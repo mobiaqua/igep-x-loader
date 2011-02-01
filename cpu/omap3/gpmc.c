@@ -85,6 +85,7 @@ void gpmc_init (void)
 	/* global settings */
 	writel(0, &gpmc_cfg->irqenable); /* isr's sources masked */
 	writel(0, &gpmc_cfg->timeout_control);/* timeout disable */
+
 	/* Set WAIT polarity actuve low*/
 	config = readl(&gpmc_cfg->config);
 	config &= (~0xf00);
