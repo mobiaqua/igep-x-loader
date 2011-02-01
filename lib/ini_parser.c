@@ -62,7 +62,7 @@ static FILE* fopen (const char* filename, const char* mode)
     for(i=0; i < 16*1024; i++ ) xLoader_CFG->file_address[i] = EOF;
     // memset(xLoader_CFG->file_address, EOF, 16*1024);
     xLoader_CFG->file_size = file_fat_read(filename, xLoader_CFG->file_address , 0);
-    printf("%s : file_size %d\n", filename, xLoader_CFG->file_size );
+    // printf("%s : file_size %d\n", filename, xLoader_CFG->file_size );
     xLoader_CFG->file_pos = 0;
     if(xLoader_CFG->file_size > 0){
         xLoader_CFG->file_address[xLoader_CFG->file_size+1] = EOF;
