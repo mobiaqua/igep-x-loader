@@ -106,8 +106,8 @@ RANLIB	= $(CROSS_COMPILE)RANLIB
 
 RELFLAGS= $(PLATFORM_RELFLAGS)
 DBGFLAGS= -g # -DDEBUG
-#OPTFLAGS= -Os #-fomit-frame-pointer
-OPTFLAGS= -O0 #-fomit-frame-pointer
+OPTFLAGS= -Os #-fomit-frame-pointer
+#OPTFLAGS= -O3 -Os #-fomit-frame-pointer
 ifndef LDSCRIPT
 #LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/x-load.lds.debug
 LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/x-load.lds

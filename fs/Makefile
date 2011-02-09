@@ -22,7 +22,7 @@
 #
 #
 
-SUBDIRS	:= fat
+SUBDIRS	:= fat jffs2 cramfs
 
 .depend all:
 	@for dir in $(SUBDIRS) ; do \

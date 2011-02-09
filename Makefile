@@ -68,9 +68,11 @@ LIBS += board/$(BOARDDIR)/lib$(BOARD).a
 LIBS += cpu/$(CPU)/lib$(CPU).a
 LIBS += lib/lib$(ARCH).a
 LIBS += fs/fat/libfat.a
+LIBS += fs/jffs2/libjffs2.a
 LIBS += disk/libdisk.a
 LIBS += drivers/libdrivers.a
 LIBS += common/libcommon.a
+LIBS += mtd/libmtd.a
 .PHONY : $(LIBS)
 
 # Add GCC lib

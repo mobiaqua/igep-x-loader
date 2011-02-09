@@ -27,6 +27,8 @@
 #ifndef __COMMON_H_
 #define __COMMON_H_	1
 
+#define CONFIG_SYS_MALLOC_LEN	32 * (1024 * 1014)
+
 #undef	_LINUX_CONFIG_H
 #define _LINUX_CONFIG_H 1	/* avoid reading Linux autoconf.h file	*/
 
@@ -48,6 +50,33 @@ typedef volatile unsigned char	vu_char;
 # include <asm/setup.h>
 # include <asm/x-load-arm.h>	/* ARM version to be fixed! */
 #endif /* CONFIG_ARM */
+
+/*
+ * General Purpose Utilities
+ */
+#define min(X, Y)				\
+	({ typeof (X) __x = (X), __y = (Y);	\
+		(__x < __y) ? __x : __y; })
+
+#define max(X, Y)				\
+	({ typeof (X) __x = (X), __y = (Y);	\
+		(__x > __y) ? __x : __y; })
+
+#define MIN(x, y)  min(x, y)
+#define MAX(x, y)  max(x, y)
+
+
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the member.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+ */
+#define container_of(ptr, type, member) ({			\
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
 
 #ifdef	CFG_PRINTF
 #define printf(fmt,args...)	serial_printf (fmt ,##args)
@@ -83,9 +112,10 @@ void 	udelay (unsigned long usec);
 int 	nand_chip(void);
 int 	nand_read_block(uchar *buf, ulong block_addr);
 
-int 	onenand_chip(void);
-int	onenand_read_block(unsigned char *buf, ulong block);
+// int 	onenand_chip(void);
+// int	onenand_read_block(unsigned char *buf, ulong block);
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifdef CFG_PRINTF
 

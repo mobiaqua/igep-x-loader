@@ -665,7 +665,6 @@ __u8 do_fat_read_block[MAX_CLUSTSIZE];  /* Block buffer */
 
 __u8 *fnamecopy = 0x80500000;
 __u8 *do_fat_read_block = 0x80500880;
-
 boot_sector bs;
 volume_info volinfo;
 fsdata datablock;

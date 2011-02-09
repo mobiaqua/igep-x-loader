@@ -96,6 +96,8 @@ void start_armboot (void)
 	/* Execute board specific misc init */
 	misc_init_r();
 
+	onenand_init();
+
     /* First try to load the Linux Kernel from MMC */
 	if (mmc_init(1)) {
         	printf("boot_linux error: %d\n", boot_linux());
@@ -103,6 +105,7 @@ void start_armboot (void)
 
     while(1);
 
+#ifdef __NOTDEF
 	buf =  (uchar*) CFG_LOADADDR;
 
 #ifdef CONFIG_MMC
@@ -170,6 +173,7 @@ void start_armboot (void)
  	((init_fnc_t *)CFG_LOADADDR)();
 
 	/* should never come here */
+#endif
 }
 
 void hang (void)

@@ -117,11 +117,13 @@
 /*
  * Board oneNAND Info.
  */
+#define CONFIG_CMD_ONENAND              1
 #define CONFIG_ONENAND                  1
 #define CONFIG_MTD_ONENAND_2X_PROGRAM   1
 
 #define ONENAND_BASE	ONENAND_MAP
 #define ONENAND_ADDR	ONENAND_BASE
+#define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 
 #define ONENAND_START_BLOCK 	4	 /* 0x00080000 */
 #define ONENAND_END_BLOCK	16	 /* 0x00200000 */
@@ -130,11 +132,18 @@
 
 #define CONFIG_NR_DRAM_BANKS        2
 
+// #define CONFIG_JFFS2_PART_SIZE      0xA00000
+#define CONFIG_JFFS2_PART_SIZE      0xC00000
+#define CONFIG_JFFS2_PART_OFFSET    0x80000
+// #define CONFIG_JFFS2_PART_OFFSET    0x580000
+
 /* Memory work */
 #define XLOADER_CFG_GLOBAL_PTR      0x90000000
 #define XLOADER_KERNEL_PARAMS       0x80000100                  /* Kernel params */
-#define XLOADER_KERNEL_MEMORY       XLOADER_CFG_GLOBAL_PTR /* + (4 * 1024) */
+#define XLOADER_KERNEL_MEMORY       XLOADER_CFG_GLOBAL_PTR      /* struct Linux_Memory_Layout (Reserved 32K) */
 #define XLOADER_CFG_FILE            XLOADER_KERNEL_MEMORY + (32 * 1024)      /* Configuration file : Reserved 32K */
+#define XLOADER_MALLOC_IPTR         XLOADER_CFG_FILE + (32 * 1024)  /* Malloc Initial Pointer */
+#define XLOADER_MALLOC_SIZE         32 * (1024 * 1014)  /* Malloc space size = 32 M Bytes */
 
 #endif /* __CONFIG_H */
 

@@ -37,9 +37,23 @@
 #include <linux/mtd/onenand.h>
 #include <asm/arch/gpmc.h>
 #include <asm/arch/mux.h>
+#include <malloc.h>
+#include <jffs2/load_kernel.h>
+#include <linux/ctypes.h>
+
+// #include <common.h>
+#include <linux/mtd/compat.h>
+#include <linux/mtd/mtd.h>
+// #include <linux/mtd/onenand.h>
 
 #define GPIO_LED_USER0      27
 #define GPIO_LED_USER1      26
+
+struct mtd_info *onenand_mtd = NULL;
+struct onenand_chip *onenand_chip = NULL;
+struct mtd_device *current_mtd_dev = NULL;
+u8 current_mtd_partnum = 0;
+static __attribute__((unused)) char dev_name[] = "onenand0";
 
 /* Used to index into DPLL parameter tables */
 struct dpll_param {
@@ -840,6 +854,9 @@ void config_multichip_package()
 {
 	config_onenand_nand0xgr4wxa();
 
+    config_sdram_m65kx002am();
+/* TODO: Add 2 support for the two kind memories */
+#ifdef __notdef
 	switch (ONENAND_DEVICE_ID()) {
 	case ONENAND_NAND02GR4E_DEV_ID:
 		config_sdram_m65kx001am();
@@ -851,6 +868,7 @@ void config_multichip_package()
 		board_hang();
 		break;
 	}
+#endif
 }
 
 /**********************************************************
@@ -861,12 +879,12 @@ void config_multichip_package()
 void s_init(void)
 {
 	watchdog_init();
-
 	try_unlock_memory();
 	set_muxconf_regs();
 	delay(100);
 	prcm_init();
 	per_clocks_enable();
+	gpmc_init ();
 	config_multichip_package();
 }
 
@@ -876,8 +894,10 @@ void s_init(void)
  *****************************************/
 int board_init(void)
 {
-    gpmc_init ();
     setup_net_chip ();
+    // Setup Malloc memory
+    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
+
 	return 0;
 }
 
@@ -1517,6 +1537,212 @@ void set_muxconf_regs(void)
 {
 	// MUX_DEFAULT();
 	MUX_IGEP0020();
+}
+
+static inline u32 get_part_sector_size_onenand(void)
+{
+#if defined(CONFIG_CMD_ONENAND)
+	struct mtd_info *mtd;
+
+	mtd = onenand_mtd;
+
+	return mtd->erasesize;
+#else
+	BUG();
+	return 0;
+#endif
+}
+
+static inline u32 get_part_sector_size(struct mtdids *id, struct part_info *part)
+{
+	if (id->type == MTD_DEV_TYPE_ONENAND)
+		return get_part_sector_size_onenand();
+	else
+		printf("Error: Unknown device type.\n");
+
+	return 0;
+}
+
+static int mtd_device_validate(u8 type, u8 num, u32 *size)
+{
+	if (type == MTD_DEV_TYPE_NOR) {
+#if defined(CONFIG_CMD_FLASH)
+		if (num < CONFIG_SYS_MAX_FLASH_BANKS) {
+			extern flash_info_t flash_info[];
+			*size = flash_info[num].size;
+
+			return 0;
+		}
+
+		printf("no such FLASH device: %s%d (valid range 0 ... %d\n",
+				MTD_DEV_TYPE(type), num, CONFIG_SYS_MAX_FLASH_BANKS - 1);
+#else
+		printf("support for FLASH devices not present\n");
+#endif
+	} else if (type == MTD_DEV_TYPE_NAND) {
+#if defined(CONFIG_JFFS2_NAND) && defined(CONFIG_CMD_NAND)
+		if (num < CONFIG_SYS_MAX_NAND_DEVICE) {
+			*size = nand_info[num].size;
+			return 0;
+		}
+
+		printf("no such NAND device: %s%d (valid range 0 ... %d)\n",
+				MTD_DEV_TYPE(type), num, CONFIG_SYS_MAX_NAND_DEVICE - 1);
+#else
+		printf("support for NAND devices not present\n");
+#endif
+	} else if (type == MTD_DEV_TYPE_ONENAND) {
+#if defined(CONFIG_CMD_ONENAND)
+		*size = onenand_mtd->size;
+		return 0;
+#else
+		printf("support for OneNAND devices not present\n");
+#endif
+	} else
+		printf("Unknown defice type %d\n", type);
+
+	return 1;
+}
+
+
+/**
+ * Parse device id string <dev-id> := 'nand'|'nor'|'onenand'<dev-num>,
+ * return device type and number.
+ *
+ * @param id string describing device id
+ * @param ret_id output pointer to next char after parse completes (output)
+ * @param dev_type parsed device type (output)
+ * @param dev_num parsed device number (output)
+ * @return 0 on success, 1 otherwise
+ */
+static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *dev_num)
+{
+	const char *p = id;
+
+	*dev_type = 0;
+	if (strncmp(p, "nand", 4) == 0) {
+		*dev_type = MTD_DEV_TYPE_NAND;
+		p += 4;
+	} else if (strncmp(p, "nor", 3) == 0) {
+		*dev_type = MTD_DEV_TYPE_NOR;
+		p += 3;
+	} else if (strncmp(p, "onenand", 7) == 0) {
+		*dev_type = MTD_DEV_TYPE_ONENAND;
+		p += 7;
+	} else {
+		printf("incorrect device type in %s\n", id);
+		return 1;
+	}
+
+	if (!isdigit(*p)) {
+		printf("incorrect device number in %s\n", id);
+		return 1;
+	}
+
+	*dev_num = simple_strtoul(p, (char **)&p, 0);
+	if (ret_id)
+		*ret_id = p;
+	return 0;
+}
+
+
+void onenand_init(void)
+{
+    struct mtdids *id;
+    struct part_info *part;
+    char *dev_name;
+    u32 size;
+    char* dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
+
+    onenand_mtd = malloc(sizeof(struct mtd_info));
+    onenand_chip = malloc(sizeof(struct onenand_chip));
+	memset(onenand_mtd, 0, sizeof(struct mtd_info));
+	memset(onenand_chip, 0, sizeof(struct onenand_chip));
+	onenand_mtd->priv = onenand_chip;
+	onenand_chip->base = (void *) CONFIG_SYS_ONENAND_BASE;
+
+    /* OneNand Scan */
+	onenand_scan(onenand_mtd, 1);
+
+	printf("OneNAND: ");
+	print_size(onenand_mtd->size, "\n");
+
+
+	/*
+	 * Add MTD device so that we can reference it later
+	 * via the mtdcore infrastructure (e.g. ubi).
+	 */
+	onenand_mtd->name = dev_name;
+	// add_mtd_device(onenand_mtd);
+
+	/* jffs2 */
+
+    current_mtd_dev = (struct mtd_device *) malloc(sizeof(struct mtd_device) +
+                                            sizeof(struct part_info) +
+                                            sizeof(struct mtdids));
+    memset(current_mtd_dev, 0, sizeof(struct mtd_device) +
+		       sizeof(struct part_info) + sizeof(struct mtdids));
+
+    id = (struct mtdids *)(current_mtd_dev + 1);
+    part = (struct part_info *)(id + 1);
+
+    /* id */
+    id->mtd_id = "single part";
+    dev_name ="onenand0";
+
+
+    if ((mtd_id_parse(dev_name, NULL, &id->type, &id->num) != 0) ||
+            (mtd_device_validate(id->type, id->num, &size) != 0)) {
+			printf("incorrect device: %s%d\n", MTD_DEV_TYPE(id->type), id->num);
+			free(current_mtd_dev);
+			return 1;
+    }
+    id->size = size;
+    INIT_LIST_HEAD(&id->link);
+
+    printf("dev id: type = %d, num = %d, size = 0x%08lx, mtd_id = %s\n",
+				id->type, id->num, id->size, id->mtd_id);
+
+    /* partition */
+    part->name = "static";
+    part->auto_name = 0;
+
+#if defined(CONFIG_JFFS2_PART_SIZE)
+    part->size = CONFIG_JFFS2_PART_SIZE;
+#else
+	part->size = SIZE_REMAINING;
+#endif
+
+#if defined(CONFIG_JFFS2_PART_OFFSET)
+    part->offset = CONFIG_JFFS2_PART_OFFSET;
+#else
+    part->offset = 0x00000000;
+#endif
+
+    part->dev = current_mtd_dev;
+    INIT_LIST_HEAD(&part->link);
+
+    /* recalculate size if needed */
+    // if (part->size == SIZE_REMAINING)
+        // part->size = id->size - part->offset;
+
+    part->sector_size = get_part_sector_size(id, part);
+
+    printf("part  : name = %s, size = 0x%08lx, offset = 0x%08lx\n",
+				part->name, part->size, part->offset);
+
+		/* device */
+    current_mtd_dev->id = id;
+    INIT_LIST_HEAD(&current_mtd_dev->link);
+    current_mtd_dev->num_parts = 1;
+    INIT_LIST_HEAD(&current_mtd_dev->parts);
+    list_add(&part->link, &current_mtd_dev->parts);
+
+    // size = jffs2_1pass_load(dest , part, "igep.ini");
+    // printf("load size: %u\n", size);
+
+	return 0;
+
 }
 
 /**********************************************************
