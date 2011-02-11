@@ -142,8 +142,17 @@
 #define XLOADER_KERNEL_PARAMS       0x80000100                  /* Kernel params */
 #define XLOADER_KERNEL_MEMORY       XLOADER_CFG_GLOBAL_PTR      /* struct Linux_Memory_Layout (Reserved 32K) */
 #define XLOADER_CFG_FILE            XLOADER_KERNEL_MEMORY + (32 * 1024)      /* Configuration file : Reserved 32K */
-#define XLOADER_MALLOC_IPTR         XLOADER_CFG_FILE + (32 * 1024)  /* Malloc Initial Pointer */
-#define XLOADER_MALLOC_SIZE         32 * (1024 * 1014)  /* Malloc space size = 32 M Bytes */
+#define XLOADER_MALLOC_IPTR         XLOADER_CFG_FILE + (32 * 1024)      /* Malloc Initial Pointer */
+#define XLOADER_MALLOC_SIZE         32 * (1024 * 1014)                  /* Malloc space size = 32 M Bytes */
+
+/* Kernel Parameters */
+#define IGEP_MACHINE_ID             2344
+#define IGEP_BOOT_CFG_INI_FILE      "igep.ini"
+#define IGEP_MMC_BOOT               0
+#define IGEP_ONENAND_BOOT           1
+#define IGEP_CS0_MEMORY_SIZE        256 * (1024 * 1024)                 /* CS0 First Die Memory = 256 M Bytes*/
+#define IGEP_CS1_MEMORY_SIZE        256 * (1024 * 1024)                 /* CS0 First Die Memory = 256 M Bytes*/
+#define IGEP_INI_FILE_MAX_SIZE      16 * 1024                           /* Max ini file size */
 
 #endif /* __CONFIG_H */
 

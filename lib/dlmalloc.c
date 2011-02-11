@@ -2551,6 +2551,7 @@ Void_t* rEALLOc(Void_t* oldmem, size_t bytes)
 Void_t* rEALLOc(oldmem, bytes) Void_t* oldmem; size_t bytes;
 #endif
 {
+#ifdef __notdef
   INTERNAL_SIZE_T    nb;      /* padded request size */
 
   mchunkptr oldp;             /* chunk corresponding to oldmem */
@@ -2740,6 +2741,10 @@ Void_t* rEALLOc(oldmem, bytes) Void_t* oldmem; size_t bytes;
 
   check_inuse_chunk(newp);
   return chunk2mem(newp);
+#else
+return 0;
+#endif
+
 }
 
 
@@ -2770,6 +2775,7 @@ Void_t* mEMALIGn(size_t alignment, size_t bytes)
 Void_t* mEMALIGn(alignment, bytes) size_t alignment; size_t bytes;
 #endif
 {
+#ifdef __notdef
   INTERNAL_SIZE_T    nb;      /* padded  request size */
   char*     m;                /* memory returned by malloc call */
   mchunkptr p;                /* corresponding chunk */
@@ -2858,7 +2864,9 @@ Void_t* mEMALIGn(alignment, bytes) size_t alignment; size_t bytes;
 
   check_inuse_chunk(p);
   return chunk2mem(p);
-
+#else
+return 0;
+#endif
 }
 
 

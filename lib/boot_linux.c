@@ -31,6 +31,8 @@
 #define SZ_1M                       SZ_1K * SZ_1K
 #define KERNEL_MAX_CMDLINE		    4 * SZ_1K
 
+#define DEFAULT_RAMDISK_NAME        "initrd"
+
 /* Internal Memory layout */
 typedef struct Linux_Memory_Layout {
     char* kbase_address;                // It must be the dest kernel address
@@ -45,9 +47,12 @@ typedef struct Linux_Memory_Layout {
 
 /* Linux Images */
 const char* LinuxImageNames [] = {
-        "zimage",
-        "bzimage",
+        "kparam"   /* Use kparam first */
+        "zImage",   /* jffs2 it's case sensitive */
+        "zimage",   /* fat name it's not case sentitive */
         "vmlinuz",
+        "bzImage",
+        "bzimage",
         0,
 };
 
@@ -60,6 +65,9 @@ const char* LinuxImageNames [] = {
 static struct Linux_Memory_Layout* LMemoryLayout = (struct Linux_Memory_Layout*) XLOADER_KERNEL_MEMORY;
 static struct tag *kparams = (struct tag *) XLOADER_KERNEL_PARAMS;
 static struct tag *params = (struct tag *) XLOADER_KERNEL_PARAMS;
+
+char *kImage_Name = NULL;
+char *kRdImage_Name = NULL;
 
 /* Initialize */
 static void init_memory_layout (void)
@@ -109,18 +117,15 @@ static void setup_start_tag (void)
 /* setup the map memory setup for the kernel */
 static void setup_memory_tags (void)
 {
-    /* TODO: Setup the memory, actually it's configured for
-     * use 512 MBytes and it's map into CS0 and CS1
-     */
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
     params->u.mem.start = OMAP34XX_SDRC_CS0;
-    params->u.mem.size = 256 * SZ_1M;
+    params->u.mem.size = IGEP_CS0_MEMORY_SIZE;
     params = tag_next (params);
     params->hdr.tag = ATAG_MEM;
     params->hdr.size = tag_size (tag_mem32);
     params->u.mem.start = OMAP34XX_SDRC_CS1;
-    params->u.mem.size = 256 * SZ_1M;
+    params->u.mem.size = IGEP_CS1_MEMORY_SIZE;
     params = tag_next (params);
 }
 
@@ -137,20 +142,14 @@ static void setup_commandline_tag ()
 #ifdef CONFIG_INITRD_TAG
 static void setup_initrd_tag (ulong initrd_start, ulong initrd_end)
 {
-	/* an ATAG_INITRD node tells the kernel where the compressed
-	 * ramdisk can be found. ATAG_RDIMG is a better name, actually.
-	 */
 	params->hdr.tag = ATAG_INITRD2;
 	params->hdr.size = tag_size (tag_initrd);
-
 	params->u.initrd.start = initrd_start;
 	params->u.initrd.size = initrd_end - initrd_start;
-
 	params = tag_next (params);
 }
 #endif /* CONFIG_INITRD_TAG */
 
-// #ifdef CONFIG_SERIAL_TAG
 void setup_serial_tag ()
 {
 	params->hdr.tag = ATAG_SERIAL;
@@ -159,9 +158,7 @@ void setup_serial_tag ()
 	params->u.serialnr.high= LMemoryLayout->serial.high;
 	params = tag_next (params);
 }
-//#endif
 
-//#ifdef CONFIG_REVISION_TAG
 void setup_revision_tag ()
 {
 	params->hdr.tag = ATAG_REVISION;
@@ -169,7 +166,6 @@ void setup_revision_tag ()
 	params->u.revision.rev = LMemoryLayout->revision.rev;
 	params = tag_next (params);
 }
-//#endif  /* CONFIG_REVISION_TAG */
 
 /* setup_end_tag : terminate the var kernel list */
 static void setup_end_tag (void)
@@ -180,29 +176,38 @@ static void setup_end_tag (void)
 
 
 /* Pre: kbase_address: kernel base address
+*       from: IGEP_MMC_BOOT -> boot from mmc
+        from: IGEP_ONENAND_BOOT -> boot from onenand jffs2 boot partition
 *  Out: kernel image size, copied to base_address
-*       rdImage copied rear the linux kernel image
+*       rdImage copied below the linux kernel image
 *       rdImage_size size of rd Image
 *  result:	 -1 = kbase_address it's not configured
 *  		0 = kernel not found in mmc
 *		1 = kernel found
 */
-int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
+int load_kernel (struct Linux_Memory_Layout *myImage, int from)
 {
-    	int size = -1;
-    	int found = 0;
-    	int count = 0;
-    	const char* linuxName = LinuxImageNames[0];
+    int size = -1;
+    int found = 0;
+    int count = 0;
+    const char* linuxName;
+    const char* rdImageName = DEFAULT_RAMDISK_NAME;
 
-	/* Check if the kbase_address it'sprovided (PREREQUISITE) */
+    if(kImage_Name)
+        linuxName = kImage_Name;
+    else
+        linuxName = LinuxImageNames[++count];
+    if(kRdImage_Name)
+        rdImageName = kRdImage_Name;
+
 	if(!myImage->kbase_address) return -1;
 
 	while(linuxName && !found){
-#ifdef __DEBUG__
-		printf("try load kernel %s from mmc\n", linuxName);
-#endif
 		/* Try load the linuxName [n] Image into kbase_address */
-		size = file_fat_read(linuxName, myImage->kbase_address , 0);
+		if(from == IGEP_MMC_BOOT)
+            size = file_fat_read(linuxName, myImage->kbase_address , 0);
+        else
+            size = load_jffs2_file(linuxName, myImage->kbase_address);
         	/* If size > 0 then the image was loaded ok */
 		if(size > 0){
 #ifdef __DEBUG__
@@ -211,30 +216,33 @@ int load_kernel_from_mmc (struct Linux_Memory_Layout *myImage)
 			/* Update the size variable */
 			myImage->k_size = size;
 			/* if the ram disk dest address it's not supplied then calculate the address */
-            		if(!myImage->kImage_rd_address){
+            if(!myImage->kImage_rd_address){
 				// Put the RD address rear the kernel address with MEM_PADD_BLOCKS for padding
-                		myImage->kImage_rd_address = myImage->k_size + (MEM_PADD_BLOCKS * SZ_16K) + myImage->kbase_address;
-            		}
+                myImage->kImage_rd_address = myImage->k_size + (MEM_PADD_BLOCKS * SZ_16K) + myImage->kbase_address;
+            }
 			/* try to load the RAM disk into kImage_rd_address */
 			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea
 			 * to permit supply a different names for it */
-            		size = file_fat_read("initrd", myImage->kImage_rd_address, 0);
-            		/* Update Information if we get the ram disk image into memory */
+			if(from == IGEP_MMC_BOOT)
+                size = file_fat_read(rdImageName, myImage->kImage_rd_address, 0);
+            else
+                size = load_jffs2_file(rdImageName, myImage->kImage_rd_address, 0);
+            /* Update Information if we get the ram disk image into memory */
 			if(size > 0){
-                		myImage->rdImage_size = size;
-            		}
+                myImage->rdImage_size = size;
+            }
 #ifdef __DEBUG__
-            		printf("kernel %s found first stage done\n", linuxName);
+            printf("kernel %s found first stage done\n", linuxName);
 #endif
-            		return 1;
-        	}
+            return 1;
+        }
 #ifdef __DEBUG__
-        	else {
-            		printf("load kernel %s failed\n", linuxName);
-        	}
+        else {
+            printf("load kernel %s failed\n", linuxName);
+        }
 #endif
 		/* Try the next kernel image name */
-        	linuxName = LinuxImageNames[++count];
+        linuxName = LinuxImageNames[++count];
     }
     return found;
 }
@@ -269,6 +277,18 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
         else if(!strcmp(key, "serial.high")){
             sscanf(value, "%u", &v);
             LMemoryLayout->serial.high = v;
+        }
+        else if(!strcmp(key, "kImageName")){
+            if(kImage_Name) free(kImage_Name);
+            kImage_Name = malloc (strlen(value)+1);
+            memcpy(kImage_Name, value, strlen(value));
+            kImage_Name[strlen(value)] = '\0';
+        }
+        else if(!strcmp(key, "kRdImageName")){
+            if(kRdImage_Name) free(kRdImage_Name);
+            kRdImage_Name = malloc (strlen(value)+1);
+            memcpy(kRdImage_Name, value, strlen(value));
+            kRdImage_Name[strlen(value)] = '\0';
         }
     }
     /* SECTION: Kernel parameters */
@@ -335,6 +355,36 @@ void cleanup_before_linux (void)
 #endif
 }
 
+int load_and_parse ()
+{
+    int bootr;
+    bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_MMC_BOOT, cfg_handler, (void*) LMemoryLayout);
+    if(bootr >= 0){
+#ifdef __DEBUG__
+        printf("Loaded %s from MMC\n", IGEP_MMC_BOOT);
+#endif
+        return bootr;
+    }
+    bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_ONENAND_BOOT, cfg_handler, (void*) LMemoryLayout);
+#ifdef __DEBUG__
+    if(bootr >= 0)
+        printf("Loaded %s from OneNand\n", IGEP_ONENAND_BOOT);
+    else
+        printf("Configuration file <not found>\n");
+#endif
+    return bootr;
+}
+
+int load_kernel_image (struct Linux_Memory_Layout* layout)
+{
+    // load_kernel
+    int bootr;
+    bootr = load_kernel (layout, IGEP_MMC_BOOT);
+    if(bootr > 0) return bootr;
+    bootr = load_kernel (layout, IGEP_ONENAND_BOOT);
+    return bootr;
+}
+
 /* Main Linux boot
 *  If all it's ok this function never returns because at latest it
 *  Jump directly to the kernel image.
@@ -342,7 +392,7 @@ void cleanup_before_linux (void)
 int boot_linux (/*int machine_id*/)
 {
     int bootr = -1;
-    int machine_id = 2344;
+    int machine_id = IGEP_MACHINE_ID;
     void (*theKernel)(int zero, int arch, uint params);
 
 #ifdef __DEBUG__
@@ -353,15 +403,14 @@ int boot_linux (/*int machine_id*/)
 #ifdef __DEBUG__
     printf("Parse configuration file\n");
 #endif
-    /* parse configuration file, actually only a ini file be supported */
-    /* TODO: Set variable the configuartion file name, add other file formats  */
-    if(ini_parse("igep.ini", cfg_handler, (void*) LMemoryLayout) >= 0){
+    /* parse configuration file */
+    if(load_and_parse() >= 0){
 #ifdef __DEBUG__
         printf("Try load kernel\n");
 #endif
 	/* If parse it's ok, it's a good moment for load
         the kernel image from the mmc card */
-        bootr = load_kernel_from_mmc(LMemoryLayout);
+        bootr = load_kernel_image (LMemoryLayout);
 	/* if bootr it's > 0 then we get right the kernel image */
         if(bootr > 0){
 	    /* prepare the kernel command line list */
@@ -379,7 +428,7 @@ int boot_linux (/*int machine_id*/)
 #endif
 	    /* Prepare the system for kernel boot */
 	    cleanup_before_linux();
-            theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
+        theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
             /* boot ! = GREAT ;) */
 	    theKernel (0, machine_id, kparams);
         }else{

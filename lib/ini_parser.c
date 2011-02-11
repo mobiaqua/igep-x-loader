@@ -38,7 +38,7 @@ typedef struct tFILE {
     const char* filename;
     int file_size;
     int file_pos;
-    char file_address [16 * 1024];
+    char file_address [IGEP_INI_FILE_MAX_SIZE];
 } FILE;
 
 // #define GLOBAL_XLOADER_WORK_MEMORY      0x80000000
@@ -55,13 +55,16 @@ void *(memset)(void *s, int c, int n)
     return s;
 }
 
-static FILE* fopen (const char* filename, const char* mode)
+static FILE* fopen (const char* filename, int from, const char* mode)
 {
     int i;
     xLoader_CFG->filename = filename;
     for(i=0; i < 16*1024; i++ ) xLoader_CFG->file_address[i] = EOF;
     // memset(xLoader_CFG->file_address, EOF, 16*1024);
-    xLoader_CFG->file_size = file_fat_read(filename, xLoader_CFG->file_address , 0);
+    if(from == IGEP_MMC_BOOT)
+        xLoader_CFG->file_size = file_fat_read(filename, xLoader_CFG->file_address , 0);
+    else
+        xLoader_CFG->file_size = load_jffs2_file(filename, xLoader_CFG->file_address);
     // printf("%s : file_size %d\n", filename, xLoader_CFG->file_size );
     xLoader_CFG->file_pos = 0;
     if(xLoader_CFG->file_size > 0){
@@ -173,7 +176,7 @@ char* fgets(char *buf, int bsize, FILE *fp)
 }
 
 /* See documentation in header file. */
-int ini_parse(const char* filename,
+int ini_parse(const char* filename, int from,
               int (*handler)(void*, const char*, const char*, const char*),
               void* user)
 {
@@ -190,7 +193,7 @@ int ini_parse(const char* filename,
     int lineno = 0;
     int error = 0;
 
-    file = fopen(filename, "r");
+    file = fopen(filename, from , "r");
     if (!file)
         return -1;
 

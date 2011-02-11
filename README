@@ -1,4 +1,6 @@
 #
+# (C) Copyright 2009-2011 ISEE
+#
 # (C) Copyright 2004-2006 Texas Instruments
 #
 # Some cut/paste from U-Boot README
@@ -23,6 +25,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
+
+ **************************************************************************
+ **** IMPORTANT NOTICE: This information it's out of date please read  ****
+ **** ISEE_README.txt *****************************************************
+ **************************************************************************
 
 Summary:
 ========

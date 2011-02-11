@@ -25,6 +25,7 @@
 
 #include <config.h>
 #include <jffs2/mini_inflate.h>
+#include <malloc.h>
 
 /* The order that the code lengths in section 3.2.7 are in */
 static unsigned char huffman_order[] = {16, 17, 18,  0,  8,  7,  9,  6, 10,  5,
@@ -367,18 +368,20 @@ long decompress_block(unsigned char *dest, unsigned char *source,
 		      void *(*inflate_memcpy)(void *, const void *, size))
 {
 	int bfinal, btype;
-	struct bitstream stream;
+	struct bitstream *stream = malloc(sizeof(struct bitstream));
 
-	init_stream(&stream, source, inflate_memcpy);
+	init_stream(stream, source, inflate_memcpy);
 	do {
-		bfinal = pull_bit(&stream);
-		btype = pull_bits(&stream, 2);
-		if (btype == NO_COMP) decompress_none(&stream, dest + stream.decoded);
+		bfinal = pull_bit(stream);
+		btype = pull_bits(stream, 2);
+		if (btype == NO_COMP) decompress_none(stream, dest + stream->decoded);
 		else if (btype == DYNAMIC_COMP)
-			decompress_dynamic(&stream, dest + stream.decoded);
-		else if (btype == FIXED_COMP) decompress_fixed(&stream, dest + stream.decoded);
-		else stream.error = COMP_UNKNOWN;
-	} while (!bfinal && !stream.error);
+			decompress_dynamic(stream, dest + stream->decoded);
+		else if (btype == FIXED_COMP) decompress_fixed(stream, dest + stream->decoded);
+		else stream->error = COMP_UNKNOWN;
+	} while (!bfinal && !stream->error);
+
+    free(stream);
 
 #if 0
 	putstr("decompress_block start\r\n");
@@ -387,5 +390,5 @@ long decompress_block(unsigned char *dest, unsigned char *source,
 	putLabeledWord("dest = ",dest);
 	putstr("decompress_block end\r\n");
 #endif
-	return stream.error ? -stream.error : stream.decoded;
+	return stream->error ? -stream->error : stream->decoded;
 }

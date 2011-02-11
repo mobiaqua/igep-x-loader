@@ -1148,6 +1148,7 @@ static int onenand_verify(struct mtd_info *mtd, const u_char *buf, loff_t addr, 
 static int onenand_fill_auto_oob(struct mtd_info *mtd, u_char *oob_buf,
 		const u_char *buf, int column, int thislen)
 {
+#ifdef __notdef
 	struct onenand_chip *this = mtd->priv;
 	struct nand_oobfree *free;
 	int writecol = column;
@@ -1175,6 +1176,7 @@ static int onenand_fill_auto_oob(struct mtd_info *mtd, u_char *oob_buf,
 		} else if (column == 0)
 			break;
 	}
+#endif
 	return 0;
 }
 
@@ -1189,6 +1191,7 @@ static int onenand_fill_auto_oob(struct mtd_info *mtd, u_char *oob_buf,
 static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 		struct mtd_oob_ops *ops)
 {
+#ifdef __notdef
 	struct onenand_chip *this = mtd->priv;
 	int written = 0, column, thislen, subpage;
 	int oobwritten = 0, oobcolumn, thisooblen, oobsize;
@@ -1300,6 +1303,9 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 	ops->retlen = written;
 
 	return ret;
+#else
+    return -1;
+#endif
 }
 
 /**
@@ -1316,6 +1322,7 @@ static int onenand_write_ops_nolock(struct mtd_info *mtd, loff_t to,
 static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 		struct mtd_oob_ops *ops)
 {
+#ifdef __notef
 	struct onenand_chip *this = mtd->priv;
 	int column, ret = 0, oobsize;
 	int written = 0;
@@ -1405,8 +1412,10 @@ static int onenand_write_oob_nolock(struct mtd_info *mtd, loff_t to,
 	}
 
 	ops->oobretlen = written;
-
 	return ret;
+#else
+    return -1;
+#endif
 }
 
 /**
@@ -1596,7 +1605,7 @@ erase_exit:
  */
 void onenand_sync(struct mtd_info *mtd)
 {
-	MTDDEBUG (MTD_DEBUG_LEVEL3, "onenand_sync: called\n");
+	// MTDDEBUG (MTD_DEBUG_LEVEL3, "onenand_sync: called\n");
 
 	/* Grab the lock and see if the device is available */
 	/* onenand_get_device(mtd, FL_SYNCING); */
@@ -2004,7 +2013,7 @@ static int onenand_probe(struct mtd_info *mtd)
 	/* Save system configuration 1 */
 	// syscfg = this->read_word(this->base + ONENAND_REG_SYS_CFG1);
 	syscfg = __raw_readw(this->base + ONENAND_REG_SYS_CFG1);
-	
+
 	/* Clear Sync. Burst Read mode to read BootRAM */
 	__raw_writew((syscfg & ~ONENAND_SYS_CFG1_SYNC_READ & ~ONENAND_SYS_CFG1_SYNC_WRITE), this->base + ONENAND_REG_SYS_CFG1);
 	// this->write_word((syscfg & ~ONENAND_SYS_CFG1_SYNC_READ & ~ONENAND_SYS_CFG1_SYNC_WRITE), this->base + ONENAND_REG_SYS_CFG1);

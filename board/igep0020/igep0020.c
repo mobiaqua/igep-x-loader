@@ -1699,10 +1699,10 @@ void onenand_init(void)
     }
     id->size = size;
     INIT_LIST_HEAD(&id->link);
-
+#ifdef __DEBUG__
     printf("dev id: type = %d, num = %d, size = 0x%08lx, mtd_id = %s\n",
 				id->type, id->num, id->size, id->mtd_id);
-
+#endif
     /* partition */
     part->name = "static";
     part->auto_name = 0;
@@ -1727,10 +1727,10 @@ void onenand_init(void)
         // part->size = id->size - part->offset;
 
     part->sector_size = get_part_sector_size(id, part);
-
+#ifdef __DEBUG__
     printf("part  : name = %s, size = 0x%08lx, offset = 0x%08lx\n",
 				part->name, part->size, part->offset);
-
+#endif
 		/* device */
     current_mtd_dev->id = id;
     INIT_LIST_HEAD(&current_mtd_dev->link);
@@ -1743,6 +1743,15 @@ void onenand_init(void)
 
 	return 0;
 
+}
+
+int load_jffs2_file (const char* filename, char* dest)
+{
+    struct mtdids *id;
+    struct part_info *part;
+    id = (struct mtdids *)(current_mtd_dev + 1);
+    part = (struct part_info *)(id + 1);
+    return jffs2_1pass_load(dest , part, filename);
 }
 
 /**********************************************************
@@ -1761,6 +1770,11 @@ int nand_init(void)
 /* optionally do something */
 void board_hang(void)
 {
+    while(1){
+        omap_set_gpio_dataout(GPIO_LED_USER0, 1);
+        delay(1000000);
+        omap_set_gpio_dataout(GPIO_LED_USER0, 0);
+    }
 }
 
 /******************************************************************************

@@ -195,6 +195,30 @@
 			<Option compilerVar="CC" />
 			<Option target="Release_ARM" />
 		</Unit>
+		<Unit filename="../fs/jffs2/compr_lzo.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/compr_rtime.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/compr_rubin.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/compr_zlib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/jffs2_1pass.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/jffs2_nand_1pass.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/jffs2_nand_private.h" />
+		<Unit filename="../fs/jffs2/jffs2_private.h" />
+		<Unit filename="../fs/jffs2/mini_inflate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../fs/jffs2/summary.h" />
 		<Unit filename="../include/asm/arch-arm1136/bits.h" />
 		<Unit filename="../include/asm/arch-arm1136/clocks.h" />
 		<Unit filename="../include/asm/arch-arm1136/clocks242x.h" />

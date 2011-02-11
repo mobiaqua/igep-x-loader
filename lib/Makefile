@@ -31,7 +31,7 @@ AOBJS	= _udivsi3.o _umodsi3.o
 
 COBJS	= board.o ecc.o printf.o div0.o boot_linux.o ini_parser.o cache-cp15.o dlmalloc.o display_options.o div64.o 
 COBJS	+= crc32.o 
-# COBJS	+= zlib.o
+#COBJS	+= zlib.o
 
 OBJS	= $(AOBJS) $(COBJS)
 

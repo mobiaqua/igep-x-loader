@@ -294,8 +294,10 @@ static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 				   it's a bootloader, nobody cares */
 				onenand_cache = malloc(ONENAND_CACHE_SIZE);
 				if (!onenand_cache) {
-					printf("read_onenand_cached: can't alloc cache size %d bytes\n",
+#if 0
+                    printf("read_onenand_cached: can't alloc cache size %d bytes\n",
 					       ONENAND_CACHE_SIZE);
+#endif
 					return -1;
 				}
 			}
@@ -304,8 +306,10 @@ static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 			if (onenand_read(onenand_mtd, onenand_cache_off, retlen,
 						&retlen, onenand_cache) != 0 ||
 					retlen != ONENAND_CACHE_SIZE) {
+#if 0
 				printf("read_onenand_cached: error reading nand off %#x size %d bytes\n",
 					onenand_cache_off, ONENAND_CACHE_SIZE);
+#endif
 				return -1;
 			}
 		}
@@ -325,7 +329,9 @@ static void *get_fl_mem_onenand(u32 off, u32 size, void *ext_buf)
 	u_char *buf = ext_buf ? (u_char *)ext_buf : (u_char *)malloc(size);
 
 	if (NULL == buf) {
+#if 0
 		printf("get_fl_mem_onenand: can't alloc %d bytes\n", size);
+#endif
 		return NULL;
 	}
 	if (read_onenand_cached(off, size, buf) < 0) {
@@ -349,8 +355,10 @@ static void *get_node_mem_onenand(u32 off, void *ext_buf)
 			JFFS2_MAGIC_BITMASK ? node.totlen : sizeof(node),
 			ext_buf);
 	if (!ret) {
+#if 0
 		printf("off = %#x magic %#x type %#x node.totlen = %d\n",
 		       off, node.magic, node.nodetype, node.totlen);
+#endif
 	}
 	return ret;
 }
@@ -424,8 +432,12 @@ static inline void *get_fl_mem(u32 off, u32 size, void *ext_buf)
 		break;
 #endif
 	default:
+#if 0
 		printf("get_fl_mem: unknown device type, " \
 			"using raw offset!\n");
+#else
+        break;
+#endif
 	}
 	return (void*)off;
 }
@@ -452,8 +464,12 @@ static inline void *get_node_mem(u32 off, void *ext_buf)
 		break;
 #endif
 	default:
+#if 0
 		printf("get_fl_mem: unknown device type, " \
 			"using raw offset!\n");
+#else
+        break;
+#endif
 	}
 	return (void*)off;
 }
@@ -529,7 +545,9 @@ add_node(struct b_list *list)
 		/* we need more space before we continue */
 		memBase = mmalloc(sizeof(struct mem_block));
 		if (memBase == NULL) {
+#if 0
 			putstr("add_node: malloc failed\n");
+#endif
 			return NULL;
 		}
 		memBase->next = list->listMemBase;
@@ -558,7 +576,9 @@ insert_node(struct b_list *list, u32 offset)
 #endif
 
 	if (!(new = add_node(list))) {
+#if 0
 		putstr("add_node failed!\r\n");
+#endif
 		return NULL;
 	}
 	new->offset = offset;
@@ -784,20 +804,18 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 					for (i = 0; i < jNode->dsize; i++)
 						*(lDest++) = 0;
 					break;
-/*				case JFFS2_COMPR_RTIME:
+				case JFFS2_COMPR_RTIME:
 					ret = 0;
-					rtime_decompress(src, lDest, jNode->csize, jNode->dsize);
-					break;*/
-#ifdef __notdef
+					// rtime_decompress(src, lDest, jNode->csize, jNode->dsize);
+					break;
 				case JFFS2_COMPR_DYNRUBIN:
 					/* this is slow but it works */
 					ret = 0;
-					dynrubin_decompress(src, lDest, jNode->csize, jNode->dsize);
+					// dynrubin_decompress(src, lDest, jNode->csize, jNode->dsize);
 					break;
-#endif
-/*				case JFFS2_COMPR_ZLIB:
+				case JFFS2_COMPR_ZLIB:
 					ret = zlib_decompress(src, lDest, jNode->csize, jNode->dsize);
-					break;*/
+					break;
 #if defined(CONFIG_JFFS2_LZO)
 				case JFFS2_COMPR_LZO:
 					ret = lzo_decompress(src, lDest, jNode->csize, jNode->dsize);
@@ -856,9 +874,11 @@ jffs2_1pass_find_inode(struct b_lists * pL, const char *name, u32 pino)
 
 			if (jDir->version == version && inode != 0) {
 				/* I'm pretty sure this isn't legal */
+#if 0
 				putstr(" ** ERROR ** ");
 				putnstr(jDir->name, jDir->nsize);
 				putLabeledWord(" has dup version =", version);
+#endif
 			}
 			inode = jDir->ino;
 			version = jDir->version;
@@ -924,12 +944,14 @@ static inline void dump_stat(struct stat *st, const char *name)
 	printf("%6lo %s %8ld %s %s\n", st->st_mode, mkmodestr(st->st_mode, str),
 		st->st_size, s, name);
 */
-
+#if 0
 	printf(" %s %8ld %s %s", mkmodestr(st->st_mode,str), st->st_size, s, name);
+#endif
 }
 
 static inline u32 dump_inode(struct b_lists * pL, struct jffs2_raw_dirent *d, struct jffs2_raw_inode *i)
 {
+#if 0
 	char fname[256];
 	struct stat st;
 
@@ -954,7 +976,7 @@ static inline u32 dump_inode(struct b_lists * pL, struct jffs2_raw_dirent *d, st
 	}
 
 	putstr("\r\n");
-
+#endif
 	return 0;
 }
 
@@ -1040,17 +1062,21 @@ jffs2_1pass_search_inode(struct b_lists * pL, const char *fname, u32 pino)
 #endif
 
 		if (!(pino = jffs2_1pass_find_inode(pL, working_tmp, pino))) {
+#if 0
 			putstr("find_inode failed for name=");
 			putstr(working_tmp);
 			putstr("\r\n");
+#endif
 			return 0;
 		}
 	}
 	/* this is for the bare filename, directories have already been mapped */
 	if (!(pino = jffs2_1pass_find_inode(pL, tmp, pino))) {
+#if 0
 		putstr("find_inode failed for name=");
 		putstr(tmp);
 		putstr("\r\n");
+#endif
 		return 0;
 	}
 	return pino;
@@ -1834,23 +1860,30 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 		return 0;
 
 	if (! (inode = jffs2_1pass_search_inode(pl, fname, 1))) {
+#ifdef __DEBUG__
 		putstr("load: Failed to find inode\r\n");
+#endif
 		return 0;
 	}
 
 	/* Resolve symlinks */
 	if (! (inode = jffs2_1pass_resolve_inode(pl, inode))) {
+#ifdef __DEBUG__
 		putstr("load: Failed to resolve inode structure\r\n");
+#endif
 		return 0;
 	}
 
 	if ((ret = jffs2_1pass_read_inode(pl, inode, dest)) < 0) {
+#ifdef __DEBUG__
 		putstr("load: Failed to read inode\r\n");
+#endif
 		return 0;
 	}
-
+#ifdef __DEBUG__
 	DEBUGF ("load: loaded '%s' to 0x%lx (%ld bytes)\n", fname,
 				(unsigned long) dest, ret);
+#endif
 	return ret;
 }
 

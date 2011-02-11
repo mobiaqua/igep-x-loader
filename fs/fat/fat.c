@@ -687,7 +687,9 @@ do_fat_read(const char *filename, void *buffer, unsigned long maxsize,
     int firsttime;
 
     if (read_bootsectandvi (&bs, &volinfo, &mydata->fatsize)) {
+#ifdef __DEBUG__
 	printf ("Error: reading boot sector\n");
+#endif
 	return -1;
     }
     if (mydata->fatsize == 32) {
@@ -894,7 +896,7 @@ file_fat_detectfs(void)
 		default :		printf("Unknown");
 	}
 	printf("\n  Device %d: ",cur_dev->dev);
-	dev_print(cur_dev);
+	// dev_print(cur_dev);
 #endif
 	if(read_bootsectandvi(&bs, &volinfo, &fatsize)) {
 		printf("\nNo valid FAT fs found\n");
