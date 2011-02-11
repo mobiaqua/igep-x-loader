@@ -48,6 +48,7 @@ loader for Embedded boards based on OMAP processors.
 * The configuration resides in a plain txt (ini format file).
 * Support Windows & Linux formating ini files.
 * boot from mmc, onenand, or mix with mmc highest priority.
+* Added codeblocks project and compilation rules.
 
 2.2 Issues
 
@@ -201,6 +202,23 @@ Suggested procedure:
 nand_eraseall /dev/mtd0
 nandwrite -p /dev/mtd0 <x-loader>
 
+* Sign x-loader (Only for OneNAND memory)
+You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
+
+contrib/signGP x-load.bin 
+The signed x-loader it's named: x-load.bin.ift
+
+Due the Onenand 512 MiB has two dies it's necessary split the x-loader and convert it to a 1 die binary.
+This is a know OMAP/DM/AM OneNand/Nand boot limitation.
+
+This is the procedure for create the x-loader OneNand binary:
+You should execute: (You can use copy paste in your console)
+
+split -b 2K x-load.bin.ift split-
+for file in `ls split-a?`; do cat $file >> x-load-ddp.bin.ift; cat $file >> x-load-ddp.bin.ift; done
+
+This last command generate a file named x-load-ddp.bin.ift this is the x-loader for copy it in the OneNand.
+
 4.4.2 Boot Partition
 --------------------
 * fs used jffs2 zlib compressed filesystem.
@@ -222,20 +240,25 @@ when kernel boots you can enable mount this partition over /boot directory for a
 * fs (your prefered fs supported by linux, maybe a good choice it should be ubifs)
 * Size, all or you can create more partitions if you wish ... :)
 
+5 Build procedure
+=================
 
+5.1 Configure the enviroment.
 
-
-
+a) Source the enviroment
 
 source /usr/local/poky/eabi-glibc/environment-setup-arm-none-linux-gnueabi 
 
-Sign x-loader
---------------
-contrib/signGP x-load.bin
+b) Configure the board
+make igep0020-sdcard_config
 
----- split x-loader
-split -b 2K x-load.bin.ift split-
-for file in `ls split-a?`; do cat $file >> x-load-ddp.bin.ift; cat $file >> x-load-ddp.bin.ift; done
+c) build
+make
+
+
+
+
+
 
 
 
