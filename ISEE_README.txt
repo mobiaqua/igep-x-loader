@@ -3,7 +3,7 @@
 # Manel Caro (mcaro@iseebcn.com)
 #
 # Change log:
-# Version: ISEE - IGEP - X-Loader 2.0.0-1 
+# Version: IGEP-X-Loader 2.0.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -24,12 +24,31 @@
 # MA 02111-1307 USA
 #
 
-1) Summary:
+Index
+=====
+
+1 Summary.
+2 Features and Issues.
+2.1 Improvements & Modifications.
+2.2 Issues
+2.3 TODO
+4 Settings & Configuration
+4.1 MMC Boot
+4.2 Setup igep.ini file
+4.3 Boot Priority
+4.4 OneNand Partition settings
+4.4.1 Xloader partition
+4.4.2 Boot Partition
+4.4.3 Rootfs
+5 Build procedure
+6 Contribution & Support & Report Bugs
+
+1 Summary:
 ===========
 This directory contains the source code for X-Loader, an initial program
 loader for Embedded boards based on OMAP processors.
 
-2) Features and Issues:
+2 Features and Issues:
 =======================
 
 2.1 Improvements & Modifications
@@ -51,6 +70,7 @@ loader for Embedded boards based on OMAP processors.
 * Added codeblocks project and compilation rules.
 
 2.2 Issues
+-----------
 
 * The ini file it's limited to max size: 16 KiB
   This is not a real limitation due all ini file it's 
@@ -61,21 +81,23 @@ loader for Embedded boards based on OMAP processors.
 * Malloc it's limited to 32 MiB.
 
 2.3 TODO
+--------
 
 * Add support for IGEP0020 - OMAP3530 Processor family.
 * Add support for IGEP0020 - Processor under 1Ghz (600, 720 Mhz)
 * Add support for IGEP0030 - Family boards.
 * Add support for other OMAP/DM/AM processor boards.
+* Remove compilation warnings.
 
 
-3) Status:
+3 Status:
 ==========
 
 * Support IGEP0020 family boards (at this moment only DM3730 it's supported).
 	- Tested with IGEPv2 (DM3730@1Ghz and 512/512 MB Ram/Onenand)
         - Tested with IGEPv2 (AM3703@1Ghz and 512/512 MB Ram/Onenand)
 
-4) Settings & Configuration:
+4 Settings & Configuration:
 ============================
 
 4.1 MMC Boot
@@ -240,10 +262,9 @@ when kernel boots you can enable mount this partition over /boot directory for a
 * fs (your prefered fs supported by linux, maybe a good choice it should be ubifs)
 * Size, all or you can create more partitions if you wish ... :)
 
+
 5 Build procedure
 =================
-
-5.1 Configure the enviroment.
 
 a) Source the enviroment
 
@@ -255,10 +276,8 @@ make igep0020-sdcard_config
 c) build
 make
 
-
-
-
-
-
-
-
+6 Contribution & Support & Report Bugs
+======================================
+Contributions to this project be welcome and you can send your patches to support@iseebcn.com
+or you can use the igep forum for it.
+You can access to IGEP-x-Loader repository using our git at git.igep.es
