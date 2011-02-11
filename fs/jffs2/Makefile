@@ -53,7 +53,12 @@ $(LIB):	$(obj).depend $(OBJS)
 
 # defines $(obj).depend target
 #include $(SRCTREE)/rules.mk
+.depend:	Makefile $(AOBJS:.o=.S) $(COBJS:.o=.c)
+		$(CC) -M $(CFLAGS) $(AOBJS:.o=.S) $(COBJS:.o=.c) > $@
+
 
 sinclude $(obj).depend
 
 #########################################################################
+
+
