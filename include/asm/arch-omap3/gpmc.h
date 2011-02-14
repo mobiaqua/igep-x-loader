@@ -26,6 +26,6 @@
 #define _IGEP_GPMC_H_
 
 void gpmc_init (void);
-void setup_net_chip (void);
+void setup_net_chip (unsigned int);
 
 #endif

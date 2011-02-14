@@ -894,7 +894,8 @@ void s_init(void)
  *****************************************/
 int board_init(void)
 {
-    setup_net_chip ();
+    // Setup gpmc <-> Ethernet
+    setup_net_chip(is_cpu_family());
     // Setup Malloc memory
     mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
 
