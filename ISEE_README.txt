@@ -3,7 +3,7 @@
 # Manel Caro (mcaro@iseebcn.com)
 #
 # Change log:
-# Version: IGEP-X-Loader 2.0.0-1
+# Version: IGEP-X-Loader 2.0.1-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -83,19 +83,17 @@ loader for Embedded boards based on OMAP processors.
 2.3 TODO
 --------
 
-* Add support for IGEP0020 - OMAP3530 Processor family.
-* Add support for IGEP0020 - Processor under 1Ghz (600, 720 Mhz)
 * Add support for IGEP0030 - Family boards.
 * Add support for other OMAP/DM/AM processor boards.
 * Remove compilation warnings.
 
-
 3 Status:
 ==========
 
-* Support IGEP0020 family boards (at this moment only DM3730 it's supported).
+* Support IGEP0020 Revision B & C family boards.
 	- Tested with IGEPv2 (DM3730@1Ghz and 512/512 MB Ram/Onenand)
         - Tested with IGEPv2 (AM3703@1Ghz and 512/512 MB Ram/Onenand)
+	- Tested with IGEPv2 (OMAP3530@720Mhz and 512/512 MB Ram/Onenand)
 
 4 Settings & Configuration:
 ============================
