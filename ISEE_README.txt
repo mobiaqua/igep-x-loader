@@ -104,7 +104,7 @@ Get a new mmc and create two partitions, the first one must be fat (you can foll
 this howto: http://code.google.com/p/beagleboard/wiki/LinuxBootDiskFormat)
 In this first partition (boot partition) you should copy:
 
-* x-loader.bin (you must rename this file to MLO)
+* x-loader.bin.ift (you must rename this file to MLO) / This is a signed image using contrib/signGP tool
 * igep.ini
 * Your desired kernel image.
 
@@ -209,7 +209,7 @@ Creating 3 MTD partitions on "omap2-onenand":
 0x000000c80000-0x000020000000 : "File System"
 
 4.4.1) Xloader partition
-* Not fs formated
+* Not fs formated (raw)
 * Suggested size: 0x80000 (512 KiB)
 * The xloader must be signed before copy it in the flash memory.
 
@@ -222,7 +222,7 @@ Suggested procedure:
 nand_eraseall /dev/mtd0
 nandwrite -p /dev/mtd0 <x-loader>
 
-* Sign x-loader (Only for OneNAND memory)
+* Sign x-loader
 You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
 
 contrib/signGP x-load.bin 
