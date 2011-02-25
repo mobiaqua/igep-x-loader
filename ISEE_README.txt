@@ -3,7 +3,7 @@
 # Manel Caro (mcaro@iseebcn.com)
 #
 # Change log:
-# Version: IGEP-X-Loader 2.0.1-1
+# Version: IGEP-X-Loader 2.0.1-2
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -41,6 +41,9 @@ Index
 4.4.2 Boot Partition
 4.4.3 Rootfs
 5 Build procedure
+5.1 Build with Ubuntu Cross Compiler gcc 4.5.1
+5.2 Build with IGEP SDK
+5.3 Build Native
 6 Contribution & Support & Report Bugs
 
 1 Summary:
@@ -68,6 +71,7 @@ loader for Embedded boards based on OMAP processors.
 * Support Windows & Linux formating ini files.
 * boot from mmc, onenand, or mix with mmc highest priority.
 * Added codeblocks project and compilation rules.
+* Added support for gcc 4.5.1
 
 2.2 Issues
 -----------
@@ -79,6 +83,7 @@ loader for Embedded boards based on OMAP processors.
   This is not a real limitation due all ini file it's 
   copied into the RAM memory.
 * Malloc it's limited to 32 MiB.
+* Cannot write comments in lines with tag=value 
 
 2.3 TODO
 --------
@@ -86,6 +91,7 @@ loader for Embedded boards based on OMAP processors.
 * Add support for IGEP0030 - Family boards.
 * Add support for other OMAP/DM/AM processor boards.
 * Remove compilation warnings.
+* Add in the tag=value inline comments
 
 3 Status:
 ==========
@@ -264,9 +270,35 @@ when kernel boots you can enable mount this partition over /boot directory for a
 5 Build procedure
 =================
 
-a) Source the enviroment
+5.1 Build with Ubuntu Cross Compiler gcc 4.5.1
 
+* This is tested with Ubuntu 10.10
+
+a) Install the cross compiler:
+apt-get install cpp-4.5-arm-linux-gnueabi g++-4.5-arm-linux-gnueabi 
+
+b) Configure the board
+make igep0020-sdcard_config
+
+c) Build
+make
+
+d) Sign x-loader
+You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
+contrib/signGP x-load.bin 
+The signed x-loader it's named: x-load.bin.ift
+
+
+5.2 Build with IGEP SDK
+
+a) Source the enviroment
 source /usr/local/poky/eabi-glibc/environment-setup-arm-none-linux-gnueabi 
+
+b) Edit the file Makefile
+Find the define:
+
+And Set the variable as:
+CROSS_COMPILE = arm-none-linux-gnueabi-
 
 b) Configure the board
 make igep0020-sdcard_config
@@ -274,8 +306,34 @@ make igep0020-sdcard_config
 c) build
 make
 
+d) Sign x-loader
+You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
+contrib/signGP x-load.bin 
+The signed x-loader it's named: x-load.bin.ift
+
+
+5.3 Build Native
+
+a) Configure the board
+make igep0020-sdcard_config
+
+b) Modify the config.mk file
+Edit the variable CFLAGS and add the option: -fno-stack-protector
+
+CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -fno-stack-protector
+
+c) build 
+make CROSS_COMPILE=""
+
+d) Sign x-loader
+You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
+contrib/signGP x-load.bin 
+The signed x-loader it's named: x-load.bin.ift
+
+
 6 Contribution & Support & Report Bugs
 ======================================
 Contributions to this project be welcome and you can send your patches to support@iseebcn.com
 or you can use the igep forum for it.
 You can access to IGEP-x-Loader repository using our git at git.igep.es
+IGEP IRC Channel: http://webchat.freenode.net/?channels=igep
