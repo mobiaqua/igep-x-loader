@@ -59,7 +59,7 @@ static FILE* fopen (const char* filename, int from, const char* mode)
 {
     int i;
     xLoader_CFG->filename = filename;
-    for(i=0; i < 16*1024; i++ ) xLoader_CFG->file_address[i] = EOF;
+    for(i=0; i < IGEP_INI_FILE_MAX_SIZE; i++ ) xLoader_CFG->file_address[i] = EOF;
     // memset(xLoader_CFG->file_address, EOF, 16*1024);
     if(from == IGEP_MMC_BOOT)
         xLoader_CFG->file_size = file_fat_read(filename, xLoader_CFG->file_address , 0);
@@ -234,11 +234,14 @@ int ini_parse(const char* filename, int from,
                 *end = '\0';
                 name = rstrip(start);
                 value = lskip(end + 1);
+                // printf("<%s> :: <%s>\n", start, end+1);
+                // printf("<%s> :: <%s> -> name<%s> value<%s>\n", start, end + 1, name, value);
+#ifdef __notdef
                 end = find_char_or_comment(value, '\0');
                 if (*end == ';')
                     *end = '\0';
+#endif
                 rstrip(value);
-
                 /* Valid name=value pair found, call handler */
                 strncpy0(prev_name, name, sizeof(prev_name));
                 if (!handler(user, section, name, value) && !error)
