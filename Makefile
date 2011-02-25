@@ -53,7 +53,8 @@ export	ARCH CPU BOARD VENDOR
 include $(TOPDIR)/config.mk
 
 ifndef CROSS_COMPILE
-CROSS_COMPILE = arm-none-linux-gnueabi-
+#CROSS_COMPILE = arm-none-linux-gnueabi-
+CROSS_COMPILE = arm-linux-gnueabi-
 #CROSS_COMPILE = arm-linux-
 export	CROSS_COMPILE
 endif
