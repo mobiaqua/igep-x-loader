@@ -2,8 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Change log:
-# Version: IGEP-X-Loader 2.0.1-2
+# Version: IGEP-X-Loader 2.0.2-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -72,6 +71,7 @@ loader for Embedded boards based on OMAP processors.
 * boot from mmc, onenand, or mix with mmc highest priority.
 * Added codeblocks project and compilation rules.
 * Added support for gcc 4.5.1
+* Added support for vfat32 extra names.
 
 2.2 Issues
 -----------
