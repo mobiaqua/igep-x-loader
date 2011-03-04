@@ -80,9 +80,9 @@
 #define LS_DIR	1
 #define LS_ROOT	2
 
-//#define DEBUG
+// #define DEBUG2
 
-#ifdef DEBUG
+#ifdef DEBUG2
 #define FAT_DPRINT(args...)	printf(args)
 #else
 #define FAT_DPRINT(args...)
@@ -113,6 +113,10 @@
 #define START(dent)	(FAT2CPU16((dent)->start) \
 			+ (mydata->fatsize != 32 ? 0 : \
 			  (FAT2CPU16((dent)->starthi) << 16)))
+
+#define CHECK_CLUST(x, fatsize) ((x) <= 1 || \
+        (x) >= ((fatsize) != 32 ? 0xfff0 : 0xffffff0))
+
 
 
 typedef struct boot_sector {
@@ -212,6 +216,6 @@ int file_fat_detectfs(void);
 int file_fat_ls(const char *dir);
 long file_fat_read(const char *filename, void *buffer, unsigned long maxsize);
 const char *file_getfsname(int idx);
-int fat_register_device(block_dev_desc_t *dev_desc, int part_no);
+// int fat_register_device(block_dev_desc_t *dev_desc, int part_no);
 
 #endif /* _FAT_H_ */
