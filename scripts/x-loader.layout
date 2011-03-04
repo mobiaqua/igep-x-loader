@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep0020/igep0020.c" open="0" top="0" tabpos="6">
-		<Cursor position="26917" topLine="858" />
+	<File name="../board/igep0020/igep0020.c" open="1" top="0" tabpos="4">
+		<Cursor position="69213" topLine="1752" />
 	</File>
 	<File name="../board/igep0020/platform.S" open="0" top="0" tabpos="8">
 		<Cursor position="7658" topLine="248" />
@@ -35,7 +35,7 @@
 		<Cursor position="0" topLine="36" />
 	</File>
 	<File name="../disk/part.c" open="0" top="0" tabpos="0">
-		<Cursor position="0" topLine="239" />
+		<Cursor position="3479" topLine="86" />
 	</File>
 	<File name="../drivers/omap24xx_i2c.c" open="0" top="0" tabpos="0">
 		<Cursor position="1166" topLine="23" />
@@ -43,8 +43,8 @@
 	<File name="../drivers/onenand.c" open="0" top="0" tabpos="0">
 		<Cursor position="3597" topLine="108" />
 	</File>
-	<File name="../fs/fat/fat.c" open="0" top="0" tabpos="3">
-		<Cursor position="15889" topLine="668" />
+	<File name="../fs/fat/fat.c" open="1" top="1" tabpos="5">
+		<Cursor position="8206" topLine="369" />
 	</File>
 	<File name="../fs/fat/file.c" open="0" top="0" tabpos="0">
 		<Cursor position="3985" topLine="175" />
@@ -125,7 +125,7 @@
 		<Cursor position="5062" topLine="117" />
 	</File>
 	<File name="../include/fat.h" open="0" top="0" tabpos="0">
-		<Cursor position="2388" topLine="42" />
+		<Cursor position="1125" topLine="15" />
 	</File>
 	<File name="../include/linux/ctypes.h" open="0" top="0" tabpos="0">
 		<Cursor position="408" topLine="6" />
@@ -154,16 +154,16 @@
 	<File name="../include/setup.h" open="0" top="0" tabpos="0">
 		<Cursor position="4097" topLine="135" />
 	</File>
-	<File name="../lib/board.c" open="1" top="1" tabpos="3">
-		<Cursor position="1378" topLine="25" />
+	<File name="../lib/board.c" open="1" top="0" tabpos="3">
+		<Cursor position="2536" topLine="77" />
 	</File>
 	<File name="../lib/boot_linux.c" open="1" top="0" tabpos="1">
-		<Cursor position="3403" topLine="94" />
+		<Cursor position="6728" topLine="168" />
 	</File>
 	<File name="../lib/cache-cp15.c" open="0" top="0" tabpos="0">
 		<Cursor position="1632" topLine="82" />
 	</File>
 	<File name="../lib/ini_parser.c" open="1" top="0" tabpos="2">
-		<Cursor position="6691" topLine="210" />
+		<Cursor position="6691" topLine="218" />
 	</File>
 </CodeBlocks_layout_file>
