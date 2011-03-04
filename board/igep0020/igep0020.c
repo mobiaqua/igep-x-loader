@@ -1773,8 +1773,9 @@ void board_hang(void)
 {
     while(1){
         omap_set_gpio_dataout(GPIO_LED_USER0, 1);
-        delay(1000000);
+        delay(1000);
         omap_set_gpio_dataout(GPIO_LED_USER0, 0);
+        delay(1000);
     }
 }
 
