@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.0.2-1
+# Version: IGEP-X-Loader 2.1.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -31,6 +31,7 @@ Index
 2.1 Improvements & Modifications.
 2.2 Issues
 2.3 TODO
+2.4 Version Changes
 4 Settings & Configuration
 4.1 MMC Boot
 4.2 Setup igep.ini file
@@ -70,8 +71,14 @@ loader for Embedded boards based on OMAP processors.
 * Support Windows & Linux formating ini files.
 * boot from mmc, onenand, or mix with mmc highest priority.
 * Added codeblocks project and compilation rules.
-* Added support for gcc 4.5.1
 * Added support for vfat32 extra names.
+* Configure TPS65950 voltage to 1.35V if it's used a DM3730 processor.
+* Added new parameter MachineID in kernel tag file, with it you can
+	- configure the kernel board ID setup
+* Optimize some LPDDR Memory configuration values
+* Removed some OneNand Debug information
+* Removed some FAT incorrect warnings
+* Only support gcc 4.5.2 linaro version
 
 2.2 Issues
 -----------
@@ -82,16 +89,26 @@ loader for Embedded boards based on OMAP processors.
 * Kernel Command line parameters it's limited to: 4 KiB
   This is not a real limitation due all ini file it's 
   copied into the RAM memory.
-* Malloc it's limited to 32 MiB.
-* Cannot write comments in lines with tag=value 
+* Malloc it's limited to 32 MiB (this is not a real issue)
 
 2.3 TODO
 --------
 
-* Add support for IGEP0030 - Family boards.
-* Add support for other OMAP/DM/AM processor boards.
 * Remove compilation warnings.
 * Add in the tag=value inline comments
+
+2.4 Version Changes
+-------------------
+
+[2.1.0-1] This version only can be build with gcc linaro 4.5.2
+	  other compilers be not supported.
+[2.1.0-1] Removed some uncontrolled "printf" with incorrect information.
+[2.1.0-1] Modified some code under __DEBUG__ option.
+[2.1.0-1] Added Support for TPS65950-A3 initialization at 1.35V
+[2.1.0-1] Added support for IGEP Module 0030
+[2.1.0-1] Added support dynamic Machine ID selection (same xloader boot IGEPv2 & IGEP Module)
+
+
 
 3 Status:
 ==========
@@ -100,6 +117,10 @@ loader for Embedded boards based on OMAP processors.
 	- Tested with IGEPv2 (DM3730@1Ghz and 512/512 MB Ram/Onenand)
         - Tested with IGEPv2 (AM3703@1Ghz and 512/512 MB Ram/Onenand)
 	- Tested with IGEPv2 (OMAP3530@720Mhz and 512/512 MB Ram/Onenand)
+* Support IGEP0030 Revisions D & E family Modules.
+	- Tested with IGEP Module (DM3730@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
+	- Tested with IGEP Module (AM3730@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
+	
 
 4 Settings & Configuration:
 ============================
@@ -184,6 +205,12 @@ Kernel file name, if you don't provide this tag it try to load these others:
 Kernel RAM Disk file, if you don't provide this tag it try to load these others:
 // DEFAULT IMAGES
 "initrd"
+
+* MachineID=id
+Board ID actually support two values:
+IGEP0020_MACHINE_ID             2344
+IGEP0030_MACHINE_ID             2717
+
 
 ---- [kparams] ----
 Kernel parameters, all these parameters are passed directly to the kernel using the
