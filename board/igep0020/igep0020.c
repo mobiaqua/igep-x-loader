@@ -772,8 +772,8 @@ void config_sdram_m65kx002am(void)
 	/* CS0 SDRC Mode Register */
 	__raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
 
-        /* CS1 SDRC Mode Register */
-        __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
+    /* CS1 SDRC Mode Register */
+    __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
 
 	/* Set timings */
 	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
@@ -894,6 +894,13 @@ void s_init(void)
  *****************************************/
 int board_init(void)
 {
+    unsigned char data;
+    if(is_cpu_family() == CPU_OMAP36XX){
+        // Init TPS65950 - Voltage Selection (1.35V)
+        data = 0x3C;
+        i2c_write(0x4B, 0xb9, 1, &data, 1);
+    }
+
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
     // Setup Malloc memory
@@ -912,6 +919,11 @@ int misc_init_r(void)
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
 	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
+	// Print Configuration Setup
+	if(is_cpu_family() == CPU_OMAP36XX)
+        printf("XLoader: CPU DM3730\n");
+    else printf("XLoader: CPU OMAP3530\n");
+
 	return 0;
 }
 
@@ -1362,8 +1374,8 @@ void per_clocks_enable(void)
  MUX_VAL(CP(HSUSB0_DATA7),	(IEN  | PTD | DIS | M0)) /* HSUSB0_DATA7*/\
  MUX_VAL(CP(I2C1_SCL),		(IEN  | PTU | EN  | M0)) /* I2C1_SCL*/\
  MUX_VAL(CP(I2C1_SDA),		(IEN  | PTU | EN  | M0)) /* I2C1_SDA*/\
- MUX_VAL(CP(I2C2_SCL),		(IEN  | PTU | EN  | M4)) /* GPIO_168*/\
- MUX_VAL(CP(I2C2_SDA),		(IEN  | PTU | EN  | M4)) /* GPIO_183*/\
+ MUX_VAL(CP(I2C2_SCL),		(IEN  | PTU | EN  | M0)) /* GPIO_168*/\
+ MUX_VAL(CP(I2C2_SDA),		(IEN  | PTU | EN  | M0)) /* GPIO_183*/\
  MUX_VAL(CP(I2C3_SCL),		(IEN  | PTU | EN  | M0)) /* I2C3_SCL*/\
  MUX_VAL(CP(I2C3_SDA),		(IEN  | PTU | EN  | M0)) /* I2C3_SDA*/\
  MUX_VAL(CP(I2C4_SCL),		(IEN  | PTU | EN  | M0)) /* I2C4_SCL*/\
@@ -1528,6 +1540,112 @@ void per_clocks_enable(void)
  MUX_VAL(CP(sdrc_cke0),		(IDIS | PTU | EN  | M0)) /*sdrc_cke0*/\
  MUX_VAL(CP(sdrc_cke1),		(IDIS | PTD | DIS | M7)) /*sdrc_cke1*/
 
+#define MUX_IGEP0030()\
+	MUX_VAL(CP(SDRC_D0),        (IEN  | PTD | DIS | M0)) /* SDRC_D0 */\
+	MUX_VAL(CP(SDRC_D1),        (IEN  | PTD | DIS | M0)) /* SDRC_D1 */\
+	MUX_VAL(CP(SDRC_D2),        (IEN  | PTD | DIS | M0)) /* SDRC_D2 */\
+	MUX_VAL(CP(SDRC_D3),        (IEN  | PTD | DIS | M0)) /* SDRC_D3 */\
+	MUX_VAL(CP(SDRC_D4),        (IEN  | PTD | DIS | M0)) /* SDRC_D4 */\
+	MUX_VAL(CP(SDRC_D5),        (IEN  | PTD | DIS | M0)) /* SDRC_D5 */\
+	MUX_VAL(CP(SDRC_D6),        (IEN  | PTD | DIS | M0)) /* SDRC_D6 */\
+	MUX_VAL(CP(SDRC_D7),        (IEN  | PTD | DIS | M0)) /* SDRC_D7 */\
+	MUX_VAL(CP(SDRC_D8),        (IEN  | PTD | DIS | M0)) /* SDRC_D8 */\
+	MUX_VAL(CP(SDRC_D9),        (IEN  | PTD | DIS | M0)) /* SDRC_D9 */\
+	MUX_VAL(CP(SDRC_D10),       (IEN  | PTD | DIS | M0)) /* SDRC_D10 */\
+	MUX_VAL(CP(SDRC_D11),       (IEN  | PTD | DIS | M0)) /* SDRC_D11 */\
+	MUX_VAL(CP(SDRC_D12),       (IEN  | PTD | DIS | M0)) /* SDRC_D12 */\
+	MUX_VAL(CP(SDRC_D13),       (IEN  | PTD | DIS | M0)) /* SDRC_D13 */\
+	MUX_VAL(CP(SDRC_D14),       (IEN  | PTD | DIS | M0)) /* SDRC_D14 */\
+	MUX_VAL(CP(SDRC_D15),       (IEN  | PTD | DIS | M0)) /* SDRC_D15 */\
+	MUX_VAL(CP(SDRC_D16),       (IEN  | PTD | DIS | M0)) /* SDRC_D16 */\
+	MUX_VAL(CP(SDRC_D17),       (IEN  | PTD | DIS | M0)) /* SDRC_D17 */\
+	MUX_VAL(CP(SDRC_D18),       (IEN  | PTD | DIS | M0)) /* SDRC_D18 */\
+	MUX_VAL(CP(SDRC_D19),       (IEN  | PTD | DIS | M0)) /* SDRC_D19 */\
+	MUX_VAL(CP(SDRC_D20),       (IEN  | PTD | DIS | M0)) /* SDRC_D20 */\
+	MUX_VAL(CP(SDRC_D21),       (IEN  | PTD | DIS | M0)) /* SDRC_D21 */\
+	MUX_VAL(CP(SDRC_D22),       (IEN  | PTD | DIS | M0)) /* SDRC_D22 */\
+	MUX_VAL(CP(SDRC_D23),       (IEN  | PTD | DIS | M0)) /* SDRC_D23 */\
+	MUX_VAL(CP(SDRC_D24),       (IEN  | PTD | DIS | M0)) /* SDRC_D24 */\
+	MUX_VAL(CP(SDRC_D25),       (IEN  | PTD | DIS | M0)) /* SDRC_D25 */\
+	MUX_VAL(CP(SDRC_D26),       (IEN  | PTD | DIS | M0)) /* SDRC_D26 */\
+	MUX_VAL(CP(SDRC_D27),       (IEN  | PTD | DIS | M0)) /* SDRC_D27 */\
+	MUX_VAL(CP(SDRC_D28),       (IEN  | PTD | DIS | M0)) /* SDRC_D28 */\
+	MUX_VAL(CP(SDRC_D29),       (IEN  | PTD | DIS | M0)) /* SDRC_D29 */\
+	MUX_VAL(CP(SDRC_D30),       (IEN  | PTD | DIS | M0)) /* SDRC_D30 */\
+	MUX_VAL(CP(SDRC_D31),       (IEN  | PTD | DIS | M0)) /* SDRC_D31 */\
+	MUX_VAL(CP(SDRC_CLK),       (IEN  | PTD | DIS | M0)) /* SDRC_CLK */\
+	MUX_VAL(CP(SDRC_DQS0),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS0 */\
+	MUX_VAL(CP(SDRC_DQS1),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS1 */\
+	MUX_VAL(CP(SDRC_DQS2),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS2 */\
+	MUX_VAL(CP(SDRC_DQS3),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS3 */\
+	MUX_VAL(CP(GPMC_A1),        (IDIS | PTD | DIS | M0)) /* GPMC_A1 */\
+	MUX_VAL(CP(GPMC_A2),        (IDIS | PTD | DIS | M0)) /* GPMC_A2 */\
+	MUX_VAL(CP(GPMC_A3),        (IDIS | PTD | DIS | M0)) /* GPMC_A3 */\
+	MUX_VAL(CP(GPMC_A4),        (IDIS | PTD | DIS | M0)) /* GPMC_A4 */\
+	MUX_VAL(CP(GPMC_A5),        (IDIS | PTD | DIS | M0)) /* GPMC_A5 */\
+	MUX_VAL(CP(GPMC_A6),        (IDIS | PTD | DIS | M0)) /* GPMC_A6 */\
+	MUX_VAL(CP(GPMC_A7),        (IDIS | PTD | DIS | M0)) /* GPMC_A7 */\
+	MUX_VAL(CP(GPMC_A8),        (IDIS | PTD | DIS | M0)) /* GPMC_A8 */\
+	MUX_VAL(CP(GPMC_A9),        (IDIS | PTD | DIS | M0)) /* GPMC_A9 */\
+	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M0)) /* GPMC_A10 */\
+	MUX_VAL(CP(GPMC_D0),        (IEN  | PTD | DIS | M0)) /* GPMC_D0 */\
+	MUX_VAL(CP(GPMC_D1),        (IEN  | PTD | DIS | M0)) /* GPMC_D1 */\
+	MUX_VAL(CP(GPMC_D2),        (IEN  | PTD | DIS | M0)) /* GPMC_D2 */\
+	MUX_VAL(CP(GPMC_D3),        (IEN  | PTD | DIS | M0)) /* GPMC_D3 */\
+	MUX_VAL(CP(GPMC_D4),        (IEN  | PTD | DIS | M0)) /* GPMC_D4 */\
+	MUX_VAL(CP(GPMC_D5),        (IEN  | PTD | DIS | M0)) /* GPMC_D5 */\
+	MUX_VAL(CP(GPMC_D6),        (IEN  | PTD | DIS | M0)) /* GPMC_D6 */\
+	MUX_VAL(CP(GPMC_D7),        (IEN  | PTD | DIS | M0)) /* GPMC_D7 */\
+	MUX_VAL(CP(GPMC_D8),        (IEN  | PTD | DIS | M0)) /* GPMC_D8 */\
+	MUX_VAL(CP(GPMC_D9),        (IEN  | PTD | DIS | M0)) /* GPMC_D9 */\
+	MUX_VAL(CP(GPMC_D10),       (IEN  | PTD | DIS | M0)) /* GPMC_D10 */\
+	MUX_VAL(CP(GPMC_D11),       (IEN  | PTD | DIS | M0)) /* GPMC_D11 */\
+	MUX_VAL(CP(GPMC_D12),       (IEN  | PTD | DIS | M0)) /* GPMC_D12 */\
+	MUX_VAL(CP(GPMC_D13),       (IEN  | PTD | DIS | M0)) /* GPMC_D13 */\
+	MUX_VAL(CP(GPMC_D14),       (IEN  | PTD | DIS | M0)) /* GPMC_D14 */\
+	MUX_VAL(CP(GPMC_D15),       (IEN  | PTD | DIS | M0)) /* GPMC_D15 */\
+	MUX_VAL(CP(GPMC_nCS0),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS0 */\
+	MUX_VAL(CP(GPMC_nCS1),      (IEN  | PTU | EN  | M4)) /* GPMC_nCS1 */\
+	MUX_VAL(CP(GPMC_nCS2),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS2 */\
+	MUX_VAL(CP(GPMC_nCS3),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS3 */\
+	MUX_VAL(CP(GPMC_nCS4),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS4 */\
+	MUX_VAL(CP(GPMC_nCS5),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS5 */\
+	MUX_VAL(CP(GPMC_nCS6),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS6 */\
+	MUX_VAL(CP(GPMC_nCS7),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS7 */\
+	MUX_VAL(CP(GPMC_CLK),       (IDIS | PTD | DIS | M0)) /* GPMC_CLK */\
+	MUX_VAL(CP(GPMC_nADV_ALE),  (IDIS | PTD | DIS | M0)) /* GPMC_nADV_ALE*/\
+	MUX_VAL(CP(GPMC_nOE),       (IDIS | PTD | DIS | M0)) /* GPMC_nOE */\
+	MUX_VAL(CP(GPMC_nWE),       (IDIS | PTD | DIS | M0)) /* GPMC_nWE */\
+	MUX_VAL(CP(GPMC_nBE0_CLE),  (IDIS | PTD | DIS | M0)) /* GPMC_nBE0_CLE*/\
+	MUX_VAL(CP(GPMC_nBE1),      (IEN  | PTD | DIS | M0)) /* GPMC_nBE1 */\
+	MUX_VAL(CP(GPMC_nWP),       (IEN  | PTD | DIS | M0)) /* GPMC_nWP */\
+	MUX_VAL(CP(GPMC_WAIT0),     (IEN  | PTU | EN  | M0)) /* GPMC_WAIT0 */\
+	MUX_VAL(CP(GPMC_WAIT2),     (IDIS | PTU | EN  | M4)) /* GPMC_WAIT2 */\
+	MUX_VAL(CP(MMC1_CLK),       (IDIS | PTU | EN  | M0)) /* MMC1_CLK */\
+	MUX_VAL(CP(MMC1_CMD),       (IEN  | PTU | EN  | M0)) /* MMC1_CMD */\
+	MUX_VAL(CP(MMC1_DAT0),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT0 */\
+	MUX_VAL(CP(MMC1_DAT1),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT1 */\
+	MUX_VAL(CP(MMC1_DAT2),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT2 */\
+	MUX_VAL(CP(MMC1_DAT3),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT3 */\
+	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /* UART1_TX */\
+	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /* UART1_RX */\
+	MUX_VAL(CP(UART3_TX_IRTX),  (IDIS | PTD | DIS | M0)) /* UART3_TX */\
+	MUX_VAL(CP(UART3_RX_IRRX),  (IEN  | PTD | DIS | M0)) /* UART3_RX */\
+	MUX_VAL(CP(I2C1_SCL),       (IEN  | PTU | EN  | M0)) /* I2C1_SCL */\
+	MUX_VAL(CP(I2C1_SDA),       (IEN  | PTU | EN  | M0)) /* I2C1_SDA */\
+	MUX_VAL(CP(I2C4_SCL),       (IEN  | PTU | EN  | M0)) /* I2C4_SCL */\
+	MUX_VAL(CP(I2C4_SDA),       (IEN  | PTU | EN  | M0)) /* I2C4_SDA */\
+	MUX_VAL(CP(SYS_32K),        (IEN  | PTD | DIS | M0)) /* SYS_32K */\
+	MUX_VAL(CP(SYS_BOOT0),      (IEN  | PTD | DIS | M4)) /* GPIO_2 */\
+	MUX_VAL(CP(SYS_BOOT1),      (IEN  | PTD | DIS | M4)) /* GPIO_3 */\
+	MUX_VAL(CP(SYS_BOOT2),      (IEN  | PTD | DIS | M4)) /* GPIO_4 */\
+	MUX_VAL(CP(SYS_BOOT3),      (IEN  | PTD | DIS | M4)) /* GPIO_5 */\
+	MUX_VAL(CP(SYS_BOOT4),      (IEN  | PTD | DIS | M4)) /* GPIO_6 */\
+	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /* GPIO_7 */\
+	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /* GPIO_8 */\
+	MUX_VAL(CP(sdrc_cke0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
+	MUX_VAL(CP(sdrc_cke1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */
+
 /**********************************************************
  * Routine: set_muxconf_regs
  * Description: Setting up the configuration Mux registers
@@ -1537,7 +1655,8 @@ void per_clocks_enable(void)
 void set_muxconf_regs(void)
 {
 	// MUX_DEFAULT();
-	MUX_IGEP0020();
+	// MUX_IGEP0020();
+	MUX_IGEP0030();
 }
 
 static inline u32 get_part_sector_size_onenand(void)
@@ -1600,7 +1719,7 @@ static int mtd_device_validate(u8 type, u8 num, u32 *size)
 		printf("support for OneNAND devices not present\n");
 #endif
 	} else
-		printf("Unknown defice type %d\n", type);
+		printf("Unknown device type %d\n", type);
 
 	return 1;
 }
@@ -1664,10 +1783,10 @@ void onenand_init(void)
 
     /* OneNand Scan */
 	onenand_scan(onenand_mtd, 1);
-
+#ifdef __DEBUG__
 	printf("OneNAND: ");
 	print_size(onenand_mtd->size, "\n");
-
+#endif
 
 	/*
 	 * Add MTD device so that we can reference it later
@@ -1761,7 +1880,7 @@ int load_jffs2_file (const char* filename, char* dest)
  *********************************************************/
 int nand_init(void)
 {
-#ifdef DEBUG
+#ifdef __DEBUG__
 	onenand_check_maf(ONENAND_MANUF_ID());
 	onenand_print_device_info(ONENAND_DEVICE_ID(), ONENAND_VERSION_ID());
 #endif
