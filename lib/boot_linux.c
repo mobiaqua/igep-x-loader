@@ -25,6 +25,8 @@
 #include <config.h>
 #include <setup.h>
 
+// #define __DEBUG__
+
 #define SZ_1K				        1024
 #define SZ_2K				        2 * SZ_1K
 #define SZ_16K				        16 * SZ_1K
@@ -35,6 +37,7 @@
 
 /* Internal Memory layout */
 typedef struct Linux_Memory_Layout {
+    int machine_id;                     // Linux Machine ID
     char* kbase_address;                // It must be the dest kernel address
     int k_size;                         // 0 = and return here the size
     char* kImage_rd_address;            // Return here the rd image if it is found
@@ -73,6 +76,7 @@ char *kRdImage_Name = NULL;
 static void init_memory_layout (void)
 {
     // Initialize Linux Memory Layout struct
+    LMemoryLayout->machine_id = IGEP0030_MACHINE_ID;
     LMemoryLayout->kbase_address = 0;
     LMemoryLayout->k_size = 0;
     LMemoryLayout->kImage_rd_address = 0;
@@ -290,6 +294,10 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             memcpy(kRdImage_Name, value, strlen(value));
             kRdImage_Name[strlen(value)] = '\0';
         }
+        else if(!strcmp(key, "MachineID")){
+            sscanf(value, "%u", &v);
+            LMemoryLayout->machine_id = v;
+        }
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
@@ -392,7 +400,7 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
 int boot_linux (/*int machine_id*/)
 {
     int bootr = -1;
-    int machine_id = IGEP_MACHINE_ID;
+    // int machine_id = IGEP0030_MACHINE_ID;
     void (*theKernel)(int zero, int arch, uint params);
 
 #ifdef __DEBUG__
@@ -418,19 +426,26 @@ int boot_linux (/*int machine_id*/)
             setup_memory_tags();
             setup_serial_tag();
             setup_revision_tag();
+
 #ifdef __DEBUG__
-            printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
+            // printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
 #endif
             setup_commandline_tag();
             setup_end_tag();
+
 #ifdef __DEBUG__
-	    printf("kernel boot: 0x%x 0x%x\n", LMemoryLayout->kbase_address,  kparams);
+            printf("kernel boot: 0x%x 0x%x\n", LMemoryLayout->kbase_address,  kparams);
 #endif
-	    /* Prepare the system for kernel boot */
-	    cleanup_before_linux();
-        theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
-            /* boot ! = GREAT ;) */
-	    theKernel (0, machine_id, kparams);
+            /* Prepare the system for kernel boot */
+            cleanup_before_linux();
+            theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
+            if(LMemoryLayout->machine_id == IGEP0020_MACHINE_ID)
+                printf("XLoader: IGEPv2 kernel boot ...\n");
+            else if(LMemoryLayout->machine_id == IGEP0030_MACHINE_ID)
+                printf("XLoader: IGEP Module kernel boot ...\n");
+            else printf("XLoader: Unknown %d kernel boot ...\n", LMemoryLayout->machine_id);
+            /* Kernel Boot */
+            theKernel (0, LMemoryLayout->machine_id, kparams);
         }else{
             if(bootr < 0)
                 printf("Invalid load kernel address\n");
