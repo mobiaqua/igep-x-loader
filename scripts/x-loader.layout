@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep0020/igep0020.c" open="1" top="0" tabpos="4">
-		<Cursor position="69213" topLine="1752" />
+	<File name="../board/igep0020/igep0020.c" open="1" top="1" tabpos="1">
+		<Cursor position="27094" topLine="929" />
 	</File>
 	<File name="../board/igep0020/platform.S" open="0" top="0" tabpos="8">
 		<Cursor position="7658" topLine="248" />
+	</File>
+	<File name="../board/igep0030/igep0030.c" open="0" top="0" tabpos="0">
+		<Cursor position="0" topLine="976" />
 	</File>
 	<File name="../board/igep0030/platform.S" open="0" top="0" tabpos="0">
 		<Cursor position="0" topLine="81" />
@@ -22,17 +25,17 @@
 	<File name="../cpu/omap3/cache.S" open="0" top="0" tabpos="0">
 		<Cursor position="5171" topLine="125" />
 	</File>
-	<File name="../cpu/omap3/cpu.c" open="0" top="0" tabpos="4">
-		<Cursor position="1667" topLine="1" />
+	<File name="../cpu/omap3/cpu.c" open="0" top="0" tabpos="9">
+		<Cursor position="1667" topLine="12" />
 	</File>
 	<File name="../cpu/omap3/gpio.c" open="0" top="0" tabpos="2">
 		<Cursor position="3375" topLine="59" />
 	</File>
-	<File name="../cpu/omap3/gpmc.c" open="0" top="0" tabpos="9">
-		<Cursor position="2713" topLine="109" />
+	<File name="../cpu/omap3/gpmc.c" open="1" top="0" tabpos="2">
+		<Cursor position="3016" topLine="114" />
 	</File>
 	<File name="../cpu/omap3/mmc.c" open="0" top="0" tabpos="11">
-		<Cursor position="0" topLine="36" />
+		<Cursor position="13067" topLine="524" />
 	</File>
 	<File name="../disk/part.c" open="0" top="0" tabpos="0">
 		<Cursor position="3479" topLine="86" />
@@ -41,10 +44,10 @@
 		<Cursor position="1166" topLine="23" />
 	</File>
 	<File name="../drivers/onenand.c" open="0" top="0" tabpos="0">
-		<Cursor position="3597" topLine="108" />
+		<Cursor position="7199" topLine="243" />
 	</File>
-	<File name="../fs/fat/fat.c" open="1" top="1" tabpos="5">
-		<Cursor position="8206" topLine="369" />
+	<File name="../fs/fat/fat.c" open="0" top="0" tabpos="5">
+		<Cursor position="16065" topLine="610" />
 	</File>
 	<File name="../fs/fat/file.c" open="0" top="0" tabpos="0">
 		<Cursor position="3985" topLine="175" />
@@ -68,7 +71,7 @@
 		<Cursor position="2243" topLine="51" />
 	</File>
 	<File name="../include/asm/arch-omap3/gpio.h" open="0" top="0" tabpos="0">
-		<Cursor position="0" topLine="88" />
+		<Cursor position="2429" topLine="49" />
 	</File>
 	<File name="../include/asm/arch-omap3/gpmc.h" open="0" top="0" tabpos="12">
 		<Cursor position="988" topLine="0" />
@@ -76,8 +79,8 @@
 	<File name="../include/asm/arch-omap3/i2c.h" open="0" top="0" tabpos="0">
 		<Cursor position="3879" topLine="69" />
 	</File>
-	<File name="../include/asm/arch-omap3/mem.h" open="0" top="0" tabpos="11">
-		<Cursor position="18567" topLine="535" />
+	<File name="../include/asm/arch-omap3/mem.h" open="0" top="0" tabpos="10">
+		<Cursor position="18901" topLine="537" />
 	</File>
 	<File name="../include/asm/arch-omap3/mmc.h" open="0" top="0" tabpos="13">
 		<Cursor position="5733" topLine="70" />
@@ -88,11 +91,11 @@
 	<File name="../include/asm/arch-omap3/mux.h" open="0" top="0" tabpos="0">
 		<Cursor position="19993" topLine="403" />
 	</File>
-	<File name="../include/asm/arch-omap3/omap3430.h" open="0" top="0" tabpos="0">
-		<Cursor position="1121" topLine="1" />
+	<File name="../include/asm/arch-omap3/omap3430.h" open="0" top="0" tabpos="12">
+		<Cursor position="2724" topLine="85" />
 	</File>
-	<File name="../include/asm/arch-omap3/sizes.h" open="0" top="0" tabpos="0">
-		<Cursor position="861" topLine="3" />
+	<File name="../include/asm/arch-omap3/sizes.h" open="0" top="0" tabpos="2">
+		<Cursor position="861" topLine="8" />
 	</File>
 	<File name="../include/asm/arch-omap3/sys_info.h" open="0" top="0" tabpos="10">
 		<Cursor position="1896" topLine="52" />
@@ -119,13 +122,13 @@
 		<Cursor position="0" topLine="73" />
 	</File>
 	<File name="../include/common.h" open="0" top="0" tabpos="0">
-		<Cursor position="1235" topLine="16" />
+		<Cursor position="2261" topLine="68" />
 	</File>
-	<File name="../include/configs/igep0020-sdcard.h" open="0" top="0" tabpos="2">
-		<Cursor position="5062" topLine="117" />
+	<File name="../include/configs/igep0020-sdcard.h" open="0" top="0" tabpos="7">
+		<Cursor position="4642" topLine="118" />
 	</File>
-	<File name="../include/fat.h" open="0" top="0" tabpos="0">
-		<Cursor position="1125" topLine="15" />
+	<File name="../include/fat.h" open="0" top="0" tabpos="6">
+		<Cursor position="2419" topLine="6" />
 	</File>
 	<File name="../include/linux/ctypes.h" open="0" top="0" tabpos="0">
 		<Cursor position="408" topLine="6" />
@@ -154,16 +157,22 @@
 	<File name="../include/setup.h" open="0" top="0" tabpos="0">
 		<Cursor position="4097" topLine="135" />
 	</File>
-	<File name="../lib/board.c" open="1" top="0" tabpos="3">
-		<Cursor position="2536" topLine="77" />
+	<File name="../lib/board.c" open="0" top="0" tabpos="3">
+		<Cursor position="2402" topLine="80" />
 	</File>
-	<File name="../lib/boot_linux.c" open="1" top="0" tabpos="1">
-		<Cursor position="6728" topLine="168" />
+	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="3">
+		<Cursor position="1617" topLine="33" />
 	</File>
 	<File name="../lib/cache-cp15.c" open="0" top="0" tabpos="0">
 		<Cursor position="1632" topLine="82" />
 	</File>
-	<File name="../lib/ini_parser.c" open="1" top="0" tabpos="2">
-		<Cursor position="6691" topLine="218" />
+	<File name="../lib/ini_parser.c" open="0" top="0" tabpos="2">
+		<Cursor position="6691" topLine="212" />
+	</File>
+	<File name="../lib/printf.c" open="0" top="0" tabpos="0">
+		<Cursor position="2443" topLine="177" />
+	</File>
+	<File name="../mtd/onenand_base.c" open="0" top="0" tabpos="0">
+		<Cursor position="46553" topLine="1759" />
 	</File>
 </CodeBlocks_layout_file>

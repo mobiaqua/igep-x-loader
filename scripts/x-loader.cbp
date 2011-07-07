@@ -344,6 +344,21 @@
 			<Option compilerVar="CC" />
 			<Option target="Release_ARM" />
 		</Unit>
+		<Unit filename="../mtd/mtdconcat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../mtd/mtdcore.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../mtd/mtdpart.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../mtd/onenand_base.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../mtd/onenand_bbt.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<envvars />
