@@ -54,9 +54,8 @@ int print_info(void)
 
 static int init_func_i2c (void)
 {
-#ifdef CONFIG_MMC
+    /* Initialize TPS65950 - i2c Connection */
 	i2c_init (CFG_I2C_SPEED, CFG_I2C_SLAVE);
-#endif
 	return 0;
 }
 
@@ -64,15 +63,13 @@ typedef int (init_fnc_t) (void);
 
 init_fnc_t *init_sequence[] = {
 	cpu_init,		/* basic cpu dependent setup */
+	init_func_i2c,
 	board_init,		/* basic board dependent setup */
 #ifdef CFG_NS16550_SERIAL
  	serial_init,		/* serial communications setup */
 #endif
 	print_info,
   	nand_init,		/* board specific nand init */
-#ifdef CONFIG_MMC
-	init_func_i2c,
-#endif
   	NULL,
 };
 
@@ -83,6 +80,7 @@ void start_armboot (void)
 	uchar *buf;
 	int *first_instruction;
 	block_dev_desc_t *dev_desc = NULL;
+
 #ifdef CONFIG_ONENAND
 	unsigned int onenand_features;
 #endif
@@ -109,6 +107,7 @@ void start_armboot (void)
     /* boot_linux() should never return */
     boot_linux();
 
+    /* If boot linux fails hang the board */
     hang();
 }
 
