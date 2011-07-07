@@ -86,6 +86,8 @@ typedef enum {
 #define SDP_3430_SDRC_RFR_CTRL_100MHz   0x0002da01
 #define SDP_3430_SDRC_RFR_CTRL_133MHz   0x0003de01 /* 7.8us/7.5ns - 50=0x3de */
 #define SDP_3430_SDRC_RFR_CTRL_165MHz   0x0004e201 /* 7.8us/6ns - 50=0x4e2 */
+// #define SDP_3630_SDRC_RFR_CTRL_200MHz   0x0004e201 /* 7.8us/5ns - 50=0x5e6 */
+#define SDP_3630_SDRC_RFR_CTRL_200MHz   0x0005e601 /* 7.8us/5ns - 50=0x5e6 */
 
 #define DLL_OFFSET              0
 #define DLL_WRITEDDRCLKX2DIS    1
@@ -274,6 +276,42 @@ typedef enum {
 #define NUMONYX_V_ACTIMB_165 ((NUMONYX_TCKE_165 << 12) | (NUMONYX_XSR_165 << 0)) | \
 				(NUMONYX_TXP_165 << 8) | (NUMONYX_TWTR_165 << 16)
 
+
+/* NUMONYX part of IGEP0020 (200MHz optimized) 5 ns
+ *   ACTIMA
+ *      TDAL = Twr/Tck + Trp/tck = 15/5 + 15/5 = 3 + 3 = 6
+ *      TDPL (Twr) = 15/5 = 3
+ *      TRRD = 10/5 = 2
+ *      TRCD = 16.2/5 = 3.24 -> 4
+ *      TRP  = 15/5 = 3
+ *      TRAS = 40/5 = 8
+ *      TRC  = 55/5 = 11
+ *      TRFC = 140/5 = 28
+ *   ACTIMB
+ *	TWTR = 2
+ *	TCKE = 2
+ *	TXSR = 200/5 =  40
+ *	-> TXP  = 2.0 + 0.9 = 2.9 -> 3 ¿?
+ */
+#define NUMONYX_TDAL_200   6
+#define NUMONYX_TDPL_200   3
+#define NUMONYX_TRRD_200   2
+#define NUMONYX_TRCD_200   4
+#define NUMONYX_TRP_200    3
+#define NUMONYX_TRAS_200   8
+#define NUMONYX_TRC_200   11
+#define NUMONYX_TRFC_200  28
+#define NUMONYX_V_ACTIMA_200 ((NUMONYX_TRFC_200 << 27) | (NUMONYX_TRC_200 << 22) | (NUMONYX_TRAS_200 << 18) \
+		| (NUMONYX_TRP_200 << 15) | (NUMONYX_TRCD_200 << 12) |(NUMONYX_TRRD_200 << 9) | \
+		(NUMONYX_TDPL_200 << 6) | (NUMONYX_TDAL_200))
+
+#define NUMONYX_TWTR_200   2
+#define NUMONYX_TCKE_200   2
+#define NUMONYX_TXP_200   3
+#define NUMONYX_XSR_200    40
+#define NUMONYX_V_ACTIMB_200 ((NUMONYX_TCKE_200 << 12) | (NUMONYX_XSR_200 << 0)) | \
+				(NUMONYX_TXP_200 << 8) | (NUMONYX_TWTR_200 << 16)
+
 /* New and compatability speed defines */
 #if defined(PRCM_CLK_CFG2_200MHZ) || defined(PRCM_CONFIG_II) || defined(PRCM_CONFIG_5B)
 # define L3_100MHZ   /* Use with <= 100MHz SDRAM */
@@ -292,8 +330,10 @@ typedef enum {
 #elif  defined(L3_165MHZ)
 # define MICRON_SDRC_ACTIM_CTRLA_0     MICRON_V_ACTIMA_165
 # define MICRON_SDRC_ACTIM_CTRLB_0     MICRON_V_ACTIMB_165
-# define NUMONYX_SDRC_ACTIM_CTRLA      NUMONYX_V_ACTIMA_165
-# define NUMONYX_SDRC_ACTIM_CTRLB      NUMONYX_V_ACTIMB_165
+// # define NUMONYX_SDRC_ACTIM_CTRLA      NUMONYX_V_ACTIMA_165
+// # define NUMONYX_SDRC_ACTIM_CTRLB      NUMONYX_V_ACTIMB_165
+# define NUMONYX_SDRC_ACTIM_CTRLA      NUMONYX_V_ACTIMA_200
+# define NUMONYX_SDRC_ACTIM_CTRLB      NUMONYX_V_ACTIMB_200
 #endif
 
 
@@ -313,7 +353,8 @@ typedef enum {
 #elif defined(L3_133MHZ)
 # define SDP_SDRC_RFR_CTRL          SDP_3430_SDRC_RFR_CTRL_133MHz
 #elif  defined(L3_165MHZ)
-# define SDP_SDRC_RFR_CTRL          SDP_3430_SDRC_RFR_CTRL_165MHz
+// # define SDP_SDRC_RFR_CTRL          SDP_3430_SDRC_RFR_CTRL_165MHz
+# define SDP_SDRC_RFR_CTRL          SDP_3630_SDRC_RFR_CTRL_200MHz
 #endif
 
 /*
