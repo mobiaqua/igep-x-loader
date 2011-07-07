@@ -1764,11 +1764,12 @@ static int onenand_do_lock_cmd(struct mtd_info *mtd, loff_t ofs, size_t len, int
 		while (this->read_word(this->base + ONENAND_REG_CTRL_STATUS)
 		    & ONENAND_CTRL_ONGO)
 			continue;
-
 		/* Check lock status */
 		status = this->read_word(this->base + ONENAND_REG_WP_STATUS);
+#ifdef __DEBUG__
 		if (!(status & wp_status_mask))
 			printk(KERN_ERR "block = %d, wp status = 0x%x\n", block, status);
+#endif
 	}
 
 	return 0;
@@ -1837,7 +1838,9 @@ static int onenand_check_lock_status(struct onenand_chip *this)
 		/* Check lock status */
 		status = this->read_word(this->base + ONENAND_REG_WP_STATUS);
 		if (!(status & ONENAND_WP_US)) {
+#ifdef __DEBUG__
 			printk(KERN_ERR "block = %d, wp status = 0x%x\n", block, status);
+#endif
 			return 0;
 		}
 	}
@@ -1927,13 +1930,14 @@ static void onenand_check_features(struct mtd_info *mtd)
 			this->options |= ONENAND_HAS_CONT_LOCK;
 		break;
 	}
-
+#ifdef __DEBUG__
 	if (this->options & ONENAND_HAS_CONT_LOCK)
 		printk(KERN_DEBUG "Lock scheme is Continuous Lock\n");
 	if (this->options & ONENAND_HAS_UNLOCK_ALL)
 		printk(KERN_DEBUG "Chip support all block unlock\n");
 	if (this->options & ONENAND_HAS_2PLANE)
 		printk(KERN_DEBUG "Chip has 2 plane\n");
+#endif
 }
 
 /**
@@ -1956,10 +1960,10 @@ char *onenand_print_device_info(int device, int version)
 	       demuxed ? "" : "Muxed ",
 	       ddp ? "(DDP)" : "",
 	       (16 << density), vcc ? "2.65/3.3" : "1.8", device);
-
+#ifdef __DEBUG__
 	sprintf(p, "\nOneNAND version = 0x%04x", version);
 	printk("%s\n", dev_info);
-
+#endif
 	return dev_info;
 }
 

@@ -413,7 +413,7 @@ getit:
 		curclust = get_fatent(mydata, endclust);
 		if (CHECK_CLUST(curclust, mydata->fatsize)) {
 			FAT_DPRINT("curclust: 0x%x\n", curclust);
-			FAT_ERROR("Invalid FAT entry\n");
+			FAT_DPRINT("Invalid FAT entry\n");
 			return gotsize;
 		}
 		actsize=bytesperclust;
@@ -486,7 +486,7 @@ get_vfatname(fsdata *mydata, int curclust, __u8 *cluster,
 		curclust = get_fatent(mydata, curclust);
 		if (CHECK_CLUST(curclust, mydata->fatsize)) {
 			FAT_DPRINT("curclust: 0x%x\n", curclust);
-			FAT_ERROR("Invalid FAT entry\n");
+			FAT_DPRINT("Invalid FAT entry\n");
 			return -1;
 		}
 		if (get_cluster(mydata, curclust, get_vfatname_block,
@@ -681,7 +681,7 @@ static dir_entry *get_dentfromdir (fsdata * mydata, int startsect,
 	curclust = get_fatent (mydata, curclust);
 	if (CHECK_CLUST(curclust, mydata->fatsize)) {
 	    FAT_DPRINT ("curclust: 0x%x\n", curclust);
-	    FAT_ERROR ("Invalid FAT entry\n");
+	    FAT_DPRINT ("Invalid FAT entry\n");
 	    return NULL;
 	}
     }
