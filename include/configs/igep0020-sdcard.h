@@ -146,7 +146,8 @@
 #define XLOADER_MALLOC_SIZE         32 * (1024 * 1014)                  /* Malloc space size = 32 M Bytes */
 
 /* Kernel Parameters */
-#define IGEP_MACHINE_ID             2344
+#define IGEP0020_MACHINE_ID             2344
+#define IGEP0030_MACHINE_ID             2717
 #define IGEP_BOOT_CFG_INI_FILE      "igep.ini"
 #define IGEP_MMC_BOOT               0
 #define IGEP_ONENAND_BOOT           1
