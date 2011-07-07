@@ -107,8 +107,10 @@ void gpmc_init (void)
  */
 void setup_net_chip (u32 processor)
 {
+    int i;
     struct gpmc* gpmc_cfg = (struct gpmc *)GPMC_BASE;
 	struct gpio* gpio3_base = (struct gpio *)OMAP34XX_GPIO3_BASE;
+/*	struct gpio* gpio2_base = (struct gpio *)OMAP34XX_GPIO2_BASE; */
 	struct ctrl* ctrl_base = (struct ctrl *)OMAP34XX_CTRL_BASE;
 
 	/* Configure GPMC registers */
@@ -129,6 +131,16 @@ void setup_net_chip (u32 processor)
         writel(NET_LAN9221_GPMC_CONFIG5, &gpmc_cfg->cs[5].config5);
         writel(NET_LAN9221_GPMC_CONFIG6, &gpmc_cfg->cs[5].config6);
         writel(NET_LAN9221_GPMC_CONFIG7, &gpmc_cfg->cs[5].config7);
+#ifdef __notdef
+        // IGEP Module with DUAL Ethernet
+        writel(NET_LAN9221_GPMC_CONFIG1, &gpmc_cfg->cs[4].config1);
+        writel(NET_LAN9221_GPMC_CONFIG2, &gpmc_cfg->cs[4].config2);
+        writel(NET_LAN9221_GPMC_CONFIG3, &gpmc_cfg->cs[4].config3);
+        writel(NET_LAN9221_GPMC_CONFIG4, &gpmc_cfg->cs[4].config4);
+        writel(NET_LAN9221_GPMC_CONFIG5, &gpmc_cfg->cs[4].config5);
+        writel(NET_LAN9221_GPMC_CONFIG6, &gpmc_cfg->cs[4].config6);
+        writel(NET_LAN9221_GPMC_CONFIG7, &gpmc_cfg->cs[4].config7);
+#endif
     }
 
 	/* Enable off mode for NWE in PADCONF_GPMC_NWE register */
@@ -147,4 +159,5 @@ void setup_net_chip (u32 processor)
 	writel(GPIO0, &gpio3_base->cleardataout);
 	udelay(1);
 	writel(GPIO0, &gpio3_base->setdataout);
+
 }
