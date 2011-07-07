@@ -245,6 +245,7 @@ unsigned int onenand_check_features()
  */
 void onenand_print_device_info(int device, int version)
 {
+#ifdef __DEBUG__
 	int vcc, demuxed, ddp, density, flexonenand;
 
         vcc = device & ONENAND_DEVICE_VCC_MASK;
@@ -260,6 +261,7 @@ void onenand_print_device_info(int device, int version)
                 vcc ? "2.65/3.3" : "1.8",
                 device);
 	printf("OneNAND version = 0x%04x\n", version);
+#endif
 }
 
 static const struct onenand_manufacturers onenand_manuf_ids[] = {
