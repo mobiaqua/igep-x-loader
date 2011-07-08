@@ -126,8 +126,8 @@ ifdef BUILD_TAG
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes \
 	-DBUILD_TAG='"$(BUILD_TAG)"'
 else
-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
-#CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -fno-stack-protector
+#CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
+CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -fno-stack-protector -marm
 endif
 
 AFLAGS_DEBUG := -Wa,-gstabs
