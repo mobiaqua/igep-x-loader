@@ -42,7 +42,7 @@
 #endif
 
 const char version_string[] =
-	"IGEP-X-Loader 2.1.0-1 (" __DATE__ " - " __TIME__ ")";
+	"IGEP-X-Loader 2.1.0-2 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {

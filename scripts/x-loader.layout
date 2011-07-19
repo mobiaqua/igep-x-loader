@@ -2,7 +2,7 @@
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
 	<File name="../board/igep0020/igep0020.c" open="1" top="1" tabpos="1">
-		<Cursor position="27094" topLine="929" />
+		<Cursor position="70340" topLine="1590" />
 	</File>
 	<File name="../board/igep0020/platform.S" open="0" top="0" tabpos="8">
 		<Cursor position="7658" topLine="248" />
