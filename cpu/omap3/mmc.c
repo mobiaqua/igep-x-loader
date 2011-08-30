@@ -471,7 +471,7 @@ unsigned char configure_mmc(mmc_card_data *mmc_card_cur)
 
 	if (mmc_card_cur->card_type == MMC_CARD)
 		mmc_card_cur->version = Card_CSD.spec_vers;
-
+	
 	trans_speed = Card_CSD.tran_speed;
 
 	ret_val = mmc_send_cmd(MMC_CMD4, MMC_DSR_DEFAULT << 16, resp);

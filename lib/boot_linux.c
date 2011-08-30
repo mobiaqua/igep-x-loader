@@ -143,16 +143,14 @@ static void setup_commandline_tag ()
 	params = tag_next (params);
 }
 
-#ifdef CONFIG_INITRD_TAG
-static void setup_initrd_tag (ulong initrd_start, ulong initrd_end)
+static void setup_initrd_tag (ulong initrd_start, ulong initrd_size)
 {
 	params->hdr.tag = ATAG_INITRD2;
 	params->hdr.size = tag_size (tag_initrd);
 	params->u.initrd.start = initrd_start;
-	params->u.initrd.size = initrd_end - initrd_start;
+	params->u.initrd.size = initrd_size;
 	params = tag_next (params);
 }
-#endif /* CONFIG_INITRD_TAG */
 
 void setup_serial_tag ()
 {
@@ -426,6 +424,9 @@ int boot_linux (/*int machine_id*/)
             setup_memory_tags();
             setup_serial_tag();
             setup_revision_tag();
+		if(LMemoryLayout->rdImage_size > 0){
+			setup_initrd_tag((ulong) LMemoryLayout->kImage_rd_address , LMemoryLayout->rdImage_size);
+		}
 
 #ifdef __DEBUG__
             // printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
