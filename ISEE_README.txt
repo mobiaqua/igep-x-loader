@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.1.0-1
+# Version: IGEP-X-Loader 2.1.0-3
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -75,10 +75,12 @@ loader for Embedded boards based on OMAP processors.
 * Configure TPS65950 voltage to 1.35V if it's used a DM3730 processor.
 * Added new parameter MachineID in kernel tag file, with it you can
 	- configure the kernel board ID setup
+* Added new parameter buddy for kernels 2.6.35.13-3
 * Optimize some LPDDR Memory configuration values
 * Removed some OneNand Debug information
 * Removed some FAT incorrect warnings
 * Only support gcc 4.5.2 linaro version
+* Added Initial Ram disk 
 
 2.2 Issues
 -----------
@@ -99,16 +101,18 @@ loader for Embedded boards based on OMAP processors.
 
 2.4 Version Changes
 -------------------
-
-[2.1.0-1] This version only can be build with gcc linaro 4.5.2
-	  other compilers be not supported.
+[2.1.0-1] This version only can be build with gcc linaro 4.5.2 other compilers be not supported.
 [2.1.0-1] Removed some uncontrolled "printf" with incorrect information.
 [2.1.0-1] Modified some code under __DEBUG__ option.
 [2.1.0-1] Added Support for TPS65950-A3 initialization at 1.35V
 [2.1.0-1] Added support for IGEP Module 0030
 [2.1.0-1] Added support dynamic Machine ID selection (same xloader boot IGEPv2 & IGEP Module)
-
-
+----
+[2.1.0-2] ARM Compilation bug resolved
+----
+[2.1.0-3] Update SDRAM structure initialization
+[2.1.0-3] Added support for Initial RAM disk
+[2.1.0-3] Updated Initial RAM disk destination address
 
 3 Status:
 ==========
@@ -149,7 +153,7 @@ Read the kernel documentation about kernel images.
 
 [kernel]
 kaddress=0x80008000
-;rdaddress=0x84000000
+;rdaddress=0x81600000
 serial.low=00000001
 serial.high=00000000
 revision=0001
@@ -181,7 +185,7 @@ Tags Supported
 Kernel copy address, you should use the same address used in kernel image
 configuration. If you don't know what it means maybe it's better don't change it.
 
-* rdaddress=0x84000000
+* rdaddress=0x81600000
 Kernel RAM disk copy address. 
 If you don't know what it means maybe it's better don't change it.
 
