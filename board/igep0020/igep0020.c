@@ -40,11 +40,9 @@
 #include <malloc.h>
 #include <jffs2/load_kernel.h>
 #include <linux/ctypes.h>
-
-// #include <common.h>
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
-// #include <linux/mtd/onenand.h>
+
 
 #define GPIO_LED_USER0      27
 #define GPIO_LED_USER1      26
@@ -165,7 +163,6 @@ u32 is_cpu_family(void)
 	} else {
 		cpuid = __raw_readl(OMAP34XX_CONTROL_ID);
 		hawkeye  = (cpuid >> HAWKEYE_SHIFT) & 0xffff;
-
 		switch (hawkeye) {
 			case HAWKEYE_OMAP34XX:
 				cpu_family = CPU_OMAP34XX;
@@ -191,8 +188,8 @@ u32 is_cpu_family(void)
 
 #define PRODUCT_ID_SKUID	0x4830A20C
 #define CPU_35XX_PID_MASK	0x0000000F
-//#define CPU_35XX_600MHZ_DEV	0x0
-//#define CPU_35XX_720MHZ_DEV	0x8
+#define CPU_35XX_600MHZ_DEV	0x0
+#define CPU_35XX_720MHZ_DEV	0x8
 
 static u32 get_prod_id(void)
 {
@@ -707,6 +704,7 @@ void try_unlock_memory(void)
 	return;
 }
 
+#ifdef __notdef
 /*********************************************************************
  * config_sdram_m65kx001am() - 1Gb, DDR x32 I/O, 4KB page
  *********************************************************************/
@@ -752,6 +750,7 @@ void config_sdram_m65kx001am(void)
 	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
 	delay(0x2000);	/* give time to lock */
 }
+#endif
 
 /*********************************************************************
  * config_sdram_m65kx002am() - 2 dice of 2Gb, DDR x32 I/O, 4KB page
@@ -775,14 +774,25 @@ void config_sdram_m65kx002am(void)
     /* CS1 SDRC Mode Register */
     __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
 
-	/* Set timings */
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_1);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_1);
+    /* Set timings */
+    if(is_cpu_family() == CPU_OMAP36XX){
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_200, SDRC_ACTIM_CTRLA_0);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_200, SDRC_ACTIM_CTRLB_0);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_200, SDRC_ACTIM_CTRLA_1);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_200, SDRC_ACTIM_CTRLB_1);
+        __raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_0);
+        __raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_1);
 
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_1);
+    }
+    else{
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_165, SDRC_ACTIM_CTRLA_0);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_165, SDRC_ACTIM_CTRLB_0);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_165, SDRC_ACTIM_CTRLA_1);
+        __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_165, SDRC_ACTIM_CTRLB_1);
+        __raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_0);
+        __raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_1);
+
+    }
 
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
 
@@ -852,9 +862,11 @@ void config_onenand_nand0xgr4wxa(void)
  **********************************************************/
 void config_multichip_package()
 {
+    // Configure OneNand memory
 	config_onenand_nand0xgr4wxa();
-
+    // Configure LPDDR with two dies memory
     config_sdram_m65kx002am();
+
 /* TODO: Add 2 support for the two kind memories */
 #ifdef __notdef
 	switch (ONENAND_DEVICE_ID()) {
@@ -897,10 +909,21 @@ int board_init(void)
     unsigned char data;
     if(is_cpu_family() == CPU_OMAP36XX){
         // Init TPS65950 - Voltage Selection (1.35V)
+        // Calculation using this formula:
+        // VSel = Vout - 600 / 12.5 ( all values in mili-Volts)
+        // VSel = 1350 - 600 / 12.5 = 60 -> Hex = 0x3C
         data = 0x3C;
+        // 1.4 V
+        // --> data = 0x40;
         i2c_write(0x4B, 0xb9, 1, &data, 1);
     }
-
+    else {
+        if (get_prod_id() == CPU_35XX_720MHZ_DEV){
+            // Init TPS65950 - Voltage Selection (1.35V)
+            data = 0x3C;
+            i2c_write(0x4B, 0xb9, 1, &data, 1);
+        }
+    }
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
     // Setup Malloc memory
@@ -1655,8 +1678,8 @@ void per_clocks_enable(void)
 void set_muxconf_regs(void)
 {
 	// MUX_DEFAULT();
-	// MUX_IGEP0020();
-	MUX_IGEP0030();
+	MUX_IGEP0020();
+	//MUX_IGEP0030();
 }
 
 static inline u32 get_part_sector_size_onenand(void)
