@@ -725,10 +725,10 @@ void config_sdram_m65kx001am(void)
 	__raw_writel(MK65KX001AM_SDRC_MCDCFG, SDRC_MCFG_0);
 
 	/* Set timings */
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA, SDRC_ACTIM_CTRLA_0);
-	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB, SDRC_ACTIM_CTRLB_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_165, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_165, SDRC_ACTIM_CTRLB_0);
 
-	__raw_writel(SDP_SDRC_RFR_CTRL, SDRC_RFR_CTRL_0);
+	__raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_0);
 
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
 
@@ -752,10 +752,49 @@ void config_sdram_m65kx001am(void)
 }
 #endif
 
+/*
+ * Helper macros
+ */
+#define ONENAND_START_PAGE		0
+#define ONENAND_PAGES_PER_BLOCK		64
+
+#define onenand_readw(a)	(*(volatile unsigned short *)(a))
+#define onenand_writew(v, a)	((*(volatile unsigned short *)(a)) = (u16) (v))
+
+#define THIS_ONENAND(a)		(ONENAND_ADDR + (a))
+
+#define ONENAND_MANUF_ID()		\
+  (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_MANUFACTURER_ID)))
+
+#define ONENAND_DEVICE_ID()		\
+  (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_DEVICE_ID)))
+
+#define ONENAND_VERSION_ID()	\
+  (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_VERSION_ID)))
+
+#define ONENAND_TECHNOLOGY()	\
+  (*(volatile unsigned short *)(THIS_ONENAND(ONENAND_REG_TECHNOLOGY)))
+
+
+/*
+ * OneNAND Flash Manufacturer ID Codes
+ */
+#define ONENAND_MFR_SAMSUNG	0xec
+#define ONENAND_MFR_NUMONYX	0x20
+
+/*
+ * OneNAND Flash Devices ID Codes
+ */
+#define ONENAND_KFM1G16Q2A_DEV_ID	0x30
+#define ONENAND_KFN2G16Q2A_DEV_ID	0x40
+#define ONENAND_NAND01GR4E_DEV_ID	0x30
+#define ONENAND_NAND02GR4E_DEV_ID	0x40
+#define ONENAND_NAND04GR4E_DEV_ID	0x58
+
 /*********************************************************************
  * config_sdram_m65kx002am() - 2 dice of 2Gb, DDR x32 I/O, 4KB page
  *********************************************************************/
-void config_sdram_m65kx002am(void)
+void config_sdram_m65kx002am(unsigned short MemID)
 {
 	/* M65KX002AM - 2 dice of 2Gb */
 	/* reset sdrc controller */
@@ -766,13 +805,18 @@ void config_sdram_m65kx002am(void)
 	/* setup sdrc to ball mux */
 	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
 
-	__raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
-
-	/* CS0 SDRC Mode Register */
-	__raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
-
-    /* CS1 SDRC Mode Register */
-    __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
+    switch(MemID){
+        case ONENAND_NAND02GR4E_DEV_ID:
+            __raw_writel(MK65KX001AM_SDRC_MCDCFG, SDRC_MCFG_0);
+            break;
+        case ONENAND_NAND04GR4E_DEV_ID:
+            __raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
+            __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_0);
+            __raw_writel(MK65KX002AM_SDRC_MCDCFG, SDRC_MCFG_1);
+            break;
+        default:
+            hang();
+    }
 
     /* Set timings */
     if(is_cpu_family() == CPU_OMAP36XX){
@@ -781,8 +825,8 @@ void config_sdram_m65kx002am(void)
         __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_200, SDRC_ACTIM_CTRLA_1);
         __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_200, SDRC_ACTIM_CTRLB_1);
         __raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_0);
-        __raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_1);
-
+        if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+            __raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_1);
     }
     else{
         __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_165, SDRC_ACTIM_CTRLA_0);
@@ -790,7 +834,8 @@ void config_sdram_m65kx002am(void)
         __raw_writel(NUMONYX_SDRC_ACTIM_CTRLA_165, SDRC_ACTIM_CTRLA_1);
         __raw_writel(NUMONYX_SDRC_ACTIM_CTRLB_165, SDRC_ACTIM_CTRLB_1);
         __raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_0);
-        __raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_1);
+        if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+            __raw_writel(SDP_SDRC_RFR_CTRL_165, SDRC_RFR_CTRL_1);
 
     }
 
@@ -798,22 +843,28 @@ void config_sdram_m65kx002am(void)
 
 	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
 	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
-	__raw_writel(CMD_NOP, SDRC_MANUAL_1);
+	if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+        __raw_writel(CMD_NOP, SDRC_MANUAL_1);
 
 	delay(5000);
 
 	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
-	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
+	if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+        __raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
 
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
+    if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+        __raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
 
 	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
-	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+	if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+        __raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
 
 	/* set mr0 */
 	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
-	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_1);
+	if(MemID == ONENAND_NAND04GR4E_DEV_ID)
+        __raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_1);
 
 	/* set up dll */
 	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
@@ -864,8 +915,9 @@ void config_multichip_package()
 {
     // Configure OneNand memory
 	config_onenand_nand0xgr4wxa();
+
     // Configure LPDDR with two dies memory
-    config_sdram_m65kx002am();
+    config_sdram_m65kx002am(ONENAND_DEVICE_ID());
 
 /* TODO: Add 2 support for the two kind memories */
 #ifdef __notdef
@@ -932,20 +984,50 @@ int board_init(void)
 	return 0;
 }
 
+#define OMAP3730_MAX_RELEASES   4
+
+static char *rev_s[OMAP3730_MAX_RELEASES] = {
+  "1.0", /* 0 */
+  "1.1", /* 1 */
+  "1.2", /* 2 */
+  "Unknown",
+};
+
 /*******************************************************
  * Routine: misc_init_r
  * Description: Init ethernet (done here so udelay works)
  ********************************************************/
 int misc_init_r(void)
 {
+    u32 cpu_status;
+    u16 cpu_id;
+    char prod_id[16];
+    u32 cpu_release;
+    u8 rev;
     // Turn ON USER0 led
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
 	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
 	// Print Configuration Setup
-	if(is_cpu_family() == CPU_OMAP36XX)
-        printf("XLoader: CPU DM3730\n");
-    else printf("XLoader: CPU OMAP3530\n");
+	if(is_cpu_family() == CPU_OMAP36XX){
+
+        cpu_release = __raw_readl(OMAP34XX_CONTROL_ID);
+        rev = (cpu_release >> 28) & 0xff;
+#ifdef __DEBUG__
+        printf("CPU Release: 0x%x - 0x%x\n", cpu_release, rev);
+#endif
+        if(rev >= OMAP3730_MAX_RELEASES) rev = OMAP3730_MAX_RELEASES -1;
+        cpu_id = __raw_readl(OMAP3XXX_STATUS_ID);
+#ifdef __DEBUG__
+	    printf("XLoader: CPU status = 0x%x\n", cpu_id);
+#endif
+	    switch(cpu_id){
+            case 0x0c00:
+            case 0x0e00: printf("XLoader: Processor DM3730 - ES%s\n", rev_s[rev]); break;
+            case 0x5c00:
+            case 0x5e00: printf("XLoader: Processor AM3703 - ES%s\n", rev_s[rev]); break;
+	    }
+    }else printf("XLoader: Processor OMAP3530\n");
 
 	return 0;
 }
