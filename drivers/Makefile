@@ -26,41 +26,7 @@ include $(TOPDIR)/config.mk
 # CFLAGS += -DET_DEBUG -DDEBUG
 
 LIB	= libdrivers.a
-# OBJS	= serial.o ns16550.o onenand.o omap24xx_i2c.o
 OBJS  = serial.o ns16550.o omap24xx_i2c.o
-
-ifeq ($(BOARD), omap3430sdp)
-OBJS 	+= k9f1g08r0a.o
-endif
-
-ifeq ($(BOARD), omap3430labrador)
-OBJS 	+= k9f1g08r0a.o
-endif
-
-ifeq ($(BOARD), omap3530beagle)
-OBJS 	+= k9f1g08r0a.o
-endif
-
-ifeq ($(BOARD), omap3evm)
-OBJS 	+= k9f1g08r0a.o
-endif
-
-ifeq ($(BOARD), overo)
-OBJS 	+= k9f1g08r0a.o
-endif
-
-ifeq ($(BOARD), omap2420h4) 
-OBJS 	+= k9k1216.o
-endif
-
-ifeq ($(BOARD), omap2430sdp)
-OBJS    += k9k1216.o
-endif
-
-ifeq ($(BOARD), omap1710h3)
-OBJS    += k9f5616.o
-endif
-
 
 ## Disabled for now:
 ##	  cs8900.o ct69000.o dataflash.o dc2114x.o ds1722.o \
