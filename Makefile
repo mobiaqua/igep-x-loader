@@ -124,52 +124,9 @@ unconfig:
 #========================================================================
 # ARM
 #========================================================================
-#########################################################################
-## OMAP1 (ARM92xT) Systems
-#########################################################################
+igep00x0_config :  unconfig
+	@./mkconfig $(@:_config=) arm omap3 igep00x0
 
-omap1710h3_config :    unconfig
-	@./mkconfig $(@:_config=) arm arm926ejs omap1710h3
-
-#########################################################################
-## OMAP2 (ARM1136) Systems
-#########################################################################
-
-omap2420h4_config :    unconfig
-	@./mkconfig $(@:_config=) arm arm1136 omap2420h4
-
-omap2430sdp_config :    unconfig
-	@./mkconfig $(@:_config=) arm arm1136 omap2430sdp
-
-#########################################################################
-## OMAP3 (ARM-CortexA8) Systems
-#########################################################################
-omap3430sdp_config :    unconfig
-	@./mkconfig $(@:_config=) arm omap3 omap3430sdp
-
-omap3430labrador_config :    unconfig
-	@./mkconfig $(@:_config=) arm omap3 omap3430labrador
-
-omap3evm_config :	unconfig
-	@./mkconfig $(@:_config=) arm omap3 omap3evm
-
-overo_config :	unconfig
-	@./mkconfig $(@:_config=) arm omap3 overo
-
-omap3530beagle_config :    unconfig
-	@./mkconfig $(@:_config=) arm omap3 omap3530beagle
-
-igep0020-sdcard_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0020
-
-igep0020-flash_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0020
-
-igep0030-sdcard_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0030
-
-igep0030-flash_config :  unconfig
-	@./mkconfig $(@:_config=) arm omap3 igep0030
 
 #########################################################################
 
