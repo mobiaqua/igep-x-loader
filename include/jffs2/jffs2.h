@@ -68,12 +68,12 @@
 #define JFFS2_COMPR_COPY	0x04
 #define JFFS2_COMPR_DYNRUBIN	0x05
 #define JFFS2_COMPR_ZLIB	0x06
-#if defined(CONFIG_JFFS2_LZO)
+//#if defined(CONFIG_JFFS2_LZO)
 #define JFFS2_COMPR_LZO		0x07
 #define JFFS2_NUM_COMPR		8
-#else
-#define JFFS2_NUM_COMPR		7
-#endif
+//#else
+//#define JFFS2_NUM_COMPR		7
+//#endif
 
 /* Compatibility flags. */
 #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
