@@ -44,156 +44,47 @@
 		<ExtraCommands>
 			<Add before="make CROSS_COMPILE=arm-none-linux-gnueabi- igep0020-sdcard_config" />
 		</ExtraCommands>
-		<Unit filename="../board/igep0020/igep0020.c">
+		<Unit filename="../board/igep00x0/igep00x0.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
-		<Unit filename="../board/igep0020/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/igep0030/igep0030.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/igep0030/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap1710h3/omap1710h3.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap1710h3/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap2420h4/omap2420h4.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap2420h4/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap2430sdp/omap2430sdp.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap2430sdp/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3430labrador/omap3430sdp.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3430labrador/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3430sdp/omap3430sdp.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3430sdp/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3530beagle/omap3530beagle.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3530beagle/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3evm/omap3evm.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/omap3evm/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/overo/overo.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../board/overo/platform.S">
-			<Option target="Release_ARM" />
-		</Unit>
+		<Unit filename="../board/igep00x0/platform.S" />
 		<Unit filename="../common/cmd_load.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../contrib/signGP.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../cpu/arm1136/cpu.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../cpu/arm1136/start.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../cpu/arm926ejs/cpu.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../cpu/arm926ejs/start.S">
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../cpu/omap3/cache.S" />
 		<Unit filename="../cpu/omap3/cpu.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../cpu/omap3/gpio.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../cpu/omap3/gpmc.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../cpu/omap3/mmc.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
-		<Unit filename="../cpu/omap3/start.S">
-			<Option target="Release_ARM" />
-		</Unit>
+		<Unit filename="../cpu/omap3/start.S" />
 		<Unit filename="../disk/part.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../drivers/k9f1g08r0a.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../drivers/k9f5616.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../drivers/k9k1216.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../drivers/ns16550.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../drivers/omap24xx_i2c.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../drivers/onenand.c">
-			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../drivers/serial.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../fs/fat/fat.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../fs/fat/file.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../fs/jffs2/compr_lzo.c">
 			<Option compilerVar="CC" />
@@ -240,6 +131,7 @@
 		<Unit filename="../include/asm/arch-omap3/gpio.h" />
 		<Unit filename="../include/asm/arch/gpio.h" />
 		<Unit filename="../include/asm/arch-omap3/gpmc.h" />
+		<Unit filename="../include/asm/arch/gpmc.h" />
 		<Unit filename="../include/asm/arch-omap3/i2c.h" />
 		<Unit filename="../include/asm/arch/i2c.h" />
 		<Unit filename="../include/asm/arch-omap3/mem.h" />
@@ -250,6 +142,8 @@
 		<Unit filename="../include/asm/arch/mmc_host_def.h" />
 		<Unit filename="../include/asm/arch-omap3/mux.h" />
 		<Unit filename="../include/asm/arch/mux.h" />
+		<Unit filename="../include/asm/arch-omap3/omap3.h" />
+		<Unit filename="../include/asm/arch/omap3.h" />
 		<Unit filename="../include/asm/arch-omap3/omap3430.h" />
 		<Unit filename="../include/asm/arch/omap3430.h" />
 		<Unit filename="../include/asm/arch-omap3/rev.h" />
@@ -263,6 +157,7 @@
 		<Unit filename="../include/asm/arch-omap3/system.h" />
 		<Unit filename="../include/asm/arch/system.h" />
 		<Unit filename="../include/asm/atomic.h" />
+		<Unit filename="../include/asm/bitops.h" />
 		<Unit filename="../include/asm/byteorder.h" />
 		<Unit filename="../include/asm/errno.h" />
 		<Unit filename="../include/asm/io.h" />
@@ -272,6 +167,7 @@
 		<Unit filename="../include/asm/sizes.h" />
 		<Unit filename="../include/asm/string.h" />
 		<Unit filename="../include/asm/types.h" />
+		<Unit filename="../include/asm/unaligned.h" />
 		<Unit filename="../include/asm/x-load-arm.h" />
 		<Unit filename="../include/command.h" />
 		<Unit filename="../include/common.h" />
@@ -280,6 +176,7 @@
 		<Unit filename="../include/configs/igep0020-sdcard.h" />
 		<Unit filename="../include/configs/igep0030-flash.h" />
 		<Unit filename="../include/configs/igep0030-sdcard.h" />
+		<Unit filename="../include/configs/igep00x0.h" />
 		<Unit filename="../include/configs/omap1510.h" />
 		<Unit filename="../include/configs/omap1710h3.h" />
 		<Unit filename="../include/configs/omap2420h4.h" />
@@ -289,36 +186,76 @@
 		<Unit filename="../include/configs/omap3530beagle.h" />
 		<Unit filename="../include/configs/omap3evm.h" />
 		<Unit filename="../include/configs/overo.h" />
+		<Unit filename="../include/cramfs/cramfs_fs.h" />
+		<Unit filename="../include/cramfs/cramfs_fs_sb.h" />
+		<Unit filename="../include/crc.h" />
+		<Unit filename="../include/div64.h" />
 		<Unit filename="../include/fat.h" />
 		<Unit filename="../include/i2c.h" />
 		<Unit filename="../include/ide.h" />
+		<Unit filename="../include/jffs2/compr_rubin.h" />
+		<Unit filename="../include/jffs2/jffs2.h" />
+		<Unit filename="../include/jffs2/jffs2_1pass.h" />
+		<Unit filename="../include/jffs2/load_kernel.h" />
+		<Unit filename="../include/jffs2/mini_inflate.h" />
+		<Unit filename="../include/linux/bitops.h" />
 		<Unit filename="../include/linux/byteorder/big_endian.h" />
 		<Unit filename="../include/linux/byteorder/generic.h" />
 		<Unit filename="../include/linux/byteorder/little_endian.h" />
 		<Unit filename="../include/linux/byteorder/swab.h" />
+		<Unit filename="../include/linux/compiler-gcc.h" />
+		<Unit filename="../include/linux/compiler-gcc4.h" />
+		<Unit filename="../include/linux/compiler.h" />
 		<Unit filename="../include/linux/config.h" />
+		<Unit filename="../include/linux/crc32.h" />
 		<Unit filename="../include/linux/ctypes.h" />
+		<Unit filename="../include/linux/list.h" />
+		<Unit filename="../include/linux/mtd/bbm.h" />
+		<Unit filename="../include/linux/mtd/blktrans.h" />
+		<Unit filename="../include/linux/mtd/compat.h" />
+		<Unit filename="../include/linux/mtd/concat.h" />
+		<Unit filename="../include/linux/mtd/doc2000.h" />
+		<Unit filename="../include/linux/mtd/fsl_upm.h" />
+		<Unit filename="../include/linux/mtd/inftl-user.h" />
+		<Unit filename="../include/linux/mtd/jffs2-user.h" />
+		<Unit filename="../include/linux/mtd/mtd-abi.h" />
+		<Unit filename="../include/linux/mtd/mtd.h" />
+		<Unit filename="../include/linux/mtd/nand.h" />
+		<Unit filename="../include/linux/mtd/nand_ecc.h" />
+		<Unit filename="../include/linux/mtd/ndfc.h" />
+		<Unit filename="../include/linux/mtd/nftl-user.h" />
+		<Unit filename="../include/linux/mtd/nftl.h" />
 		<Unit filename="../include/linux/mtd/onenand.h" />
 		<Unit filename="../include/linux/mtd/onenand_regs.h" />
+		<Unit filename="../include/linux/mtd/partitions.h" />
+		<Unit filename="../include/linux/mtd/samsung_onenand.h" />
+		<Unit filename="../include/linux/mtd/ubi.h" />
+		<Unit filename="../include/linux/poison.h" />
 		<Unit filename="../include/linux/posix_types.h" />
+		<Unit filename="../include/linux/rbtree.h" />
 		<Unit filename="../include/linux/stat.h" />
 		<Unit filename="../include/linux/stddef.h" />
+		<Unit filename="../include/linux/string.h" />
 		<Unit filename="../include/linux/time.h" />
 		<Unit filename="../include/linux/types.h" />
+		<Unit filename="../include/linux/unaligned/access_ok.h" />
+		<Unit filename="../include/linux/unaligned/be_byteshift.h" />
+		<Unit filename="../include/linux/unaligned/generic.h" />
+		<Unit filename="../include/linux/unaligned/le_byteshift.h" />
 		<Unit filename="../include/malloc.h" />
 		<Unit filename="../include/mmc.h" />
+		<Unit filename="../include/mtd/cfi_flash.h" />
+		<Unit filename="../include/mtd/ubi-user.h" />
 		<Unit filename="../include/ns16550.h" />
+		<Unit filename="../include/onenand_uboot.h" />
 		<Unit filename="../include/part.h" />
 		<Unit filename="../include/setup.h" />
-		<Unit filename="../lib/_udivsi3.S">
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../lib/_umodsi3.S">
-			<Option target="Release_ARM" />
-		</Unit>
+		<Unit filename="../include/ubi_uboot.h" />
+		<Unit filename="../include/zlib.h" />
+		<Unit filename="../lib/_udivsi3.S" />
+		<Unit filename="../lib/_umodsi3.S" />
 		<Unit filename="../lib/board.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../lib/boot_linux.c">
 			<Option compilerVar="CC" />
@@ -326,37 +263,31 @@
 		<Unit filename="../lib/cache-cp15.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../lib/crc32.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../lib/display_options.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../lib/div0.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
+		</Unit>
+		<Unit filename="../lib/div64.c">
+			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../lib/dlmalloc.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../lib/ecc.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
 		</Unit>
 		<Unit filename="../lib/ini_parser.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../lib/printf.c">
 			<Option compilerVar="CC" />
-			<Option target="Release_ARM" />
-		</Unit>
-		<Unit filename="../mtd/mtdconcat.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="../mtd/mtdcore.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="../mtd/mtdpart.c">
-			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../mtd/onenand_base.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="../mtd/onenand_bbt.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
