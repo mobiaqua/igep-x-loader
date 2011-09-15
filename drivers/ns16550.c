@@ -3,7 +3,7 @@
  * the terms of the GNU General Public License version 2.  This program
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
- *  
+ *
  * COM1 NS16550 support
  * originally from linux source (arch/ppc/boot/ns16550.c)
  * modified to use CFG_ISA_MEM and new defines
@@ -20,8 +20,17 @@
 #define MCRVAL (MCR_DTR | MCR_RTS)			/* RTS/DTR */
 #define FCRVAL (FCR_FIFO_EN | FCR_RXSR | FCR_TXSR)	/* Clear & enable FIFOs */
 
+/* UART Reset */
+void NS16550_Reset (NS16550_t com_port)
+{
+    *(((char*) (com_port)) + 0x54) |= 0x02;
+    while(*(((char*) (com_port)) + 0x54) == 0);
+}
+
 void NS16550_init (NS16550_t com_port, int baud_divisor)
 {
+    NS16550_Reset(com_port);
+
 	com_port->ier = 0x00;
 #ifdef CONFIG_OMAP
 	com_port->mdr1 = 0x7;   /* mode select reset TL16C750*/

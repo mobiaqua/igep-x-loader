@@ -3,7 +3,7 @@
  * the terms of the GNU General Public License version 2.  This program
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
- *  
+ *
  * NS16550 Serial Port
  * originally from linux source (arch/ppc/boot/ns16550.h)
  * modified slightly to
@@ -49,28 +49,28 @@ struct NS16550 {
 } __attribute__ ((packed));
 #elif (CFG_NS16550_REG_SIZE == -4)
 struct NS16550 {
-	unsigned char rbr;		/* 0 */
+	unsigned char rbr;		/* 0 : 0000 */
 	int pad1:24;
-	unsigned char ier;		/* 1 */
+	unsigned char ier;		/* 1 : 0004 */
 	int pad2:24;
-	unsigned char fcr;		/* 2 */
+	unsigned char fcr;		/* 2 : 0008 */
 	int pad3:24;
-	unsigned char lcr;		/* 3 */
+	unsigned char lcr;		/* 3 : 000C */
 	int pad4:24;
-	unsigned char mcr;		/* 4 */
+	unsigned char mcr;		/* 4 : 0010 */
 	int pad5:24;
-	unsigned char lsr;		/* 5 */
+	unsigned char lsr;		/* 5 : 0014 */
 	int pad6:24;
-	unsigned char msr;		/* 6 */
+	unsigned char msr;		/* 6 : 0018 */
 	int pad7:24;
-	unsigned char scr;		/* 7 */
+	unsigned char scr;		/* 7 : 001C */
 	int pad8:24;
 #if defined(CONFIG_OMAP)
-	unsigned char mdr1;		/* mode select reset TL16C750*/
+	unsigned char mdr1;		/* mode select reset TL16C750 : 0020 */
+	int pad9:24;
 #endif
 #ifdef CONFIG_OMAP1510
-	int pad9:24;
-	unsigned long pad[10];
+	unsigned long pad[10];  /* 0020h + (40d) = 72d = 0x0048*/
 	unsigned char osc_12m_sel;
 	int pad10:24;
 #endif
