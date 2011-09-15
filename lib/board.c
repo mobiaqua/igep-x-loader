@@ -42,12 +42,12 @@
 #endif
 
 const char version_string[] =
-	"IGEP-X-Loader 2.1.0-3 (" __DATE__ " - " __TIME__ ")";
+	"IGEP-X-Loader 2.2.0-0 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {
 #ifdef CFG_PRINTF
-        printf("\n\n%s\n", version_string);
+    printf("\n\n%s\n", version_string);
 #endif
 	return 0;
 }
@@ -73,6 +73,7 @@ init_fnc_t *init_sequence[] = {
   	NULL,
 };
 
+/* Main Boot function called from ASM */
 void start_armboot (void)
 {
   	init_fnc_t **init_fnc_ptr;
@@ -80,10 +81,10 @@ void start_armboot (void)
 	uchar *buf;
 	int *first_instruction;
 	block_dev_desc_t *dev_desc = NULL;
-
 #ifdef CONFIG_ONENAND
 	unsigned int onenand_features;
 #endif
+
 	/* Execute init_sequence */
    	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
