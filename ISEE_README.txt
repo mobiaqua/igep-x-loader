@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.1.0-3
+# Version: IGEP-X-Loader 2.2.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -80,7 +80,9 @@ loader for Embedded boards based on OMAP processors.
 * Removed some OneNand Debug information
 * Removed some FAT incorrect warnings
 * Only support gcc 4.5.2 linaro version
-* Added Initial Ram disk 
+* Added Support Initial Ram disk
+* Reconfigure Makefile options
+* Support Kernels 2.6.35 and 2.6.37
 
 2.2 Issues
 -----------
@@ -113,6 +115,9 @@ loader for Embedded boards based on OMAP processors.
 [2.1.0-3] Update SDRAM structure initialization
 [2.1.0-3] Added support for Initial RAM disk
 [2.1.0-3] Updated Initial RAM disk destination address
+----
+[2.2.0-1] Update Makefile structure
+[2.2.0-1] Downgrade the boot processor speed
 
 3 Status:
 ==========
@@ -123,7 +128,9 @@ loader for Embedded boards based on OMAP processors.
 	- Tested with IGEPv2 (OMAP3530@720Mhz and 512/512 MB Ram/Onenand)
 * Support IGEP0030 Revisions D & E family Modules.
 	- Tested with IGEP Module (DM3730@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
-	- Tested with IGEP Module (AM3730@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
+	- Tested with IGEP Module (AM3703@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
+	- Tested with IGEP Module (DM3730@1Ghz and 128/256 MB Ram/Onenand) + BaseBoard Revision A/B
+	- Tested with IGEP Module (AM3703@1Ghz and 128/256 MB Ram/Onenand) + BaseBoard Revision A/B
 	
 
 4 Settings & Configuration:
@@ -148,6 +155,7 @@ Read the kernel documentation about kernel images.
 
 4.2 Setup igep.ini file
 ------------------------
+Please find a igep.ini example inside the scripts directory.
 # Note this format permits use the characters
 # '#' and ';' as comment check file size restrictions
 
