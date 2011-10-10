@@ -235,14 +235,16 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
  * get_sys_clk_speed - determine reference oscillator speed
  *  based on known 32kHz clock and gptimer.
  *************************************************************/
+ #ifdef __notdef
 u32 get_osc_clk_speed(void)
 {
 	u32 start, cstart, cend, cdiff, val;
 
 	val = __raw_readl(PRM_CLKSRC_CTRL);
-	/* If SYS_CLK is being divided by 2, remove for now */
-	val = (val & (~BIT7)) | BIT6;
-	__raw_writel(val, PRM_CLKSRC_CTRL);
+
+    /* If SYS_CLK is being divided by 2, remove for now */
+    val = (val & (~BIT7)) | BIT6;
+    __raw_writel(val, PRM_CLKSRC_CTRL);
 
 	/* enable timer2 */
 	val = __raw_readl(CM_CLKSEL_WKUP) | BIT0;
@@ -281,6 +283,69 @@ u32 get_osc_clk_speed(void)
 	else
 		return S12M;
 }
+#else
+
+u32 get_osc_clk_speed(void)
+{
+	u32 start, cstart, cend, cdiff, cdiv, val;
+
+	val = __raw_readl(PRM_CLKSRC_CTRL);
+
+	if (val & BIT7)
+		cdiv = 2;
+	else if (val & BIT6)
+		cdiv = 1;
+	else
+		/*
+		 * Should never reach here!
+		 * TBD: Add a WARN()/BUG()
+		 *      For now, assume divider as 1.
+		 */
+		cdiv = 1;
+
+	/* enable timer2 */
+	val = __raw_readl(CM_CLKSEL_WKUP) | BIT0;
+	__raw_writel(val, CM_CLKSEL_WKUP);	/* select sys_clk for GPT1 */
+
+	/* Enable I and F Clocks for GPT1 */
+	val = __raw_readl(CM_ICLKEN_WKUP) | BIT0 | BIT2;
+	__raw_writel(val, CM_ICLKEN_WKUP);
+	val = __raw_readl(CM_FCLKEN_WKUP) | BIT0;
+	__raw_writel(val, CM_FCLKEN_WKUP);
+
+	__raw_writel(0, OMAP34XX_GPT1 + TLDR);	/* start counting at 0 */
+	__raw_writel(GPT_EN, OMAP34XX_GPT1 + TCLR);     /* enable clock */
+	/* enable 32kHz source *//* enabled out of reset */
+	/* determine sys_clk via gauging */
+
+	start = 20 + __raw_readl(S32K_CR);	/* start time in 20 cycles */
+	while (__raw_readl(S32K_CR) < start);	/* dead loop till start time */
+	cstart = __raw_readl(OMAP34XX_GPT1 + TCRR);	/* get start sys_clk count */
+	while (__raw_readl(S32K_CR) < (start + 20));	/* wait for 40 cycles */
+	cend = __raw_readl(OMAP34XX_GPT1 + TCRR);	/* get end sys_clk count */
+	cdiff = cend - cstart;				/* get elapsed ticks */
+
+	if (cdiv == 2)
+	{
+		cdiff *= 2;
+	}
+
+	/* based on number of ticks assign speed */
+	if (cdiff > 19000)
+		return (S38_4M);
+	else if (cdiff > 15200)
+		return (S26M);
+	else if (cdiff > 13000)
+		return (S24M);
+	else if (cdiff > 9000)
+		return (S19_2M);
+	else if (cdiff > 7600)
+		return (S13M);
+	else
+		return (S12M);
+}
+
+#endif
 
 /******************************************************************************
  * get_sys_clkin_sel() - returns the sys_clkin_sel field value based on
@@ -883,7 +948,7 @@ void s_init(void)
 	try_unlock_memory();
 	set_muxconf_regs();
 	delay(100);
-	prcm_init();
+    prcm_init();
 	per_clocks_enable();
 	gpmc_init ();
 	config_multichip_package();
@@ -945,6 +1010,11 @@ int misc_init_r(void)
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
 	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
+
+	omap_request_gpio(GPIO_LED_USER0);
+	omap_set_gpio_direction(GPIO_LED_USER0, 0);
+	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
+
 	// Print Configuration Setup
 	if(is_cpu_family() == CPU_OMAP36XX){
 
@@ -964,7 +1034,8 @@ int misc_init_r(void)
             case 0x5c00:
             case 0x5e00: printf("XLoader: Processor AM3703 - ES%s\n", rev_s[rev]); break;
 	    }
-    }else printf("XLoader: Processor OMAP3530\n");
+    }
+    else printf("XLoader: Processor OMAP3530\n");
 
 	return 0;
 }
@@ -1045,6 +1116,10 @@ void per_clocks_enable(void)
 	sr32(CM_FCLKEN1_CORE, 15, 3, 0x7);
 	sr32(CM_ICLKEN1_CORE, 15, 3, 0x7);	/* I2C1,2,3 = on */
 #endif
+
+    /* Enable MMC1 clocks */
+    // sr32(CM_FCLKEN1_CORE, 24, 1, 0x1);
+    // sr32(CM_ICLKEN1_CORE, 24, 1, 0x1);
 
 	/* Enable the ICLK for 32K Sync Timer as its used in udelay */
 	sr32(CM_ICLKEN_WKUP, 2, 1, 0x1);
