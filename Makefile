@@ -86,7 +86,6 @@ SUBDIRS	=
 ALL = x-load.bin System.map
 
 all:		$(ALL)
-
  
 x-load.bin:	x-load
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
