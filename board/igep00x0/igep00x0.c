@@ -35,6 +35,7 @@
 #include <asm/arch/gpio.h>
 #include <linux/mtd/onenand_regs.h>
 #include <linux/mtd/onenand.h>
+#include <linux/mtd/nand.h>
 #include <asm/arch/gpmc.h>
 #include <asm/arch/mux.h>
 #include <malloc.h>
@@ -43,12 +44,12 @@
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 
-
 #define GPIO_LED_USER0      27
 #define GPIO_LED_USER1      26
 
-struct mtd_info *onenand_mtd = NULL;
+struct mtd_info *mtd_info = NULL;
 struct onenand_chip *onenand_chip = NULL;
+struct nand_chip *nand_chip = NULL;
 struct mtd_device *current_mtd_dev = NULL;
 u8 current_mtd_partnum = 0;
 static __attribute__((unused)) char dev_name[] = "onenand0";
@@ -120,9 +121,7 @@ u32 get_device_type(void)
  ************************************************/
 u32 get_sysboot_value(void)
 {
-	int mode;
-	mode = __raw_readl(CONTROL_STATUS) & (SYSBOOT_MASK);
-	return mode;
+	return __raw_readl(CONTROL_STATUS) & IGEP00X0_SYSBOOT_MASK;
 }
 
 /*************************************************************
@@ -131,7 +130,14 @@ u32 get_sysboot_value(void)
  *************************************************************/
 u32 get_mem_type(void)
 {
-	return GPMC_ONENAND;
+	u32 sb = get_sysboot_value();
+
+	if (sb == IGEP00X0_SYSBOOT_NAND)
+		return GPMC_NAND;
+	else if (sb == IGEP00X0_SYSBOOT_ONENAND)
+		return GPMC_ONENAND;
+	else
+		return -1;
 }
 
 /******************************************
@@ -770,6 +776,95 @@ void try_unlock_memory(void)
 }
 
 /*
+ *
+ */
+void config_sdram_mt29cxgxxmaxx(void)
+{
+	/* reset sdrc controller */
+	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
+	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
+	__raw_writel(0, SDRC_SYSCONFIG);
+
+	/* setup sdrc to ball mux */
+	__raw_writel(SDP_SDRC_SHARING, SDRC_SHARING);
+	__raw_writel(0x2, SDRC_CS_CFG); /* 256 MB/bank */
+
+	/* CS0 SDRC Mode Register */
+	__raw_writel((0x03588019|B_ALL), SDRC_MCFG_0);
+
+	/* CS1 SDRC Mode Register */
+	__raw_writel((0x03588019|B_ALL), SDRC_MCFG_1);
+
+	/* Set timings */
+	__raw_writel(MT29CXGXXMAXX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(MT29CXGXXMAXX_V_ACTIMB_200, SDRC_ACTIM_CTRLB_0);
+	__raw_writel(MT29CXGXXMAXX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_1);
+	__raw_writel(MT29CXGXXMAXX_V_ACTIMB_200, SDRC_ACTIM_CTRLB_1);
+
+	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
+
+	/* init sequence for mDDR/mSDR using manual commands (DDR is different) */
+	__raw_writel(CMD_NOP, SDRC_MANUAL_0);
+	__raw_writel(CMD_NOP, SDRC_MANUAL_1);
+
+	delay(5000);
+
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_0);
+	__raw_writel(CMD_PRECHARGE, SDRC_MANUAL_1);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_0);
+	__raw_writel(CMD_AUTOREFRESH, SDRC_MANUAL_1);
+
+	/* set mr0 */
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_0);
+	__raw_writel(SDP_SDRC_MR_0_DDR, SDRC_MR_1);
+
+	/* set up dll */
+	__raw_writel(SDP_SDRC_DLLAB_CTRL, SDRC_DLLA_CTRL);
+	delay(0x2000);	/* give time to lock */
+}
+
+/*
+ *
+ */
+void config_nand_mt29cxgxxmaxx(void)
+{
+	/* global settings */
+	__raw_writel(0x10, GPMC_SYSCONFIG);	/* smart idle */
+	__raw_writel(0x0, GPMC_IRQENABLE);	/* isr's sources masked */
+	__raw_writel(0, GPMC_TIMEOUT_CONTROL);/* timeout disable */
+	__raw_writel(0x10, GPMC_CONFIG);	/* disable Write protect */
+
+	/* Set the GPMC Vals . For NAND boot on 3430SDP, NAND is mapped at CS0
+         *  , NOR at CS1 and MPDB at CS3. And oneNAND boot, we map oneNAND at CS0.
+	 *  We configure only GPMC CS0 with required values. Configiring other devices
+	 *  at other CS in done in u-boot anyway. So we don't have to bother doing it here.
+         */
+	__raw_writel(0 , GPMC_CONFIG7 + GPMC_CONFIG_CS0);
+	delay(1000);
+
+        __raw_writel(M_NAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
+        __raw_writel(M_NAND_GPMC_CONFIG7, GPMC_CONFIG7 + GPMC_CONFIG_CS0);
+
+        __raw_writel(4144, GPMC_BASE + GPMC_ECC_CONFIG);
+        __raw_writel(0, GPMC_BASE + GPMC_ECC_CONTROL);
+
+        /* Enable the GPMC Mapping */
+        __raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
+		      ((NAND_BASE_ADR>>24) & 0x3F) |
+		      (1<<6) ),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
+        delay(2000);
+}
+
+/*
  * Helper macros
  */
 #define ONENAND_START_PAGE		0
@@ -930,11 +1025,11 @@ void config_onenand_nand0xgr4wxa(void)
  **********************************************************/
 void config_multichip_package()
 {
-    // Configure OneNand memory
+	// Configure OneNand memory
 	config_onenand_nand0xgr4wxa();
 
-    // Configure LPDDR
-    config_sdram_m65kx002am(ONENAND_DEVICE_ID());
+	// Configure LPDDR
+	config_sdram_m65kx002am(ONENAND_DEVICE_ID());
 }
 
 /**********************************************************
@@ -942,16 +1037,29 @@ void config_multichip_package()
  * Description: Does early system init of muxing and clocks.
  * - Called at time when only stack is available.
  **********************************************************/
-void s_init(void)
+int s_init(void)
 {
+	u32 mem_type;
+
 	watchdog_init();
 	try_unlock_memory();
 	set_muxconf_regs();
 	delay(100);
-    prcm_init();
+	prcm_init();
 	per_clocks_enable();
 	gpmc_init ();
-	config_multichip_package();
+
+	  mem_type = get_mem_type();
+
+	  if (mem_type == GPMC_ONENAND)
+		  config_multichip_package();
+	  else if (mem_type == GPMC_NAND) {
+		  config_sdram_mt29cxgxxmaxx();
+		  config_nand_mt29cxgxxmaxx();
+	  } else
+		  return 1;
+
+	return 0;
 }
 
 /*****************************************
@@ -1146,161 +1254,6 @@ void per_clocks_enable(void)
 		__raw_writew((VALUE), OMAP34XX_CTRL_BASE + (OFFSET));
 
 #define		CP(x)	(CONTROL_PADCONF_##x)
-
-/*
- * IEN  - Input Enable
- * IDIS - Input Disable
- * PTD  - Pull type Down
- * PTU  - Pull type Up
- * DIS  - Pull type selection is inactive
- * EN   - Pull type selection is active
- * M0   - Mode 0
- * The commented string gives the final mux configuration for that pin
- */
-#define MUX_DEFAULT()\
-	MUX_VAL(CP(SDRC_D0),        (IEN  | PTD | DIS | M0)) /*SDRC_D0*/\
-	MUX_VAL(CP(SDRC_D1),        (IEN  | PTD | DIS | M0)) /*SDRC_D1*/\
-	MUX_VAL(CP(SDRC_D2),        (IEN  | PTD | DIS | M0)) /*SDRC_D2*/\
-	MUX_VAL(CP(SDRC_D3),        (IEN  | PTD | DIS | M0)) /*SDRC_D3*/\
-	MUX_VAL(CP(SDRC_D4),        (IEN  | PTD | DIS | M0)) /*SDRC_D4*/\
-	MUX_VAL(CP(SDRC_D5),        (IEN  | PTD | DIS | M0)) /*SDRC_D5*/\
-	MUX_VAL(CP(SDRC_D6),        (IEN  | PTD | DIS | M0)) /*SDRC_D6*/\
-	MUX_VAL(CP(SDRC_D7),        (IEN  | PTD | DIS | M0)) /*SDRC_D7*/\
-	MUX_VAL(CP(SDRC_D8),        (IEN  | PTD | DIS | M0)) /*SDRC_D8*/\
-	MUX_VAL(CP(SDRC_D9),        (IEN  | PTD | DIS | M0)) /*SDRC_D9*/\
-	MUX_VAL(CP(SDRC_D10),       (IEN  | PTD | DIS | M0)) /*SDRC_D10*/\
-	MUX_VAL(CP(SDRC_D11),       (IEN  | PTD | DIS | M0)) /*SDRC_D11*/\
-	MUX_VAL(CP(SDRC_D12),       (IEN  | PTD | DIS | M0)) /*SDRC_D12*/\
-	MUX_VAL(CP(SDRC_D13),       (IEN  | PTD | DIS | M0)) /*SDRC_D13*/\
-	MUX_VAL(CP(SDRC_D14),       (IEN  | PTD | DIS | M0)) /*SDRC_D14*/\
-	MUX_VAL(CP(SDRC_D15),       (IEN  | PTD | DIS | M0)) /*SDRC_D15*/\
-	MUX_VAL(CP(SDRC_D16),       (IEN  | PTD | DIS | M0)) /*SDRC_D16*/\
-	MUX_VAL(CP(SDRC_D17),       (IEN  | PTD | DIS | M0)) /*SDRC_D17*/\
-	MUX_VAL(CP(SDRC_D18),       (IEN  | PTD | DIS | M0)) /*SDRC_D18*/\
-	MUX_VAL(CP(SDRC_D19),       (IEN  | PTD | DIS | M0)) /*SDRC_D19*/\
-	MUX_VAL(CP(SDRC_D20),       (IEN  | PTD | DIS | M0)) /*SDRC_D20*/\
-	MUX_VAL(CP(SDRC_D21),       (IEN  | PTD | DIS | M0)) /*SDRC_D21*/\
-	MUX_VAL(CP(SDRC_D22),       (IEN  | PTD | DIS | M0)) /*SDRC_D22*/\
-	MUX_VAL(CP(SDRC_D23),       (IEN  | PTD | DIS | M0)) /*SDRC_D23*/\
-	MUX_VAL(CP(SDRC_D24),       (IEN  | PTD | DIS | M0)) /*SDRC_D24*/\
-	MUX_VAL(CP(SDRC_D25),       (IEN  | PTD | DIS | M0)) /*SDRC_D25*/\
-	MUX_VAL(CP(SDRC_D26),       (IEN  | PTD | DIS | M0)) /*SDRC_D26*/\
-	MUX_VAL(CP(SDRC_D27),       (IEN  | PTD | DIS | M0)) /*SDRC_D27*/\
-	MUX_VAL(CP(SDRC_D28),       (IEN  | PTD | DIS | M0)) /*SDRC_D28*/\
-	MUX_VAL(CP(SDRC_D29),       (IEN  | PTD | DIS | M0)) /*SDRC_D29*/\
-	MUX_VAL(CP(SDRC_D30),       (IEN  | PTD | DIS | M0)) /*SDRC_D30*/\
-	MUX_VAL(CP(SDRC_D31),       (IEN  | PTD | DIS | M0)) /*SDRC_D31*/\
-	MUX_VAL(CP(SDRC_CLK),       (IEN  | PTD | DIS | M0)) /*SDRC_CLK*/\
-	MUX_VAL(CP(SDRC_DQS0),      (IEN  | PTD | DIS | M0)) /*SDRC_DQS0*/\
-	MUX_VAL(CP(SDRC_DQS1),      (IEN  | PTD | DIS | M0)) /*SDRC_DQS1*/\
-	MUX_VAL(CP(SDRC_DQS2),      (IEN  | PTD | DIS | M0)) /*SDRC_DQS2*/\
-	MUX_VAL(CP(SDRC_DQS3),      (IEN  | PTD | DIS | M0)) /*SDRC_DQS3*/\
-	MUX_VAL(CP(GPMC_A1),        (IDIS | PTD | DIS | M0)) /*GPMC_A1*/\
-	MUX_VAL(CP(GPMC_A2),        (IDIS | PTD | DIS | M0)) /*GPMC_A2*/\
-	MUX_VAL(CP(GPMC_A3),        (IDIS | PTD | DIS | M0)) /*GPMC_A3*/\
-	MUX_VAL(CP(GPMC_A4),        (IDIS | PTD | DIS | M0)) /*GPMC_A4*/\
-	MUX_VAL(CP(GPMC_A5),        (IDIS | PTD | DIS | M0)) /*GPMC_A5*/\
-	MUX_VAL(CP(GPMC_A6),        (IDIS | PTD | DIS | M0)) /*GPMC_A6*/\
-	MUX_VAL(CP(GPMC_A7),        (IDIS | PTD | DIS | M0)) /*GPMC_A7*/\
-	MUX_VAL(CP(GPMC_A8),        (IDIS | PTD | DIS | M0)) /*GPMC_A8*/\
-	MUX_VAL(CP(GPMC_A9),        (IDIS | PTD | DIS | M0)) /*GPMC_A9*/\
-	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M0)) /*GPMC_A10*/\
-	MUX_VAL(CP(GPMC_D0),        (IEN  | PTD | DIS | M0)) /*GPMC_D0*/\
-	MUX_VAL(CP(GPMC_D1),        (IEN  | PTD | DIS | M0)) /*GPMC_D1*/\
-	MUX_VAL(CP(GPMC_D2),        (IEN  | PTD | DIS | M0)) /*GPMC_D2*/\
-	MUX_VAL(CP(GPMC_D3),        (IEN  | PTD | DIS | M0)) /*GPMC_D3*/\
-	MUX_VAL(CP(GPMC_D4),        (IEN  | PTD | DIS | M0)) /*GPMC_D4*/\
-	MUX_VAL(CP(GPMC_D5),        (IEN  | PTD | DIS | M0)) /*GPMC_D5*/\
-	MUX_VAL(CP(GPMC_D6),        (IEN  | PTD | DIS | M0)) /*GPMC_D6*/\
-	MUX_VAL(CP(GPMC_D7),        (IEN  | PTD | DIS | M0)) /*GPMC_D7*/\
-	MUX_VAL(CP(GPMC_D8),        (IEN  | PTD | DIS | M0)) /*GPMC_D8*/\
-	MUX_VAL(CP(GPMC_D9),        (IEN  | PTD | DIS | M0)) /*GPMC_D9*/\
-	MUX_VAL(CP(GPMC_D10),       (IEN  | PTD | DIS | M0)) /*GPMC_D10*/\
-	MUX_VAL(CP(GPMC_D11),       (IEN  | PTD | DIS | M0)) /*GPMC_D11*/\
-	MUX_VAL(CP(GPMC_D12),       (IEN  | PTD | DIS | M0)) /*GPMC_D12*/\
-	MUX_VAL(CP(GPMC_D13),       (IEN  | PTD | DIS | M0)) /*GPMC_D13*/\
-	MUX_VAL(CP(GPMC_D14),       (IEN  | PTD | DIS | M0)) /*GPMC_D14*/\
-	MUX_VAL(CP(GPMC_D15),       (IEN  | PTD | DIS | M0)) /*GPMC_D15*/\
-	MUX_VAL(CP(GPMC_nCS0),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS0*/\
-	MUX_VAL(CP(GPMC_nCS1),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS1*/\
-	MUX_VAL(CP(GPMC_nCS2),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS2*/\
-	MUX_VAL(CP(GPMC_nCS3),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS3*/\
-	MUX_VAL(CP(GPMC_nCS4),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS4*/\
-	MUX_VAL(CP(GPMC_nCS5),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS5*/\
-	MUX_VAL(CP(GPMC_nCS6),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS6*/\
-	MUX_VAL(CP(GPMC_nCS7),      (IDIS | PTU | EN  | M0)) /*GPMC_nCS7*/\
-	MUX_VAL(CP(GPMC_CLK),       (IDIS | PTD | DIS | M0)) /*GPMC_CLK*/\
-	MUX_VAL(CP(GPMC_nADV_ALE),  (IDIS | PTD | DIS | M0)) /*GPMC_nADV_ALE*/\
-	MUX_VAL(CP(GPMC_nOE),       (IDIS | PTD | DIS | M0)) /*GPMC_nOE*/\
-	MUX_VAL(CP(GPMC_nWE),       (IDIS | PTD | DIS | M0)) /*GPMC_nWE*/\
-	MUX_VAL(CP(GPMC_nBE0_CLE),  (IDIS | PTD | DIS | M0)) /*GPMC_nBE0_CLE*/\
-	MUX_VAL(CP(GPMC_nBE1),      (IEN  | PTD | DIS | M0)) /*GPIO_61*/\
-	MUX_VAL(CP(GPMC_nWP),       (IEN  | PTD | DIS | M0)) /*GPMC_nWP*/\
-	MUX_VAL(CP(GPMC_WAIT0),     (IEN  | PTU | EN  | M0)) /*GPMC_WAIT0*/\
-	MUX_VAL(CP(GPMC_WAIT1),     (IEN  | PTU | EN  | M0)) /*GPMC_WAIT1*/\
-	MUX_VAL(CP(GPMC_WAIT2),     (IEN  | PTU | EN  | M4)) /*GPIO_64*/\
-	MUX_VAL(CP(GPMC_WAIT3),     (IEN  | PTU | EN  | M4)) /*GPIO_65*/\
-	MUX_VAL(CP(DSS_DATA18),     (IEN  | PTD | DIS | M4)) /*GPIO_88*/\
-	MUX_VAL(CP(DSS_DATA19),     (IEN  | PTD | DIS | M4)) /*GPIO_89*/\
-	MUX_VAL(CP(DSS_DATA20),     (IEN  | PTD | DIS | M4)) /*GPIO_90*/\
-	MUX_VAL(CP(DSS_DATA21),     (IEN  | PTD | DIS | M4)) /*GPIO_91*/\
-	MUX_VAL(CP(CAM_WEN),        (IEN  | PTD | DIS | M4)) /*GPIO_167*/\
-	MUX_VAL(CP(MMC1_CLK),       (IDIS | PTU | EN  | M0)) /*MMC1_CLK*/\
-	MUX_VAL(CP(MMC1_CMD),       (IEN  | PTU | EN  | M0)) /*MMC1_CMD*/\
-	MUX_VAL(CP(MMC1_DAT0),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT0*/\
-	MUX_VAL(CP(MMC1_DAT1),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT1*/\
-	MUX_VAL(CP(MMC1_DAT2),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT2*/\
-	MUX_VAL(CP(MMC1_DAT3),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT3*/\
-	MUX_VAL(CP(MMC1_DAT4),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT4*/\
-	MUX_VAL(CP(MMC1_DAT5),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT5*/\
-	MUX_VAL(CP(MMC1_DAT6),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT6*/\
-	MUX_VAL(CP(MMC1_DAT7),      (IEN  | PTU | EN  | M0)) /*MMC1_DAT7*/\
-	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /*UART1_TX*/\
-	MUX_VAL(CP(UART1_RTS),      (IDIS | PTD | DIS | M0)) /*UART1_RTS*/\
-	MUX_VAL(CP(UART1_CTS),      (IEN | PTU | DIS | M0)) /*UART1_CTS*/\
-	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /*UART1_RX*/\
-	MUX_VAL(CP(UART3_CTS_RCTX), (IEN  | PTD | EN  | M0)) /*UART3_CTS_RCTX */\
-	MUX_VAL(CP(UART3_RTS_SD),   (IDIS | PTD | DIS | M0)) /*UART3_RTS_SD */\
-	MUX_VAL(CP(UART3_RX_IRRX),  (IEN  | PTD | DIS | M0)) /*UART3_RX_IRRX*/\
-	MUX_VAL(CP(UART3_TX_IRTX),  (IDIS | PTD | DIS | M0)) /*UART3_TX_IRTX*/\
-	MUX_VAL(CP(I2C1_SCL),       (IEN  | PTU | EN  | M0)) /*I2C1_SCL*/\
-	MUX_VAL(CP(I2C1_SDA),       (IEN  | PTU | EN  | M0)) /*I2C1_SDA*/\
-	MUX_VAL(CP(I2C2_SCL),       (IEN  | PTU | EN  | M0)) /*I2C2_SCL*/\
-	MUX_VAL(CP(I2C2_SDA),       (IEN  | PTU | EN  | M0)) /*I2C2_SDA*/\
-	MUX_VAL(CP(I2C3_SCL),       (IEN  | PTU | EN  | M0)) /*I2C3_SCL*/\
-	MUX_VAL(CP(I2C3_SDA),       (IEN  | PTU | EN  | M0)) /*I2C3_SDA*/\
-	MUX_VAL(CP(I2C4_SCL),       (IEN  | PTU | EN  | M0)) /*I2C4_SCL*/\
-	MUX_VAL(CP(I2C4_SDA),       (IEN  | PTU | EN  | M0)) /*I2C4_SDA*/\
-	MUX_VAL(CP(McBSP1_DX),      (IEN  | PTD | DIS | M4)) /*GPIO_158*/\
-	MUX_VAL(CP(SYS_32K),        (IEN  | PTD | DIS | M0)) /*SYS_32K*/\
-	MUX_VAL(CP(SYS_BOOT0),      (IEN  | PTD | DIS | M4)) /*GPIO_2 */\
-	MUX_VAL(CP(SYS_BOOT1),      (IEN  | PTD | DIS | M4)) /*GPIO_3 */\
-	MUX_VAL(CP(SYS_BOOT2),      (IEN  | PTD | DIS | M4)) /*GPIO_4 */\
-	MUX_VAL(CP(SYS_BOOT3),      (IEN  | PTD | DIS | M4)) /*GPIO_5 */\
-	MUX_VAL(CP(SYS_BOOT4),      (IEN  | PTD | DIS | M4)) /*GPIO_6 */\
-	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /*GPIO_7 */\
-	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /*GPIO_8 */\
-	MUX_VAL(CP(SYS_CLKOUT2),    (IEN  | PTU | EN  | M4)) /*GPIO_186*/\
-	MUX_VAL(CP(JTAG_nTRST),     (IEN  | PTD | DIS | M0)) /*JTAG_nTRST*/\
-	MUX_VAL(CP(JTAG_TCK),       (IEN  | PTD | DIS | M0)) /*JTAG_TCK*/\
-	MUX_VAL(CP(JTAG_TMS),       (IEN  | PTD | DIS | M0)) /*JTAG_TMS*/\
-	MUX_VAL(CP(JTAG_TDI),       (IEN  | PTD | DIS | M0)) /*JTAG_TDI*/\
-	MUX_VAL(CP(JTAG_EMU0),      (IEN  | PTD | DIS | M0)) /*JTAG_EMU0*/\
-	MUX_VAL(CP(JTAG_EMU1),      (IEN  | PTD | DIS | M0)) /*JTAG_EMU1*/\
-	MUX_VAL(CP(ETK_CLK),        (IEN  | PTD | DIS | M4)) /*GPIO_12*/\
-	MUX_VAL(CP(ETK_CTL),        (IEN  | PTD | DIS | M4)) /*GPIO_13*/\
-	MUX_VAL(CP(ETK_D0),         (IEN  | PTD | DIS | M4)) /*GPIO_14*/\
-	MUX_VAL(CP(ETK_D1),         (IEN  | PTD | DIS | M4)) /*GPIO_15*/\
-	MUX_VAL(CP(ETK_D2),         (IEN  | PTD | DIS | M4)) /*GPIO_16*/\
-	MUX_VAL(CP(ETK_D11),        (IEN  | PTD | DIS  | M4)) /*GPIO_25*/\
-	MUX_VAL(CP(ETK_D12),        (IDIS  | PTD | DIS | M4)) /*GPIO_26*/\
-	MUX_VAL(CP(ETK_D13),        (IDIS  | PTD | DIS | M4)) /*GPIO_27*/\
-	MUX_VAL(CP(ETK_D14),        (IEN  | PTD | DIS | M4)) /*GPIO_28*/\
-	MUX_VAL(CP(ETK_D15),        (IEN  | PTD | DIS | M4)) /*GPIO_29 */\
-	MUX_VAL(CP(sdrc_cke0),      (IDIS | PTU | EN  | M0)) /*sdrc_cke0 */\
-	MUX_VAL(CP(sdrc_cke1),      (IDIS | PTD | DIS | M7)) /*sdrc_cke1 not used*/
-
-// #endif
 
 #define MUX_IGEP0020() \
  MUX_VAL(CP(SDRC_D0),		(IEN  | PTD | DIS | M0)) /* SDRC_D0  */\
@@ -1657,112 +1610,6 @@ void per_clocks_enable(void)
  MUX_VAL(CP(sdrc_cke0),		(IDIS | PTU | EN  | M0)) /*sdrc_cke0*/\
  MUX_VAL(CP(sdrc_cke1),		(IDIS | PTD | DIS | M7)) /*sdrc_cke1*/
 
-#define MUX_IGEP0030()\
-	MUX_VAL(CP(SDRC_D0),        (IEN  | PTD | DIS | M0)) /* SDRC_D0 */\
-	MUX_VAL(CP(SDRC_D1),        (IEN  | PTD | DIS | M0)) /* SDRC_D1 */\
-	MUX_VAL(CP(SDRC_D2),        (IEN  | PTD | DIS | M0)) /* SDRC_D2 */\
-	MUX_VAL(CP(SDRC_D3),        (IEN  | PTD | DIS | M0)) /* SDRC_D3 */\
-	MUX_VAL(CP(SDRC_D4),        (IEN  | PTD | DIS | M0)) /* SDRC_D4 */\
-	MUX_VAL(CP(SDRC_D5),        (IEN  | PTD | DIS | M0)) /* SDRC_D5 */\
-	MUX_VAL(CP(SDRC_D6),        (IEN  | PTD | DIS | M0)) /* SDRC_D6 */\
-	MUX_VAL(CP(SDRC_D7),        (IEN  | PTD | DIS | M0)) /* SDRC_D7 */\
-	MUX_VAL(CP(SDRC_D8),        (IEN  | PTD | DIS | M0)) /* SDRC_D8 */\
-	MUX_VAL(CP(SDRC_D9),        (IEN  | PTD | DIS | M0)) /* SDRC_D9 */\
-	MUX_VAL(CP(SDRC_D10),       (IEN  | PTD | DIS | M0)) /* SDRC_D10 */\
-	MUX_VAL(CP(SDRC_D11),       (IEN  | PTD | DIS | M0)) /* SDRC_D11 */\
-	MUX_VAL(CP(SDRC_D12),       (IEN  | PTD | DIS | M0)) /* SDRC_D12 */\
-	MUX_VAL(CP(SDRC_D13),       (IEN  | PTD | DIS | M0)) /* SDRC_D13 */\
-	MUX_VAL(CP(SDRC_D14),       (IEN  | PTD | DIS | M0)) /* SDRC_D14 */\
-	MUX_VAL(CP(SDRC_D15),       (IEN  | PTD | DIS | M0)) /* SDRC_D15 */\
-	MUX_VAL(CP(SDRC_D16),       (IEN  | PTD | DIS | M0)) /* SDRC_D16 */\
-	MUX_VAL(CP(SDRC_D17),       (IEN  | PTD | DIS | M0)) /* SDRC_D17 */\
-	MUX_VAL(CP(SDRC_D18),       (IEN  | PTD | DIS | M0)) /* SDRC_D18 */\
-	MUX_VAL(CP(SDRC_D19),       (IEN  | PTD | DIS | M0)) /* SDRC_D19 */\
-	MUX_VAL(CP(SDRC_D20),       (IEN  | PTD | DIS | M0)) /* SDRC_D20 */\
-	MUX_VAL(CP(SDRC_D21),       (IEN  | PTD | DIS | M0)) /* SDRC_D21 */\
-	MUX_VAL(CP(SDRC_D22),       (IEN  | PTD | DIS | M0)) /* SDRC_D22 */\
-	MUX_VAL(CP(SDRC_D23),       (IEN  | PTD | DIS | M0)) /* SDRC_D23 */\
-	MUX_VAL(CP(SDRC_D24),       (IEN  | PTD | DIS | M0)) /* SDRC_D24 */\
-	MUX_VAL(CP(SDRC_D25),       (IEN  | PTD | DIS | M0)) /* SDRC_D25 */\
-	MUX_VAL(CP(SDRC_D26),       (IEN  | PTD | DIS | M0)) /* SDRC_D26 */\
-	MUX_VAL(CP(SDRC_D27),       (IEN  | PTD | DIS | M0)) /* SDRC_D27 */\
-	MUX_VAL(CP(SDRC_D28),       (IEN  | PTD | DIS | M0)) /* SDRC_D28 */\
-	MUX_VAL(CP(SDRC_D29),       (IEN  | PTD | DIS | M0)) /* SDRC_D29 */\
-	MUX_VAL(CP(SDRC_D30),       (IEN  | PTD | DIS | M0)) /* SDRC_D30 */\
-	MUX_VAL(CP(SDRC_D31),       (IEN  | PTD | DIS | M0)) /* SDRC_D31 */\
-	MUX_VAL(CP(SDRC_CLK),       (IEN  | PTD | DIS | M0)) /* SDRC_CLK */\
-	MUX_VAL(CP(SDRC_DQS0),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS0 */\
-	MUX_VAL(CP(SDRC_DQS1),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS1 */\
-	MUX_VAL(CP(SDRC_DQS2),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS2 */\
-	MUX_VAL(CP(SDRC_DQS3),      (IEN  | PTD | DIS | M0)) /* SDRC_DQS3 */\
-	MUX_VAL(CP(GPMC_A1),        (IDIS | PTD | DIS | M0)) /* GPMC_A1 */\
-	MUX_VAL(CP(GPMC_A2),        (IDIS | PTD | DIS | M0)) /* GPMC_A2 */\
-	MUX_VAL(CP(GPMC_A3),        (IDIS | PTD | DIS | M0)) /* GPMC_A3 */\
-	MUX_VAL(CP(GPMC_A4),        (IDIS | PTD | DIS | M0)) /* GPMC_A4 */\
-	MUX_VAL(CP(GPMC_A5),        (IDIS | PTD | DIS | M0)) /* GPMC_A5 */\
-	MUX_VAL(CP(GPMC_A6),        (IDIS | PTD | DIS | M0)) /* GPMC_A6 */\
-	MUX_VAL(CP(GPMC_A7),        (IDIS | PTD | DIS | M0)) /* GPMC_A7 */\
-	MUX_VAL(CP(GPMC_A8),        (IDIS | PTD | DIS | M0)) /* GPMC_A8 */\
-	MUX_VAL(CP(GPMC_A9),        (IDIS | PTD | DIS | M0)) /* GPMC_A9 */\
-	MUX_VAL(CP(GPMC_A10),       (IDIS | PTD | DIS | M0)) /* GPMC_A10 */\
-	MUX_VAL(CP(GPMC_D0),        (IEN  | PTD | DIS | M0)) /* GPMC_D0 */\
-	MUX_VAL(CP(GPMC_D1),        (IEN  | PTD | DIS | M0)) /* GPMC_D1 */\
-	MUX_VAL(CP(GPMC_D2),        (IEN  | PTD | DIS | M0)) /* GPMC_D2 */\
-	MUX_VAL(CP(GPMC_D3),        (IEN  | PTD | DIS | M0)) /* GPMC_D3 */\
-	MUX_VAL(CP(GPMC_D4),        (IEN  | PTD | DIS | M0)) /* GPMC_D4 */\
-	MUX_VAL(CP(GPMC_D5),        (IEN  | PTD | DIS | M0)) /* GPMC_D5 */\
-	MUX_VAL(CP(GPMC_D6),        (IEN  | PTD | DIS | M0)) /* GPMC_D6 */\
-	MUX_VAL(CP(GPMC_D7),        (IEN  | PTD | DIS | M0)) /* GPMC_D7 */\
-	MUX_VAL(CP(GPMC_D8),        (IEN  | PTD | DIS | M0)) /* GPMC_D8 */\
-	MUX_VAL(CP(GPMC_D9),        (IEN  | PTD | DIS | M0)) /* GPMC_D9 */\
-	MUX_VAL(CP(GPMC_D10),       (IEN  | PTD | DIS | M0)) /* GPMC_D10 */\
-	MUX_VAL(CP(GPMC_D11),       (IEN  | PTD | DIS | M0)) /* GPMC_D11 */\
-	MUX_VAL(CP(GPMC_D12),       (IEN  | PTD | DIS | M0)) /* GPMC_D12 */\
-	MUX_VAL(CP(GPMC_D13),       (IEN  | PTD | DIS | M0)) /* GPMC_D13 */\
-	MUX_VAL(CP(GPMC_D14),       (IEN  | PTD | DIS | M0)) /* GPMC_D14 */\
-	MUX_VAL(CP(GPMC_D15),       (IEN  | PTD | DIS | M0)) /* GPMC_D15 */\
-	MUX_VAL(CP(GPMC_nCS0),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS0 */\
-	MUX_VAL(CP(GPMC_nCS1),      (IEN  | PTU | EN  | M4)) /* GPMC_nCS1 */\
-	MUX_VAL(CP(GPMC_nCS2),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS2 */\
-	MUX_VAL(CP(GPMC_nCS3),      (IDIS | PTU | EN  | M0)) /* GPIO_nCS3 */\
-	MUX_VAL(CP(GPMC_nCS4),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS4 */\
-	MUX_VAL(CP(GPMC_nCS5),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS5 */\
-	MUX_VAL(CP(GPMC_nCS6),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS6 */\
-	MUX_VAL(CP(GPMC_nCS7),      (IDIS | PTU | EN  | M0)) /* GPMC_nCS7 */\
-	MUX_VAL(CP(GPMC_CLK),       (IDIS | PTD | DIS | M0)) /* GPMC_CLK */\
-	MUX_VAL(CP(GPMC_nADV_ALE),  (IDIS | PTD | DIS | M0)) /* GPMC_nADV_ALE*/\
-	MUX_VAL(CP(GPMC_nOE),       (IDIS | PTD | DIS | M0)) /* GPMC_nOE */\
-	MUX_VAL(CP(GPMC_nWE),       (IDIS | PTD | DIS | M0)) /* GPMC_nWE */\
-	MUX_VAL(CP(GPMC_nBE0_CLE),  (IDIS | PTD | DIS | M0)) /* GPMC_nBE0_CLE*/\
-	MUX_VAL(CP(GPMC_nBE1),      (IEN  | PTD | DIS | M0)) /* GPMC_nBE1 */\
-	MUX_VAL(CP(GPMC_nWP),       (IEN  | PTD | DIS | M0)) /* GPMC_nWP */\
-	MUX_VAL(CP(GPMC_WAIT0),     (IEN  | PTU | EN  | M0)) /* GPMC_WAIT0 */\
-	MUX_VAL(CP(GPMC_WAIT2),     (IDIS | PTU | EN  | M4)) /* GPMC_WAIT2 */\
-	MUX_VAL(CP(MMC1_CLK),       (IDIS | PTU | EN  | M0)) /* MMC1_CLK */\
-	MUX_VAL(CP(MMC1_CMD),       (IEN  | PTU | EN  | M0)) /* MMC1_CMD */\
-	MUX_VAL(CP(MMC1_DAT0),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT0 */\
-	MUX_VAL(CP(MMC1_DAT1),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT1 */\
-	MUX_VAL(CP(MMC1_DAT2),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT2 */\
-	MUX_VAL(CP(MMC1_DAT3),      (IEN  | PTU | EN  | M0)) /* MMC1_DAT3 */\
-	MUX_VAL(CP(UART1_TX),       (IDIS | PTD | DIS | M0)) /* UART1_TX */\
-	MUX_VAL(CP(UART1_RX),       (IEN  | PTD | DIS | M0)) /* UART1_RX */\
-	MUX_VAL(CP(UART3_TX_IRTX),  (IDIS | PTD | DIS | M0)) /* UART3_TX */\
-	MUX_VAL(CP(UART3_RX_IRRX),  (IEN  | PTD | DIS | M0)) /* UART3_RX */\
-	MUX_VAL(CP(I2C1_SCL),       (IEN  | PTU | EN  | M0)) /* I2C1_SCL */\
-	MUX_VAL(CP(I2C1_SDA),       (IEN  | PTU | EN  | M0)) /* I2C1_SDA */\
-	MUX_VAL(CP(I2C4_SCL),       (IEN  | PTU | EN  | M0)) /* I2C4_SCL */\
-	MUX_VAL(CP(I2C4_SDA),       (IEN  | PTU | EN  | M0)) /* I2C4_SDA */\
-	MUX_VAL(CP(SYS_32K),        (IEN  | PTD | DIS | M0)) /* SYS_32K */\
-	MUX_VAL(CP(SYS_BOOT0),      (IEN  | PTD | DIS | M4)) /* GPIO_2 */\
-	MUX_VAL(CP(SYS_BOOT1),      (IEN  | PTD | DIS | M4)) /* GPIO_3 */\
-	MUX_VAL(CP(SYS_BOOT2),      (IEN  | PTD | DIS | M4)) /* GPIO_4 */\
-	MUX_VAL(CP(SYS_BOOT3),      (IEN  | PTD | DIS | M4)) /* GPIO_5 */\
-	MUX_VAL(CP(SYS_BOOT4),      (IEN  | PTD | DIS | M4)) /* GPIO_6 */\
-	MUX_VAL(CP(SYS_BOOT5),      (IEN  | PTD | DIS | M4)) /* GPIO_7 */\
-	MUX_VAL(CP(SYS_BOOT6),      (IEN  | PTD | DIS | M4)) /* GPIO_8 */\
-	MUX_VAL(CP(sdrc_cke0),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE0 */\
-	MUX_VAL(CP(sdrc_cke1),      (IDIS | PTU | EN  | M0)) /* SDRC_CKE1 */
-
 /**********************************************************
  * Routine: set_muxconf_regs
  * Description: Setting up the configuration Mux registers
@@ -1781,7 +1628,21 @@ static inline u32 get_part_sector_size_onenand(void)
 #if defined(CONFIG_CMD_ONENAND)
 	struct mtd_info *mtd;
 
-	mtd = onenand_mtd;
+	mtd = mtd_info;
+
+	return mtd->erasesize;
+#else
+	BUG();
+	return 0;
+#endif
+}
+
+static inline u32 get_part_sector_size_nand(void)
+{
+#if defined(CONFIG_CMD_NAND)
+	struct mtd_info *mtd;
+
+	mtd = mtd_info;
 
 	return mtd->erasesize;
 #else
@@ -1794,6 +1655,8 @@ static inline u32 get_part_sector_size(struct mtdids *id, struct part_info *part
 {
 	if (id->type == MTD_DEV_TYPE_ONENAND)
 		return get_part_sector_size_onenand();
+	else if (id->type == MTD_DEV_TYPE_NAND)
+		return get_part_sector_size_nand();
 	else
 		printf("Error: Unknown device type.\n");
 
@@ -1817,20 +1680,17 @@ static int mtd_device_validate(u8 type, u8 num, u32 *size)
 		printf("support for FLASH devices not present\n");
 #endif
 	} else if (type == MTD_DEV_TYPE_NAND) {
-#if defined(CONFIG_JFFS2_NAND) && defined(CONFIG_CMD_NAND)
-		if (num < CONFIG_SYS_MAX_NAND_DEVICE) {
-			*size = nand_info[num].size;
+#if defined(CONFIG_CMD_NAND)
+			*size = mtd_info->size;
 			return 0;
-		}
 
-		printf("no such NAND device: %s%d (valid range 0 ... %d)\n",
-				MTD_DEV_TYPE(type), num, CONFIG_SYS_MAX_NAND_DEVICE - 1);
+		printf("no such NAND device: %s%d \n", MTD_DEV_TYPE(type), num);
 #else
 		printf("support for NAND devices not present\n");
-#endif
+		#endif
 	} else if (type == MTD_DEV_TYPE_ONENAND) {
 #if defined(CONFIG_CMD_ONENAND)
-		*size = onenand_mtd->size;
+		*size = mtd_info->size;
 		return 0;
 #else
 		printf("support for OneNAND devices not present\n");
@@ -1882,34 +1742,54 @@ static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *d
 	return 0;
 }
 
-
-void onenand_init(void)
+void flash_init(void)
 {
+
     struct mtdids *id;
     struct part_info *part;
     char *dev_name;
     u32 size;
-    char* dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
+    char *dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
+    u32 mem_type;
 
-    onenand_mtd = malloc(sizeof(struct mtd_info));
-    onenand_chip = malloc(sizeof(struct onenand_chip));
-	memset(onenand_mtd, 0, sizeof(struct mtd_info));
-	memset(onenand_chip, 0, sizeof(struct onenand_chip));
-	onenand_mtd->priv = onenand_chip;
-	onenand_chip->base = (void *) CONFIG_SYS_ONENAND_BASE;
+    mtd_info = malloc(sizeof(struct mtd_info));
+    memset(mtd_info, 0, sizeof(struct mtd_info));
 
-    /* OneNand Scan */
-	onenand_scan(onenand_mtd, 1);
+    mem_type = get_mem_type();
+
+    if (mem_type == GPMC_ONENAND) {
+	    onenand_chip = malloc(sizeof(struct onenand_chip));
+	    memset(onenand_chip, 0, sizeof(struct onenand_chip));
+	    onenand_chip->base = (void *)CONFIG_SYS_ONENAND_BASE;
+	    mtd_info->priv = onenand_chip;
+	    dev_name ="onenand0";
+    } else if (mem_type == GPMC_NAND) {
+	    nand_chip = malloc(sizeof(struct nand_chip));
+	    memset(nand_chip, 0, sizeof(struct nand_chip));
+	    nand_chip->IO_ADDR_R = (void *)GPMC_NAND_DATA_0;
+	    nand_chip->options |= NAND_BUSWIDTH_16;
+	    mtd_info->priv = nand_chip;
+	    dev_name ="nand0";
+    } else {
+	    printf("IGEP: Flash: unsupported sysboot sequence found\n");
+	    hang();
+    }
+
+    if (mem_type == GPMC_ONENAND)
+	    onenand_scan(mtd_info, 1);
+    else
+	    nand_scan(mtd_info, 1);
+
 #ifdef __DEBUG__
 	printf("OneNAND: ");
-	print_size(onenand_mtd->size, "\n");
+	print_size(mtd_info->size, "\n");
 #endif
 
 	/*
 	 * Add MTD device so that we can reference it later
 	 * via the mtdcore infrastructure (e.g. ubi).
 	 */
-	onenand_mtd->name = dev_name;
+	mtd_info->name = dev_name;
 	// add_mtd_device(onenand_mtd);
 
 	/* jffs2 */
@@ -1925,8 +1805,6 @@ void onenand_init(void)
 
     /* id */
     id->mtd_id = "single part";
-    dev_name ="onenand0";
-
 
     if ((mtd_id_parse(dev_name, NULL, &id->type, &id->num) != 0) ||
             (mtd_device_validate(id->type, id->num, &size) != 0)) {
@@ -1975,9 +1853,6 @@ void onenand_init(void)
     INIT_LIST_HEAD(&current_mtd_dev->parts);
     list_add(&part->link, &current_mtd_dev->parts);
 
-    // size = jffs2_1pass_load(dest , part, "igep.ini");
-    // printf("load size: %u\n", size);
-
 	return 0;
 
 }
@@ -1992,10 +1867,10 @@ int load_jffs2_file (const char* filename, char* dest)
 }
 
 /**********************************************************
- * Routine: nand_init
+ * Routine: flash_setup
  * Description: Set up flash, NAND and OneNAND
  *********************************************************/
-int nand_init(void)
+int flash_setup(void)
 {
 #ifdef __DEBUG__
 	onenand_check_maf(ONENAND_MANUF_ID());

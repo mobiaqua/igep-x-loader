@@ -65,6 +65,8 @@
 #define V_SCLK	V_OSCK
 #endif
 
+#define CONFIG_SYS_HZ		1000
+
 //#define PRCM_CLK_CFG2_266MHZ	1	/* VDD2=1.15v - 133MHz DDR */
 #define PRCM_CLK_CFG2_332MHZ	1	/* VDD2=1.15v - 166MHz DDR */
 #define PRCM_PCLK_OPP2		1	/* ARM=381MHz - VDD1=1.20v */
@@ -114,6 +116,73 @@
  */
 #define CONFIG_STACKSIZE	(128*1024) /* regular stack */
 
+#define NAND_BASE_ADR	NAND_BASE
+#define CONFIG_SYS_NAND_BASE NAND_BASE_ADR
+
+/*-----------------------------------------------------------------------
+ * Board NAND Info.
+ */
+#define CONFIG_CMD_NAND              1
+#define CONFIG_NAND                  1
+
+#define CFG_NAND_K9F1G08R0A
+#define NAND_16BIT
+
+/* NAND is partitioned:
+ * 0x00000000 - 0x0007FFFF  Booting Image
+ * 0x00080000 - 0x0023FFFF  U-Boot Image
+ * 0x00240000 - 0x0027FFFF  U-Boot Env Data (X-loader doesn't care)
+ * 0x00280000 - 0x0077FFFF  Kernel Image
+ * 0x00780000 - 0x08000000  depends on application
+ */
+#define NAND_UBOOT_START	0x0080000 /* Leaving first 4 blocks for x-load */
+#define NAND_UBOOT_END		0x0240000 /* Giving a space of 2 blocks = 256KB */
+#define NAND_BLOCK_SIZE		0x20000
+
+#define GPMC_CONFIG		(OMAP34XX_GPMC_BASE+0x50)
+#define GPMC_NAND_COMMAND_0	(OMAP34XX_GPMC_BASE+0x7C)
+#define GPMC_NAND_ADDRESS_0	(OMAP34XX_GPMC_BASE+0x80)
+#define GPMC_NAND_DATA_0	(OMAP34XX_GPMC_BASE+0x84)
+
+#ifdef NAND_16BIT
+#define WRITE_NAND_COMMAND(d, adr)					\
+	do {*(volatile u16 *)GPMC_NAND_COMMAND_0 = d; } while (0)
+#define WRITE_NAND_ADDRESS(d, adr)					\
+	do {*(volatile u16 *)GPMC_NAND_ADDRESS_0 = d; } while (0)
+#define WRITE_NAND(d, adr)					\
+	do {*(volatile u16 *)GPMC_NAND_DATA_0 = d; } while (0)
+#define READ_NAND(adr)				\
+	(*(volatile u16 *)GPMC_NAND_DATA_0)
+#define NAND_WAIT_READY()
+#define NAND_WP_OFF()							\
+	do {*(volatile u32 *)(GPMC_CONFIG) |= 0x00000010; } while (0)
+#define NAND_WP_ON()							\
+	do {*(volatile u32 *)(GPMC_CONFIG) &= ~0x00000010; } while (0)
+
+#else /* to support 8-bit NAND devices */
+#define WRITE_NAND_COMMAND(d, adr)					\
+	do {*(volatile u8 *)GPMC_NAND_COMMAND_0 = d; } while (0)
+#define WRITE_NAND_ADDRESS(d, adr)					\
+	do {*(volatile u8 *)GPMC_NAND_ADDRESS_0 = d; } while (0)
+#define WRITE_NAND(d, adr)					\
+	do {*(volatile u8 *)GPMC_NAND_DATA_0 = d; } while (0)
+#define READ_NAND(adr)				\
+	(*(volatile u8 *)GPMC_NAND_DATA_0);
+#define NAND_WAIT_READY()
+#define NAND_WP_OFF()							\
+	do {*(volatile u32 *)(GPMC_CONFIG) |= 0x00000010; } while (0)
+#define NAND_WP_ON()							\
+	do {*(volatile u32 *)(GPMC_CONFIG) &= ~0x00000010; } while (0)
+
+#endif
+
+#define NAND_CTL_CLRALE(adr)
+#define NAND_CTL_SETALE(adr)
+#define NAND_CTL_CLRCLE(adr)
+#define NAND_CTL_SETCLE(adr)
+#define NAND_DISABLE_CE()
+#define NAND_ENABLE_CE()
+
 /*
  * Board oneNAND Info.
  */
@@ -155,6 +224,11 @@
 #define IGEP_CS0_MEMORY_SIZE        256 * (1024 * 1024)                 /* CS0 First Die Memory = 256 M Bytes*/
 #define IGEP_CS1_MEMORY_SIZE        256 * (1024 * 1024)                 /* CS0 First Die Memory = 256 M Bytes*/
 #define IGEP_INI_FILE_MAX_SIZE      16 * 1024                           /* Max ini file size */
+
+/* OMAP SYS_BOOT masks */
+#define IGEP00X0_SYSBOOT_MASK           0x1f
+#define IGEP00X0_SYSBOOT_NAND           0x0f
+#define IGEP00X0_SYSBOOT_ONENAND        0x10
 
 #endif /* __CONFIG_H */
 

@@ -69,7 +69,7 @@ init_fnc_t *init_sequence[] = {
  	serial_init,		/* serial communications setup */
 #endif
 	print_info,
-  	nand_init,		/* board specific nand init */
+	flash_setup,	     	/* board specific nand init */
   	NULL,
 };
 
@@ -84,32 +84,30 @@ void start_armboot (void)
 #ifdef CONFIG_ONENAND
 	unsigned int onenand_features;
 #endif
-
 	/* Execute init_sequence */
+	i = 0;
    	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
-		if ((*init_fnc_ptr)() != 0) {
+		if ((*init_fnc_ptr)() != 0)
 			hang ();
-		}
 	}
 
 	/* Execute board specific misc init */
 	misc_init_r();
 
-    /* Initialize OneNand */
-	onenand_init();
+	flash_init();
 
-    /* Initialize MMC */
-    mmc_init(1);
+	/* Initialize MMC */
+	mmc_init(1);
 
-    /* Initialize fat dynamic structures */
-    init_fat();
+	/* Initialize fat dynamic structures */
+	init_fat();
 
-    /* Load the Linux kernel */
-    /* boot_linux() should never return */
-    boot_linux();
+	/* Load the Linux kernel */
+	/* boot_linux() should never return */
+	boot_linux();
 
-    /* If boot linux fails hang the board */
-    hang();
+	/* If boot linux fails hang the board */
+	hang();
 }
 
 void hang (void)
