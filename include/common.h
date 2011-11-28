@@ -88,7 +88,7 @@ typedef volatile unsigned char	vu_char;
 
 /* board/$(BOARD)/$(BOARD).c */
 int 	board_init (void);
-int 	nand_init (void);
+int 	flash_setup(void);
 int     mmc_boot (unsigned char *buf);
 void	board_hang (void);
 
@@ -109,12 +109,6 @@ void 	udelay (unsigned long usec);
 /* Extended Commands for Large page devices */
 #define NAND_CMD_READSTART	0x30
 
-int 	nand_chip(void);
-int 	nand_read_block(uchar *buf, ulong block_addr);
-
-// int 	onenand_chip(void);
-// int	onenand_read_block(unsigned char *buf, ulong block);
-
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifdef CFG_PRINTF
@@ -130,10 +124,6 @@ int	serial_tstc   (void);
 /* lib/printf.c */
 void	serial_printf (const char *fmt, ...);
 #endif
-
-/* lib/crc.c */
-void 	nand_calculate_ecc (const u_char *dat, u_char *ecc_code);
-int 	nand_correct_data (u_char *dat, u_char *read_ecc, u_char *calc_ecc);
 
 /* lib/board.c */
 void	hang		(void) __attribute__ ((noreturn));
