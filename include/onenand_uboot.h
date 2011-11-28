@@ -22,7 +22,7 @@ struct mtd_oob_ops;
 struct erase_info;
 struct onenand_chip;
 
-extern struct mtd_info *onenand_mtd;
+extern struct mtd_info *mtd_info;
 
 /* board */
 extern void onenand_board_init(struct mtd_info *);
