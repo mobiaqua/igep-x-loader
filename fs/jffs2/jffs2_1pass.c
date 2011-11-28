@@ -110,7 +110,7 @@
  * it should probably be dumped and replaced by something like jffs2reader!
  */
 
-#define CONFIG_CMD_ONENAND
+#define CONFIG_JFFS2_NAND
 
 #include <common.h>
 #include <config.h>
@@ -122,9 +122,13 @@
 #include <jffs2/jffs2_1pass.h>
 #include <linux/mtd/compat.h>
 #include <asm/errno.h>
+#include <linux/mtd/mtd.h>
+#include <onenand_uboot.h>
+#include <nand_uboot.h>
 
 #include "jffs2_private.h"
 
+//#define __DEBUG__
 
 #define	NODE_CHUNK	1024	/* size of memory allocation chunk in b_nodes */
 #define	SPIN_BLKSIZE	18	/* spin after having scanned 1<<BLKSIZE bytes */
@@ -146,9 +150,16 @@
 /* keeps pointer to currentlu processed partition */
 static struct part_info *current_part;
 
+static char* strchr(const char * s, int c)
+{
+	for(; *s != (char) c; ++s)
+		if (*s == '\0')
+			return NULL;
+	return (char *) s;
+}
+
 #if (defined(CONFIG_JFFS2_NAND) && \
      defined(CONFIG_CMD_NAND) )
-#include <nand.h>
 /*
  * Support for jffs2 on top of NAND-flash
  *
@@ -159,12 +170,12 @@ static struct part_info *current_part;
  *
  */
 
-#define NAND_PAGE_SIZE 512
-#define NAND_PAGE_SHIFT 9
+#define NAND_PAGE_SIZE 2048
+#define NAND_PAGE_SHIFT 11
 #define NAND_PAGE_MASK (~(NAND_PAGE_SIZE-1))
 
 #ifndef NAND_CACHE_PAGES
-#define NAND_CACHE_PAGES 16
+#define NAND_CACHE_PAGES 4
 #endif
 #define NAND_CACHE_SIZE (NAND_CACHE_PAGES*NAND_PAGE_SIZE)
 
@@ -194,11 +205,11 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 			}
 
 			retlen = NAND_CACHE_SIZE;
-			if (nand_read(&nand_info[id->num], nand_cache_off,
-						&retlen, nand_cache) != 0 ||
-					retlen != NAND_CACHE_SIZE) {
+			if (nand_read(mtd_info, nand_cache_off, retlen,
+				      &retlen, nand_cache) != 0 ||
+			    retlen != NAND_CACHE_SIZE) {
 				printf("read_nand_cached: error reading nand off %#x size %d bytes\n",
-						nand_cache_off, NAND_CACHE_SIZE);
+				       nand_cache_off, NAND_CACHE_SIZE);
 				return -1;
 			}
 		}
@@ -255,9 +266,7 @@ static void put_fl_mem_nand(void *buf)
 
 #if defined(CONFIG_CMD_ONENAND)
 
-#include <linux/mtd/mtd.h>
 #include <linux/mtd/onenand.h>
-#include <onenand_uboot.h>
 
 #define ONENAND_PAGE_SIZE 2048
 #define ONENAND_PAGE_SHIFT 11
@@ -270,14 +279,6 @@ static void put_fl_mem_nand(void *buf)
 
 static u8* onenand_cache;
 static u32 onenand_cache_off = (u32)-1;
-
-static char* strchr(const char * s, int c)
-{
-	for(; *s != (char) c; ++s)
-		if (*s == '\0')
-			return NULL;
-	return (char *) s;
-}
 
 static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 {
@@ -303,7 +304,7 @@ static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 			}
 
 			retlen = ONENAND_CACHE_SIZE;
-			if (onenand_read(onenand_mtd, onenand_cache_off, retlen,
+			if (onenand_read(mtd_info, onenand_cache_off, retlen,
 						&retlen, onenand_cache) != 0 ||
 					retlen != ONENAND_CACHE_SIZE) {
 #if 0
@@ -378,6 +379,9 @@ static void put_fl_mem_onenand(void *buf)
  * NOR flash memory is mapped in processor's address space,
  * just return address.
  */
+
+#include <linux/mtd/nand.h>
+
 static inline void *get_fl_mem_nor(u32 off, u32 size, void *ext_buf)
 {
 	u32 addr = off;
@@ -1512,7 +1516,6 @@ jffs2_1pass_build_lists(struct part_info * part)
 		uint32_t sumlen;
 		int ret;
 #endif
-
 		// WATCHDOG_RESET();
 
 #ifdef CONFIG_JFFS2_SUMMARY
@@ -1861,7 +1864,7 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 
 	if (! (inode = jffs2_1pass_search_inode(pl, fname, 1))) {
 #ifdef __DEBUG__
-		putstr("load: Failed to find inode\r\n");
+		printf("load: Failed to find inode %s\r\n", fname);
 #endif
 		return 0;
 	}
@@ -1876,12 +1879,12 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 
 	if ((ret = jffs2_1pass_read_inode(pl, inode, dest)) < 0) {
 #ifdef __DEBUG__
-		putstr("load: Failed to read inode\r\n");
+		printf("load: Failed to read inode\r\n");
 #endif
 		return 0;
 	}
 #ifdef __DEBUG__
-	DEBUGF ("load: loaded '%s' to 0x%lx (%ld bytes)\n", fname,
+	printf("load: loaded '%s' to 0x%lx (%ld bytes)\n", fname,
 				(unsigned long) dest, ret);
 #endif
 	return ret;
