@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.2.0-1
+# Version: IGEP-X-Loader 2.3.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -118,6 +118,7 @@ loader for Embedded boards based on OMAP processors.
 ----
 [2.2.0-1] Update Makefile structure
 [2.2.0-1] Downgrade the boot processor speed
+[2.3.0-1] Add NAND flash devices and Micron MT29CXGXXMAXX memories support
 
 3 Status:
 ==========
