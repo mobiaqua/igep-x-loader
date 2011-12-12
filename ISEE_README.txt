@@ -223,6 +223,7 @@ Kernel RAM Disk file, if you don't provide this tag it try to load these others:
 Board ID actually support two values:
 IGEP0020_MACHINE_ID             2344
 IGEP0030_MACHINE_ID             2717
+IGEP0032_MACHINE_ID		3203
 
 
 ---- [kparams] ----

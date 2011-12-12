@@ -1482,19 +1482,6 @@ void per_clocks_enable(void)
  MUX_VAL(CP(SYS_OFF_MODE),	(IEN  | PTD | DIS | M0)) /* SYS_OFF_MODE*/\
  MUX_VAL(CP(SYS_CLKOUT1),	(IEN  | PTD | DIS | M0)) /* SYS_CLKOUT1*/\
  MUX_VAL(CP(SYS_CLKOUT2),	(IEN  | PTU | EN  | M4)) /* GPIO_186*/\
- /* USB EHCI (port 1)  */ \
- MUX_VAL(CP(ETK_CLK_ES2),	(IDIS | PTU | DIS | M3)) /* HSUSB1_STP   */\
- MUX_VAL(CP(ETK_CTL_ES2),	(IDIS | PTU | DIS | M3)) /* HSUSB1_CLK   */\
- MUX_VAL(CP(ETK_D0_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA0 */\
- MUX_VAL(CP(ETK_D1_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA1 */\
- MUX_VAL(CP(ETK_D2_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA2 */\
- MUX_VAL(CP(ETK_D3_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA3 */\
- MUX_VAL(CP(ETK_D4_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA4 */\
- MUX_VAL(CP(ETK_D5_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA5 */\
- MUX_VAL(CP(ETK_D6_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA6 */\
- MUX_VAL(CP(ETK_D7_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DATA7 */\
- MUX_VAL(CP(ETK_D8_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_DIR   */\
- MUX_VAL(CP(ETK_D9_ES2),	(IEN  | PTU | DIS | M3)) /* HSUSB1_NXT   */\
  /* Generic IO (outputs) */\
  MUX_VAL(CP(ETK_D10_ES2),	(IDIS | PTU | DIS | M4)) /* GPIO_24  - USB1HS_nRST */\
  MUX_VAL(CP(ETK_D12_ES2),	(IDIS | PTU | DIS | M4)) /* GPIO_26  - LED1        */\
@@ -1618,9 +1605,7 @@ void per_clocks_enable(void)
  *********************************************************/
 void set_muxconf_regs(void)
 {
-	// MUX_DEFAULT();
 	MUX_IGEP0020();
-	//MUX_IGEP0030();
 }
 
 static inline u32 get_part_sector_size_onenand(void)

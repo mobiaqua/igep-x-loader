@@ -444,6 +444,8 @@ int boot_linux (/*int machine_id*/)
                 printf("XLoader: IGEPv2 : kernel boot ...\n");
             else if(LMemoryLayout->machine_id == IGEP0030_MACHINE_ID)
                 printf("XLoader: IGEP Module : kernel boot ...\n");
+	    else if(LMemoryLayout->machine_id == IGEP0032_MACHINE_ID)
+                printf("XLoader: IGEP Module 0032 : kernel boot ...\n");
             else printf("XLoader: Unknown %d : kernel boot ...\n", LMemoryLayout->machine_id);
             /* Kernel Boot */
             theKernel (0, LMemoryLayout->machine_id, kparams);
