@@ -242,6 +242,100 @@ typedef enum {
 				(MICRON_TXP_165 << 8) | (MICRON_TWTR_165 << 16)
 
 /*
+ * Hynix : H9DH4GH4JJAPER-4EM
+ *
+ * 165MHz (optimized) 6.06ns
+ * ACTIMA
+ *	TDAL = 16 / 6.06 + 16 / 6.06 = 2.6 + 2.6 -> 6
+ *	TDPL (TWR) = 15 / 6.06 = 2.5 -> 3
+ *	TRRD = 12 / 6.06 = 1.98 -> 2
+ *	TRCD = 18 / 6.06 = 2.9 -> 3
+ *	TRP = 18 / 6.06 = 2.9 -> 3
+ *	TRAS = 42 / 6.06 = 6.9 -> 7
+ *	TRC = 55 / 6.06 = 9.1 -> 10
+ *	TRFC = 90 / 6.06 = 14.8 -> 15
+ * ACTIMB
+ *	TWTR = 1
+ *	TCKE = 1
+ *	TXSR = 140 / 6.06 = 23.1 = 24
+ *	TXP = 1
+ */
+#define HYNIX_TDAL_165	6
+#define HYNIX_TDPL_165	3
+#define HYNIX_TRRD_165	2
+#define HYNIX_TRCD_165	3
+#define HYNIX_TRP_165	3
+#define HYNIX_TRAS_165	7
+#define HYNIX_TRC_165	10
+#define HYNIX_TRFC_165	15
+#define HYNIX_V_ACTIMA_165		\
+	((HYNIX_TRFC_165 << 27) |	\
+	 (HYNIX_TRC_165 << 22) |	\
+	 (HYNIX_TRAS_165 << 18) |	\
+	 (HYNIX_TRP_165 << 15) |	\
+	 (HYNIX_TRCD_165 << 12) |	\
+	 (HYNIX_TRRD_165 << 9) |	\
+	 (HYNIX_TDPL_165 << 6) |	\
+	 (HYNIX_TDAL_165))
+
+#define HYNIX_TWTR_165	1
+#define HYNIX_TCKE_165	1
+#define HYNIX_TXSR_165	24
+#define HYNIX_TXP_165	1
+#define HYNIX_V_ACTIMB_165		\
+	((HYNIX_TCKE_165 << 12) |	\
+	 (HYNIX_TXSR_165 << 0)) |	\
+	(HYNIX_TXP_165 << 8) |		\
+	(HYNIX_TWTR_165 << 16)
+
+/*
+ * Hynix : H9DH4GH4JJAPER-4EM
+ *
+ * 200MHz (optimized) 5 ns
+ * ACTIMA
+ *	TDAL = 16 / 5 + 16 / 5 = 3.2 + 3.2 -> 7
+ *	TDPL (TWR) = 15 / 5 = 3 -> 3
+ *	TRRD = 10 / 5 = 2 -> 2
+ *	TRCD = 15 / 5 = 3 -> 3
+ *	TRP = 15 / 5 = 3 -> 3
+ *	TRAS = 40 / 5 = 8 -> 8
+ *	TRC = 55 / 5 = 11 -> 11
+ *	TRFC = 90 / 5 = 18 -> 18
+ * ACTIMB
+ *	TWTR = 2
+ *	TCKE = 1
+ *	TXSR = 140 / 5 = 28 = 28
+ *	TXP = 1
+ */
+#define HYNIX_TDAL_200	7
+#define HYNIX_TDPL_200	3
+#define HYNIX_TRRD_200	2
+#define HYNIX_TRCD_200	3
+#define HYNIX_TRP_200	3
+#define HYNIX_TRAS_200	8
+#define HYNIX_TRC_200	11
+#define HYNIX_TRFC_200	18
+#define HYNIX_V_ACTIMA_200		\
+	((HYNIX_TRFC_200 << 27) |	\
+	 (HYNIX_TRC_200 << 22) |	\
+	 (HYNIX_TRAS_200 << 18) |	\
+	 (HYNIX_TRP_200 << 15) |	\
+	 (HYNIX_TRCD_200 << 12) |	\
+	 (HYNIX_TRRD_200 << 9) |	\
+	 (HYNIX_TDPL_200 << 6) |	\
+	 (HYNIX_TDAL_200))
+
+#define HYNIX_TWTR_200	2
+#define HYNIX_TCKE_200	1
+#define HYNIX_TXSR_200	28
+#define HYNIX_TXP_200	1
+#define HYNIX_V_ACTIMB_200		\
+	((HYNIX_TCKE_200 << 12) |	\
+	 (HYNIX_TXSR_200 << 0)) |	\
+	(HYNIX_TXP_200 << 8) |		\
+	(HYNIX_TWTR_200 << 16)
+
+/*
  * Micron : MT29C4G48MAYAPAKQ-5 IT, MT29C4G48MAZAPAKQ-5 IT,
  *          MT29C4G96MAZAPCJG-5 IT, MT29C8G96MAZAPDJV-5 IT
  *
