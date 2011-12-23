@@ -35,10 +35,12 @@
 struct mtd_info;
 struct nand_flash_dev;
 /* Scan and identify a NAND device */
-extern int nand_scan (struct mtd_info *mtd, int max_chips);
+extern int nand_scan (struct mtd_info *mtd, int max_chips, int *nand_maf_id,
+		      int *nand_dev_id);
 /* Separate phases of nand_scan(), allowing board driver to intervene
  * and override command or ECC setup according to flash type */
-extern int nand_scan_ident(struct mtd_info *mtd, int max_chips);
+extern int nand_scan_ident(struct mtd_info *mtd, int max_chips,
+			   int *nand_maf_id, int *nand_dev_id);
 extern int nand_scan_tail(struct mtd_info *mtd);
 
 /* Free resources held by the NAND device */
@@ -212,6 +214,10 @@ typedef enum {
 /* Cell info constants */
 #define NAND_CI_CHIPNR_MSK	0x03
 #define NAND_CI_CELLTYPE_MSK	0x0C
+
+/* Constants for NAND devices manufacturers */
+#define NAND_MICRON_ID		0x2C
+#define NAND_HYNIX_ID		0xAD
 
 /* Keep gcc happy */
 struct nand_chip;

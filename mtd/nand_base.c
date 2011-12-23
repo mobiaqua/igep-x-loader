@@ -1467,9 +1467,10 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
  *
  * The mtd->owner field must be set to the module of the caller.
  */
-int nand_scan_ident(struct mtd_info *mtd, int maxchips)
+int nand_scan_ident(struct mtd_info *mtd, int maxchips, int *nand_maf_id,
+		    int *nand_dev_id)
 {
-	int busw, nand_maf_id, nand_dev_id;
+	int busw;
 	struct nand_chip *chip = mtd->priv;
 	const struct nand_flash_dev *type;
 
@@ -1481,7 +1482,7 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips)
 
 	chip->read_buf = nand_read_buf;
 
-	type = nand_get_flash_type(mtd, chip, busw, &nand_maf_id, &nand_dev_id);
+	type = nand_get_flash_type(mtd, chip, busw, nand_maf_id, nand_dev_id);
 
 	chip->read_byte = nand_read_byte16;
 	chip->read_buf = nand_read_buf16;
@@ -1642,7 +1643,8 @@ int board_nand_init(struct nand_chip *nand)
  * The mtd->owner field must be set to the module of the caller
  *
  */
-int nand_scan(struct mtd_info *mtd, int maxchips)
+int nand_scan(struct mtd_info *mtd, int maxchips, int *nand_maf_id,
+	      int *nand_dev_id)
 {
 	int ret;
 
@@ -1654,7 +1656,7 @@ int nand_scan(struct mtd_info *mtd, int maxchips)
 
 	board_nand_init(mtd->priv);
 
-	ret = nand_scan_ident(mtd, maxchips);
+	ret = nand_scan_ident(mtd, maxchips, nand_maf_id, nand_dev_id);
 
 	if (!ret)
 		ret = nand_scan_tail(mtd);
