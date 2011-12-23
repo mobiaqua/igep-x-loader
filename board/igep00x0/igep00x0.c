@@ -775,12 +775,9 @@ void try_unlock_memory(void)
 	return;
 }
 
-/*
- *
- */
-void config_sdram_mt29cxgxxmaxx(void)
+void config_sdram(int actima, int actimb)
 {
-	/* reset sdrc controller */
+		/* reset sdrc controller */
 	__raw_writel(SOFTRESET, SDRC_SYSCONFIG);
 	wait_on_value(BIT0, BIT0, SDRC_STATUS, 12000000);
 	__raw_writel(0, SDRC_SYSCONFIG);
@@ -796,10 +793,10 @@ void config_sdram_mt29cxgxxmaxx(void)
 	__raw_writel((0x03588019|B_ALL), SDRC_MCFG_1);
 
 	/* Set timings */
-	__raw_writel(MT29CXGXXMAXX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_0);
-	__raw_writel(MT29CXGXXMAXX_V_ACTIMB_200, SDRC_ACTIM_CTRLB_0);
-	__raw_writel(MT29CXGXXMAXX_V_ACTIMA_200, SDRC_ACTIM_CTRLA_1);
-	__raw_writel(MT29CXGXXMAXX_V_ACTIMB_200, SDRC_ACTIM_CTRLB_1);
+	__raw_writel(actima, SDRC_ACTIM_CTRLA_0);
+	__raw_writel(actimb, SDRC_ACTIM_CTRLB_0);
+	__raw_writel(actima, SDRC_ACTIM_CTRLA_1);
+	__raw_writel(actimb, SDRC_ACTIM_CTRLB_1);
 
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
 
@@ -828,9 +825,25 @@ void config_sdram_mt29cxgxxmaxx(void)
 }
 
 /*
- *
+ * Configure Hynix NAND flash RAM memory module
  */
-void config_nand_mt29cxgxxmaxx(void)
+void config_sdram_hynix(void)
+{
+	config_sdram(HYNIX_V_ACTIMA_200, HYNIX_V_ACTIMB_200);
+}
+
+/*
+ * Configure Micron NAND flash RAM memory module
+ */
+void config_sdram_mt29cxgxxmaxx(void)
+{
+	config_sdram(MT29CXGXXMAXX_V_ACTIMA_200, MT29CXGXXMAXX_V_ACTIMB_200);
+}
+
+/*
+ * Config flash storage NAND module
+ */
+void config_nand_flash(void)
 {
 	/* global settings */
 	__raw_writel(0x10, GPMC_SYSCONFIG);	/* smart idle */
@@ -1054,8 +1067,19 @@ int s_init(void)
 	  if (mem_type == GPMC_ONENAND)
 		  config_multichip_package();
 	  else if (mem_type == GPMC_NAND) {
-		  config_sdram_mt29cxgxxmaxx();
-		  config_nand_mt29cxgxxmaxx();
+		  /*
+		     NOTE: The RAM has to be initialized since some MTD
+		     data structures don't fit in the 64 KB memory and
+		     are stored in RAM.
+		     The problem is that each flash memory have different
+		     minimum timings constraints. So we have to use a
+		     default RAM configuration until we can get the correct
+		     NAND manufacturer id and reconfigure the RAM accordingly.
+		     Since the times are a minimum threshold, we use the slower
+		     memory configuration by default.
+		   */
+		  config_sdram_hynix();
+		  config_nand_flash();
 	  } else
 		  return 1;
 
@@ -1736,6 +1760,7 @@ void flash_init(void)
     u32 size;
     char *dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
     u32 mem_type;
+    int nand_maf_id, nand_dev_id;
 
     mtd_info = malloc(sizeof(struct mtd_info));
     memset(mtd_info, 0, sizeof(struct mtd_info));
@@ -1762,8 +1787,13 @@ void flash_init(void)
 
     if (mem_type == GPMC_ONENAND)
 	    onenand_scan(mtd_info, 1);
-    else
-	    nand_scan(mtd_info, 1);
+    else {
+	    nand_scan(mtd_info, 1, &nand_maf_id, &nand_dev_id);
+	    if (nand_maf_id == NAND_MICRON_ID)
+		    config_sdram_mt29cxgxxmaxx();
+	    else if (nand_maf_id == NAND_HYNIX_ID)
+		    config_sdram_hynix();
+    }
 
 #ifdef __DEBUG__
 	printf("OneNAND: ");
