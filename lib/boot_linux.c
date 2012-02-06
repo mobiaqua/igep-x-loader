@@ -71,6 +71,8 @@ static struct tag *params = (struct tag *) XLOADER_KERNEL_PARAMS;
 
 char *kImage_Name = NULL;
 char *kRdImage_Name = NULL;
+/* Default Boot kernel */
+int boot_kernel = 1;
 
 /* Initialize */
 static void init_memory_layout (void)
@@ -296,6 +298,12 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             sscanf(value, "%u", &v);
             LMemoryLayout->machine_id = v;
         }
+        else if(!strcmp(key, "Mode")){
+            if(!strcmp(value, "kernel")){
+                boot_kernel=1;
+            }
+            else boot_kernel=0;
+        }
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
@@ -400,6 +408,7 @@ int boot_linux (/*int machine_id*/)
     int bootr = -1;
     // int machine_id = IGEP0030_MACHINE_ID;
     void (*theKernel)(int zero, int arch, uint params);
+    void (*theARMExec)(void);
 
 #ifdef __DEBUG__
     printf("Init Memory Layout\n");
@@ -419,14 +428,22 @@ int boot_linux (/*int machine_id*/)
         bootr = load_kernel_image (LMemoryLayout);
 	/* if bootr it's > 0 then we get right the kernel image */
         if(bootr > 0){
-	    /* prepare the kernel command line list */
+            // If boot_kernel == 0 then we load a binary file and jump to it
+            if(!boot_kernel){
+                printf("XLoader: Boot ARM binary mode: %s ...\n", kImage_Name);
+                cleanup_before_linux();
+                theARMExec = (void (*)(void)) LMemoryLayout->kbase_address;
+                theARMExec();
+                hang();
+            }
+            /* prepare the kernel command line list */
             setup_start_tag();
             setup_memory_tags();
             setup_serial_tag();
             setup_revision_tag();
-		if(LMemoryLayout->rdImage_size > 0){
-			setup_initrd_tag((ulong) LMemoryLayout->kImage_rd_address , LMemoryLayout->rdImage_size);
-		}
+            if(LMemoryLayout->rdImage_size > 0){
+                setup_initrd_tag((ulong) LMemoryLayout->kImage_rd_address , LMemoryLayout->rdImage_size);
+            }
 
 #ifdef __DEBUG__
             // printf("kernel command line: \n%s\n", LMemoryLayout->kcmdline);
@@ -444,7 +461,7 @@ int boot_linux (/*int machine_id*/)
                 printf("XLoader: IGEPv2 : kernel boot ...\n");
             else if(LMemoryLayout->machine_id == IGEP0030_MACHINE_ID)
                 printf("XLoader: IGEP Module : kernel boot ...\n");
-	    else if(LMemoryLayout->machine_id == IGEP0032_MACHINE_ID)
+            else if(LMemoryLayout->machine_id == IGEP0032_MACHINE_ID)
                 printf("XLoader: IGEP Module 0032 : kernel boot ...\n");
             else printf("XLoader: Unknown %d : kernel boot ...\n", LMemoryLayout->machine_id);
             /* Kernel Boot */
