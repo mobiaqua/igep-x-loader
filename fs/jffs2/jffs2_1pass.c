@@ -198,8 +198,10 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 				   it's a bootloader, nobody cares */
 				nand_cache = malloc(NAND_CACHE_SIZE);
 				if (!nand_cache) {
+#ifdef __DEBUG__					
 					printf("read_nand_cached: can't alloc cache size %d bytes\n",
 					       NAND_CACHE_SIZE);
+#endif					       
 					return -1;
 				}
 			}
@@ -208,8 +210,10 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 			if (nand_read(mtd_info, nand_cache_off, retlen,
 				      &retlen, nand_cache) != 0 ||
 			    retlen != NAND_CACHE_SIZE) {
+#ifdef __DEBUG__										
 				printf("read_nand_cached: error reading nand off %#x size %d bytes\n",
 				       nand_cache_off, NAND_CACHE_SIZE);
+#endif				       
 				return -1;
 			}
 		}
@@ -229,7 +233,9 @@ static void *get_fl_mem_nand(u32 off, u32 size, void *ext_buf)
 	u_char *buf = ext_buf ? (u_char*)ext_buf : (u_char*)malloc(size);
 
 	if (NULL == buf) {
+#ifdef __DEBUG__		
 		printf("get_fl_mem_nand: can't alloc %d bytes\n", size);
+#endif		
 		return NULL;
 	}
 	if (read_nand_cached(off, size, buf) < 0) {
@@ -252,8 +258,10 @@ static void *get_node_mem_nand(u32 off, void *ext_buf)
 	if (!(ret = get_fl_mem_nand(off, node.magic ==
 			       JFFS2_MAGIC_BITMASK ? node.totlen : sizeof(node),
 			       ext_buf))) {
+#ifdef __DEBUG__					   
 		printf("off = %#x magic %#x type %#x node.totlen = %d\n",
 		       off, node.magic, node.nodetype, node.totlen);
+#endif		       
 	}
 	return ret;
 }
@@ -507,9 +515,9 @@ static char *compr_names[] = {
 	"COPY",
 	"DYNRUBIN",
 	"ZLIB",
-#if defined(CONFIG_JFFS2_LZO)
+// #if defined(CONFIG_JFFS2_LZO)
 	"LZO",
-#endif
+// #endif
 };
 
 /* Memory management */
@@ -1327,9 +1335,11 @@ static int jffs2_sum_process_sum_data(struct part_info *part, uint32_t offset,
 				default : {
 					uint16_t nodetype = sum_get_unaligned16(
 								&spu->nodetype);
+#ifdef __DEBUG__								
 					printf("Unsupported node type %x found"
 							" in summary!\n",
 							nodetype);
+#endif							
 					if ((nodetype & JFFS2_COMPAT_MASK) ==
 							JFFS2_FEATURE_INCOMPAT)
 						return -EIO;
@@ -1502,8 +1512,9 @@ jffs2_1pass_build_lists(struct part_info * part)
 	jffs_init_1pass_list(part);
 	pL = (struct b_lists *)part->jffs2_priv;
 	buf = malloc(buf_size);
+#ifdef __DEBUG__	
 	printf ("Scanning JFFS2 FS:   ");
-
+#endif
 	/* start at the beginning of the partition */
 	for (i = 0; i < nr_sectors; i++) {
 		uint32_t sector_ofs = i * part->sector_size;
@@ -1537,8 +1548,10 @@ jffs2_1pass_build_lists(struct part_info * part)
 				/* Need to kmalloc for this. */
 				sumptr = malloc(sumlen);
 				if (!sumptr) {
+#ifdef __DEBUG__					
 					putstr("Can't get memory for summary "
 							"node!\n");
+#endif							
 					free(buf);
 					jffs2_free_cache(part);
 					return 0;
@@ -1594,7 +1607,9 @@ jffs2_1pass_build_lists(struct part_info * part)
 	scan_more:
 		while (ofs < sector_ofs + part->sector_size) {
 			if (ofs == prevofs) {
+#ifdef __DEBUG__				
 				printf("offset %08x already seen, skip\n", ofs);
+#endif				
 				ofs += 4;
 				counter4++;
 				continue;
@@ -1746,7 +1761,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 	}
 
 	free(buf);
-	putstr("\b\b done.\r\n");		/* close off the dots */
+	putstr("\b\b Flash Scan done.\r\n");		/* close off the dots */
 
 	/* We don't care if malloc failed - then each read operation will
 	 * allocate its own buffer as necessary (NAND) or will read directly

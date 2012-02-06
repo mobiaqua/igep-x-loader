@@ -73,7 +73,9 @@ static inline int gpio_valid(int gpio)
 static int check_gpio(int gpio)
 {
 	if (gpio_valid(gpio) < 0) {
+#ifdef __DEBUG__		
 		printf("ERROR : check_gpio: invalid GPIO %d\n", gpio);
+#endif		
 		return -1;
 	}
 	return 0;
@@ -123,8 +125,10 @@ static void _set_gpio_dataout(struct gpio_bank *bank, int gpio, int enable)
 		l = 1 << gpio;
 		break;
 	default:
+#ifdef __DEBUG__	
 		printf("omap3-gpio unknown bank method %s %d\n",
 		       __FILE__, __LINE__);
+#endif		       
 		return;
 	}
 	__raw_writel(l, reg);
