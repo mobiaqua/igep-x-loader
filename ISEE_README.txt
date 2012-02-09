@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2011 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.3.0-2
+# Version: IGEP-X-Loader 2.3.0-3
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -83,9 +83,10 @@ loader for Embedded boards based on OMAP processors.
 * Added Support Initial Ram disk
 * Reconfigure Makefile options
 * Support Kernels 2.6.35 and 2.6.37
+* Added support for boot a ARM binary executable
 
-2.2 Issues
------------
+2.2 Issues & Limitations
+------------------------
 
 * The ini file it's limited to max size: 16 KiB
   This is not a real limitation due all ini file it's 
@@ -120,6 +121,10 @@ loader for Embedded boards based on OMAP processors.
 [2.2.0-1] Downgrade the boot processor speed
 [2.3.0-1] Add NAND flash devices and Micron MT29CXGXXMAXX memories support
 [2.3.0-2] Add Hynix NAND memorie and IGEP0032 support
+----
+[2.3.0-3] Add Support for execute ARM binaries
+[2.3.0-3] Bug Fixes related to I and D Cache
+
 
 3 Status:
 ==========
@@ -162,27 +167,86 @@ Please find a igep.ini example inside the scripts directory.
 # '#' and ';' as comment check file size restrictions
 
 [kernel]
+[kernel]
+; Kernel load address, NOT Modify
 kaddress=0x80008000
+; RAM disk load Address, NOT Modify (Uncomment if you wish load a ram disk)
 ;rdaddress=0x81600000
+; Board Serial ID
 serial.low=00000001
 serial.high=00000000
-revision=0001
-;kImageName=
-;kRdImageName=
+; Board Revision
+revision=0003
+; Kernel Image Name or ARM binary file
+kImageName=zImage
+;kImageName=u-boot.bin
+; Kernel RAM Disk Image Name (Uncomment with your ramdisk file)
+;kRdImageName=initrd.img-2.6.35-1010-linaro-omap
+;kRdImageName=rd-igepv2.bin
+; Module = 2717 IGEPv2 = 2344
+MachineID=2344
+; Boot Mode = binary or kernel
+Mode=kernel
 
 [kparams]
-console=ttyS2,115200n8
+; IGEP configuration set
+;buddy=base0010
+buddy=igep0022
+; Setup the Kernel console params
+; ttyO2 = if kernel it's >= 2.6.37
+console=ttyO2,115200n8
+; ttyO2 = if kernel it's <= 2.6.35
+;console=ttyS2,115200n8
+; Enable early printk
+;earlyprintk=serial,tty02,115200
 ;earlyprintk=serial,ttyS2,115200
-mem=512M
+; Setup the Board Memory Configuration
+mem=430M
+;mem=512M
+;mem=64M
+;mem=128M
+; Setup the Boot Delay
 boot_delay=0
-;mpurate=800
+; Setup the ARM Processor Speed
+;mpurate=1000
+; Setup the loglevel
 ;loglevel=7
-omapfb.mode=dvi:1024x768MR-16@60
+;Enable Kernel Debug Output
+;debug=1
+;Fix RTC Variable
+;fixrtc=1
+;Configure nocompcache variable
+nocompcache=1
+; Configure Frame Buffer Configuration
+;omapfb.mode=dvi:1280x720MR-16@60
+omapfb.mode=dvi:hd720-16@50
+;Configure Video Ram assigned
+;vram=40M
+;vram=4M
+; Configure Video RAM assigned to every frame buffer
+;omapfb.vram=0:12M,1:16M,2:12M
+; Configure frame buffer debug output
+;omapfb.debug=1
+; Configure DSS Video Debug option
+;omapdss.debug=1
+; Configure the Board Ethernet Mac Address
+smsc911x.mac0=0xb2,0xb0,0x14,0xb5,0xcd,0xde
+smsc911x.mac1=0xb2,0xb0,0x14,0xb5,0xcd,0xdf
 smsc911x.mac=0xb2,0xb0,0x14,0xb5,0xcd,0xde
-;ubi.mtd=2
+;  --- Configure UBI FS boot --- 
+;ubi.mtd=2 
 ;root=ubi0:igep0020-rootfs 
 ;rootfstype=ubifs
+;  --- Configure NFS boot --- 
+;ip=192.168.2.123:192.168.2.110:192.168.2.1:255.255.255.0::eth0:
+;root=/dev/nfs
+;nfsroot=192.168.2.110:/srv/nfs/linaro_netbook
+;  --- Configure MMC boot --- 
 root=/dev/mmcblk0p2 rw rootwait
+;root=/dev/ram0 rw
+; Assign Init program
+;init=/bin/bash
+;init=/linuxrc
 
 -----------------------------------
 
@@ -224,8 +288,11 @@ Kernel RAM Disk file, if you don't provide this tag it try to load these others:
 Board ID actually support two values:
 IGEP0020_MACHINE_ID             2344
 IGEP0030_MACHINE_ID             2717
-IGEP0032_MACHINE_ID		3203
+IGEP0032_MACHINE_ID				3203
 
+* Mode
+kernel : Boot a Linux kernel 
+binary : Boot ARM binary
 
 ---- [kparams] ----
 Kernel parameters, all these parameters are passed directly to the kernel using the
