@@ -344,29 +344,19 @@ void cleanup_before_linux (void)
 
 	/* disable all interrupts */
 	disable_interrupts();
-
-	/* disable I and D caches */
-	icache_disable();
-	dcache_disable();
-	/* flush cache */
-	cache_flush();
-
-#ifdef __notdef
-#ifndef CONFIG_L2_OFF
-	/* turn off L2 cache */
-	l2_cache_disable();
-	/* invalidate L2 cache also */
-	invalidate_dcache(get_device_type());
-#endif
-
+    /* flush caches */
+    cache_flush();
+    /* enable I Cache */
+    icache_enable();
+    /* enable D Cache */
+    dcache_enable();
+    /* Invalidate d cache */
+    invalidate_dcache(get_device_type());
+    /* Enable l2 cache */
+    l2_cache_enable();
 	i = 0;
 	/* mem barrier to sync up things */
 	asm("mcr p15, 0, %0, c7, c10, 4": :"r"(i));
-
-#ifndef CONFIG_L2_OFF
-	l2_cache_enable();
-#endif
-#endif
 }
 
 int load_and_parse ()
