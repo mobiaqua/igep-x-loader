@@ -24,6 +24,7 @@
 #include <common.h>
 #include <config.h>
 #include <setup.h>
+#include <asm/arch/omap3.h>
 
 // #define __DEBUG__
 
@@ -344,19 +345,25 @@ void cleanup_before_linux (void)
 
 	/* disable all interrupts */
 	disable_interrupts();
-    /* flush caches */
-    cache_flush();
-    /* enable I Cache */
-    icache_enable();
-    /* enable D Cache */
-    dcache_enable();
-    /* Invalidate d cache */
-    invalidate_dcache(get_device_type());
+
+    if(is_cpu_family() == CPU_OMAP36XX){
+        /* flush caches */
+        cache_flush();
+        /* enable I Cache */
+        icache_enable();
+        /* enable D Cache */
+        dcache_enable();
+        /* Invalidate d cache */
+        invalidate_dcache(get_device_type());
+    }
+    else{
+        icache_disable();
+        dcache_disable();
+        /* flush cache */
+        cache_flush();
+    }
     /* Enable l2 cache */
     l2_cache_enable();
-	i = 0;
-	/* mem barrier to sync up things */
-	asm("mcr p15, 0, %0, c7, c10, 4": :"r"(i));
 }
 
 int load_and_parse ()
