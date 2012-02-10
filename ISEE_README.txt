@@ -60,12 +60,12 @@ loader for Embedded boards based on OMAP processors.
 * Added malloc/free functionality.
 * Added mtd framework and onenand support, removed the old onenand drivers.
 * Added fs jffs2 support using mtd & onenand support (Read Only).
-* Added crc32 and zlib. 
-* Jffs2 zlib compression support (Read Only).
+* Added crc32, zlib, lzo. 
+* Jffs2 zlib & lzo compression support (Read Only).
 * Dual boot mmc & onenand with mmc highest priority.
 * Added Linux kernel boot directly (Support for 2.6.22 and highest version kernels)
 * Linux kernel supported images: vmlinuz, bzImage and zImage.
-* Support for loading Linux Ram disk (EXPERIMENTAL)
+* Support for loading Linux Ram disk
 * Added "ini" files parser.
 * The configuration resides in a plain txt (ini format file).
 * Support Windows & Linux formating ini files.
@@ -79,11 +79,12 @@ loader for Embedded boards based on OMAP processors.
 * Optimize some LPDDR Memory configuration values
 * Removed some OneNand Debug information
 * Removed some FAT incorrect warnings
-* Only support gcc 4.5.2 linaro version
+* Support gcc 4.5.x linaro version
 * Added Support Initial Ram disk
 * Reconfigure Makefile options
 * Support Kernels 2.6.35 and 2.6.37
 * Added support for boot a ARM binary executable
+* Support for Numonyx, Micron & hynix POP memories
 
 2.2 Issues & Limitations
 ------------------------
@@ -100,7 +101,6 @@ loader for Embedded boards based on OMAP processors.
 --------
 
 * Remove compilation warnings.
-* Add in the tag=value inline comments
 
 2.4 Version Changes
 -------------------
