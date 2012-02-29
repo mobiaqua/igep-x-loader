@@ -111,13 +111,13 @@
  */
 
 #define CONFIG_JFFS2_NAND
+#define CONFIG_SYS_JFFS2_SORT_FRAGMENTS
 
 #include <common.h>
 #include <config.h>
 #include <malloc.h>
 #include <linux/stat.h>
 #include <linux/time.h>
-// #include <watchdog.h>
 #include <jffs2/jffs2.h>
 #include <jffs2/jffs2_1pass.h>
 #include <linux/mtd/compat.h>
@@ -128,15 +128,13 @@
 
 #include "jffs2_private.h"
 
-//#define __DEBUG__
-
 #define	NODE_CHUNK	1024	/* size of memory allocation chunk in b_nodes */
 #define	SPIN_BLKSIZE	18	/* spin after having scanned 1<<BLKSIZE bytes */
 
 /* Debugging switches */
-#undef	DEBUG_DIRENTS		/* print directory entry list after scan */
-#undef	DEBUG_FRAGMENTS		/* print fragment list after scan */
-#undef	DEBUG			/* enable debugging messages */
+#undef DEBUG_DIRENTS		/* print directory entry list after scan */
+#undef DEBUG_FRAGMENTS		/* print fragment list after scan */
+#undef DEBUG			/* enable debugging messages */
 
 
 #ifdef  DEBUG
@@ -182,6 +180,7 @@ static char* strchr(const char * s, int c)
 static u8* nand_cache = NULL;
 static u32 nand_cache_off = (u32)-1;
 
+#ifdef __notdef
 static int read_nand_cached(u32 off, u32 size, u_char *buf)
 {
 	struct mtdids *id = current_part->dev->id;
@@ -227,6 +226,40 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 	}
 	return bytes_read;
 }
+#else
+static int read_nand_cached(u32 off, u32 size, u_char *buf)
+{
+	u32 i = 0;
+	size_t retlen;
+	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / 4096;
+	if(!nand_cache){		
+		nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
+		for(i = 0; i < n_blocks; i++){
+			nand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, nand_cache + (i * 4096));
+			if(retlen != 4096){
+				printf("BUG() read_nand return = %u != 4096\n", retlen);
+			}
+		}
+#ifdef __DEBUG_MEMORY_TEST			
+		printf("Read Memory complete %08x\n", crc32(0, nand_cache, CONFIG_JFFS2_PART_SIZE));
+#endif		
+	}
+	if(off < CONFIG_JFFS2_PART_OFFSET){
+		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
+		return 0;
+	}
+	if(off > (CONFIG_JFFS2_PART_SIZE + CONFIG_JFFS2_PART_OFFSET)){
+		printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
+		return 0;
+	}
+	if(!buf){
+		printf("BUG() - NULL buffer pointer\n");
+		return 0;		
+	}	
+	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
+	return size;
+}
+#endif
 
 static void *get_fl_mem_nand(u32 off, u32 size, void *ext_buf)
 {
@@ -594,6 +627,8 @@ insert_node(struct b_list *list, u32 offset)
 		return NULL;
 	}
 	new->offset = offset;
+	
+	// printf("insert_node: %x\n", offset);
 
 #ifdef CONFIG_SYS_JFFS2_SORT_FRAGMENTS
 	if (list->listTail != NULL && list->listCompare(new, list->listTail))
@@ -761,22 +796,21 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 		put_fl_mem(jNode, pL->readbuf);
 	}
 #endif
-
-	for (b = pL->frag.listHead; b != NULL; b = b->next) {
+	for (b = pL->frag.listHead; b != NULL; b = b->next) {		
 		jNode = (struct jffs2_raw_inode *) get_node_mem(b->offset,
 								pL->readbuf);
 		if ((inode == jNode->ino)) {
 #if 0
-			printf("\r\n\r\nread_inode: totlen = ", jNode->totlen);
-			printf("read_inode: inode = ", jNode->ino);
-			printf("read_inode: version = ", jNode->version);
-			printf("read_inode: isize = ", jNode->isize);
-			printf("read_inode: offset = ", jNode->offset);
-			printf("read_inode: csize = ", jNode->csize);
-			printf("read_inode: dsize = ", jNode->dsize);
-			printf("read_inode: compr = ", jNode->compr);
-			printf("read_inode: usercompr = ", jNode->usercompr);
-			printf("read_inode: flags = ", jNode->flags);
+			printf("\n\nread_inode: totlen = %u ", jNode->totlen);
+			printf("read_inode: inode = %u ", jNode->ino);
+			printf("read_inode: version = %u ", jNode->version);
+			printf("read_inode: isize = %u ", jNode->isize);
+			printf("read_inode: offset = %x ", jNode->offset);
+			printf("read_inode: csize = %u ", jNode->csize);
+			printf("read_inode: dsize = %u\n", jNode->dsize);
+//			printf("read_inode: compr = ", jNode->compr);
+//			printf("read_inode: usercompr = ", jNode->usercompr);
+//			printf("read_inode: flags = ", jNode->flags);
 #endif
 
 #ifndef CONFIG_SYS_JFFS2_SORT_FRAGMENTS
@@ -786,7 +820,7 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 				latestVersion = jNode->version;
 			}
 #endif
-
+			// printf("insert_node: %x\n", b->offset);
 			if(dest) {
 				src = ((uchar *) jNode) + sizeof(struct jffs2_raw_inode);
 				/* ignore data behind latest known EOF */
@@ -874,8 +908,7 @@ jffs2_1pass_find_inode(struct b_lists * pL, const char *name, u32 pino)
 	counter = 0;
 	/* we need to search all and return the inode with the highest version */
 	for(b = pL->dir.listHead; b; b = b->next, counter++) {
-		jDir = (struct jffs2_raw_dirent *) get_node_mem(b->offset,
-								pL->readbuf);
+		jDir = (struct jffs2_raw_dirent *) get_node_mem(b->offset, pL->readbuf);
 		if ((pino == jDir->pino) && (len == jDir->nsize) &&
 		    (jDir->ino) &&	/* 0 for unlink */
 		    (!strncmp((char *)jDir->name, name, len))) {	/* a match */
@@ -1261,7 +1294,7 @@ static u32 sum_get_unaligned32(u32 *ptr)
 
 	val = *p | (*(p + 1) << 8) | (*(p + 2) << 16) | (*(p + 3) << 24);
 
-	return __le32_to_cpu(val);
+	return val;
 }
 
 static u16 sum_get_unaligned16(u16 *ptr)
@@ -1271,7 +1304,7 @@ static u16 sum_get_unaligned16(u16 *ptr)
 
 	val = *p | (*(p + 1) << 8);
 
-	return __le16_to_cpu(val);
+	return val;
 }
 
 #define dbg_summary(...) do {} while (0);
@@ -1511,10 +1544,10 @@ jffs2_1pass_build_lists(struct part_info * part)
 	/* if we are building a list we need to refresh the cache. */
 	jffs_init_1pass_list(part);
 	pL = (struct b_lists *)part->jffs2_priv;
-	buf = malloc(buf_size);
-#ifdef __DEBUG__	
-	printf ("Scanning JFFS2 FS:   ");
-#endif
+	buf = malloc(buf_size * 2);
+// #ifdef __DEBUG__	
+	printf("XLoader: Scan jffs2 partition: ");
+// #endif
 	/* start at the beginning of the partition */
 	for (i = 0; i < nr_sectors; i++) {
 		uint32_t sector_ofs = i * part->sector_size;
@@ -1528,6 +1561,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 		int ret;
 #endif
 		// WATCHDOG_RESET();
+		printf(".");
 
 #ifdef CONFIG_JFFS2_SUMMARY
 		buf_len = sizeof(*sm);
@@ -1722,8 +1756,8 @@ jffs2_1pass_build_lists(struct part_info * part)
 							 jffs2_raw_dirent *)
 							node))
 					break;
-				if (! (counterN%100))
-					printf ("\b\b.  ");
+				// if (! (counterN%100))
+					// printf ("\b\b.  ");
 				if (insert_node(&pL->dir, (u32) part->offset +
 						ofs) == NULL) {
 					free(buf);
@@ -1761,8 +1795,9 @@ jffs2_1pass_build_lists(struct part_info * part)
 	}
 
 	free(buf);
-	putstr("\b\b Flash Scan done.\r\n");		/* close off the dots */
-
+// #ifdef __DEBUG__	
+	printf("done.\n");		/* close off the dots */
+// #endif
 	/* We don't care if malloc failed - then each read operation will
 	 * allocate its own buffer as necessary (NAND) or will read directly
 	 * from flash (NOR).
@@ -1838,7 +1873,7 @@ jffs2_get_list(struct part_info * part, const char *who)
 	return (struct b_lists *)part->jffs2_priv;
 }
 
-
+#ifdef __notdef
 /* Print directory / file contents */
 u32
 jffs2_1pass_ls(struct part_info * part, const char *fname)
@@ -1863,7 +1898,7 @@ jffs2_1pass_ls(struct part_info * part, const char *fname)
 
 	return ret;
 }
-
+#endif
 
 /* Load a file from flash into memory. fname can be a full path */
 u32
@@ -1883,7 +1918,9 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 #endif
 		return 0;
 	}
-
+#ifdef __DEBUG__	
+	printf("(1) jffs2_1pass_load: %s (%x)\n", fname, inode);
+#endif
 	/* Resolve symlinks */
 	if (! (inode = jffs2_1pass_resolve_inode(pl, inode))) {
 #ifdef __DEBUG__
@@ -1891,13 +1928,23 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 #endif
 		return 0;
 	}
-
+#ifdef __DEBUG__	
+	printf("(2) jffs2_1pass_resolve_inode: %s (%x)\n", fname, inode);
+#endif
 	if ((ret = jffs2_1pass_read_inode(pl, inode, dest)) < 0) {
 #ifdef __DEBUG__
 		printf("load: Failed to read inode\r\n");
 #endif
 		return 0;
 	}
+#ifdef __DEBUG__	
+	printf("(3) jffs2_1pass_read_inode: %s (%x)\n", fname, inode);
+#endif	
+#ifdef __DEBUG_MEMORY_TEST	
+	// Check Memory crc
+	printf("(2) Read Memory complete %08x\n", crc32(0, nand_cache, CONFIG_JFFS2_PART_SIZE));
+#endif	
+	
 #ifdef __DEBUG__
 	printf("load: loaded '%s' to 0x%lx (%ld bytes)\n", fname,
 				(unsigned long) dest, ret);
