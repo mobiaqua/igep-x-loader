@@ -118,8 +118,6 @@ next:
 	cmp     r0, r2                  /* until source end address [r2]    */
 	bne     next                    /* loop until equal */
 
-	bl	cpy_clk_code            /* put dpll adjust code behind vectors */
- 
 	/* the mask ROM code should have PLL and others stable */
 	bl  cpu_init_crit
 
