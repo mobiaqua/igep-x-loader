@@ -372,8 +372,8 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 	u32 i = 0;
 	size_t retlen;
 	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / 4096;
-	if(!nand_cache){		
-		nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
+	if(!onenand_cache){
+		onenand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
 		for(i = 0; i < n_blocks; i++){
 			onenand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, onenand_cache + (i * 4096));
 			if(retlen != 4096){
@@ -1580,80 +1580,17 @@ jffs2_1pass_build_lists(struct part_info * part)
 	jffs_init_1pass_list(part);
 	pL = (struct b_lists *)part->jffs2_priv;
 	buf = malloc(buf_size * 2);
-// #ifdef __DEBUG__	
+
 	printf("XLoader: Scan jffs2 partition: ");
-// #endif
+
 	/* start at the beginning of the partition */
 	for (i = 0; i < nr_sectors; i++) {
 		uint32_t sector_ofs = i * part->sector_size;
 		uint32_t buf_ofs = sector_ofs;
 		uint32_t buf_len;
 		uint32_t ofs, prevofs;
-#ifdef CONFIG_JFFS2_SUMMARY
-		struct jffs2_sum_marker *sm;
-		void *sumptr = NULL;
-		uint32_t sumlen;
-		int ret;
-#endif
-		// WATCHDOG_RESET();
+
 		printf(".");
-
-#ifdef CONFIG_JFFS2_SUMMARY
-		buf_len = sizeof(*sm);
-
-		/* Read as much as we want into the _end_ of the preallocated
-		 * buffer
-		 */
-		get_fl_mem(part->offset + sector_ofs + part->sector_size -
-				buf_len, buf_len, buf + buf_size - buf_len);
-
-		sm = (void *)buf + buf_size - sizeof(*sm);
-		if (sm->magic == JFFS2_SUM_MAGIC) {
-			sumlen = part->sector_size - sm->offset;
-			sumptr = buf + buf_size - sumlen;
-
-			/* Now, make sure the summary itself is available */
-			if (sumlen > buf_size) {
-				/* Need to kmalloc for this. */
-				sumptr = malloc(sumlen);
-				if (!sumptr) {
-#ifdef __DEBUG__					
-					putstr("Can't get memory for summary "
-							"node!\n");
-#endif							
-					free(buf);
-					jffs2_free_cache(part);
-					return 0;
-				}
-				memcpy(sumptr + sumlen - buf_len, buf +
-						buf_size - buf_len, buf_len);
-			}
-			if (buf_len < sumlen) {
-				/* Need to read more so that the entire summary
-				 * node is present
-				 */
-				get_fl_mem(part->offset + sector_ofs +
-						part->sector_size - sumlen,
-						sumlen - buf_len, sumptr);
-			}
-		}
-
-		if (sumptr) {
-			ret = jffs2_sum_scan_sumnode(part, sector_ofs, sumptr,
-					sumlen, pL);
-
-			if (buf_size && sumlen > buf_size)
-				free(sumptr);
-			if (ret < 0) {
-				free(buf);
-				jffs2_free_cache(part);
-				return 0;
-			}
-			if (ret)
-				continue;
-
-		}
-#endif /* CONFIG_JFFS2_SUMMARY */
 
 		buf_len = EMPTY_SCAN_SIZE(part->sector_size);
 
@@ -1863,36 +1800,6 @@ jffs2_1pass_build_lists(struct part_info * part)
 	return 1;
 }
 
-
-static u32
-jffs2_1pass_fill_info(struct b_lists * pL, struct b_jffs2_info * piL)
-{
-	struct b_node *b;
-	struct jffs2_raw_inode ojNode;
-	struct jffs2_raw_inode *jNode;
-	int i;
-
-	for (i = 0; i < JFFS2_NUM_COMPR; i++) {
-		piL->compr_info[i].num_frags = 0;
-		piL->compr_info[i].compr_sum = 0;
-		piL->compr_info[i].decompr_sum = 0;
-	}
-
-	b = pL->frag.listHead;
-	while (b) {
-		jNode = (struct jffs2_raw_inode *) get_fl_mem(b->offset,
-			sizeof(ojNode), &ojNode);
-		if (jNode->compr < JFFS2_NUM_COMPR) {
-			piL->compr_info[jNode->compr].num_frags++;
-			piL->compr_info[jNode->compr].compr_sum += jNode->csize;
-			piL->compr_info[jNode->compr].decompr_sum += jNode->dsize;
-		}
-		b = b->next;
-	}
-	return 0;
-}
-
-
 static struct b_lists *
 jffs2_get_list(struct part_info * part, const char *who)
 {
@@ -1907,33 +1814,6 @@ jffs2_get_list(struct part_info * part, const char *who)
 	}
 	return (struct b_lists *)part->jffs2_priv;
 }
-
-#ifdef __notdef
-/* Print directory / file contents */
-u32
-jffs2_1pass_ls(struct part_info * part, const char *fname)
-{
-	struct b_lists *pl;
-	long ret = 1;
-	u32 inode;
-
-	if (! (pl = jffs2_get_list(part, "ls")))
-		return 0;
-
-	if (! (inode = jffs2_1pass_search_list_inodes(pl, fname, 1))) {
-		putstr("ls: Failed to scan jffs2 file structure\r\n");
-		return 0;
-	}
-
-
-#if 0
-	putLabeledWord("found file at inode = ", inode);
-	putLabeledWord("read_inode returns = ", ret);
-#endif
-
-	return ret;
-}
-#endif
 
 /* Load a file from flash into memory. fname can be a full path */
 u32
@@ -1985,29 +1865,4 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 				(unsigned long) dest, ret);
 #endif
 	return ret;
-}
-
-/* Return information about the fs on this partition */
-u32
-jffs2_1pass_info(struct part_info * part)
-{
-	struct b_jffs2_info info;
-	struct b_lists *pl;
-	int i;
-
-	if (! (pl  = jffs2_get_list(part, "info")))
-		return 0;
-
-	jffs2_1pass_fill_info(pl, &info);
-	for (i = 0; i < JFFS2_NUM_COMPR; i++) {
-		printf ("Compression: %s\n"
-			"\tfrag count: %d\n"
-			"\tcompressed sum: %d\n"
-			"\tuncompressed sum: %d\n",
-			compr_names[i],
-			info.compr_info[i].num_frags,
-			info.compr_info[i].compr_sum,
-			info.compr_info[i].decompr_sum);
-	}
-	return 1;
 }
