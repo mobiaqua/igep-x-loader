@@ -321,6 +321,7 @@ static void put_fl_mem_nand(void *buf)
 static u8* onenand_cache;
 static u32 onenand_cache_off = (u32)-1;
 
+#ifdef __notdef
 static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 {
 	u32 bytes_read = 0;
@@ -365,6 +366,40 @@ static int read_onenand_cached(u32 off, u32 size, u_char *buf)
 	}
 	return bytes_read;
 }
+#else
+static int read_onenand_cached (u32 off, u32 size, u_char *buf)
+{
+	u32 i = 0;
+	size_t retlen;
+	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / 4096;
+	if(!nand_cache){		
+		nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
+		for(i = 0; i < n_blocks; i++){
+			onenand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, onenand_cache + (i * 4096));
+			if(retlen != 4096){
+				printf("BUG() onenand_read return = %u != 4096\n", retlen);
+			}
+		}
+#ifdef __DEBUG_MEMORY_TEST			
+		printf("Read Memory complete %08x\n", crc32(0, onenand_cache, CONFIG_JFFS2_PART_SIZE));
+#endif		
+	}
+	if(off < CONFIG_JFFS2_PART_OFFSET){
+		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
+		return 0;
+	}
+	if(off > (CONFIG_JFFS2_PART_SIZE + CONFIG_JFFS2_PART_OFFSET)){
+		printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
+		return 0;
+	}
+	if(!buf){
+		printf("BUG() - NULL buffer pointer\n");
+		return 0;		
+	}	
+	memcpy(buf, &(onenand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
+	return size;
+}
+#endif
 
 static void *get_fl_mem_onenand(u32 off, u32 size, void *ext_buf)
 {
