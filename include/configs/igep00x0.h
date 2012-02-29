@@ -213,7 +213,7 @@
 #define XLOADER_KERNEL_MEMORY       XLOADER_CFG_GLOBAL_PTR      /* struct Linux_Memory_Layout (Reserved 32K) */
 #define XLOADER_CFG_FILE            XLOADER_KERNEL_MEMORY + (32 * 1024)      /* Configuration file : Reserved 32K */
 #define XLOADER_MALLOC_IPTR         XLOADER_CFG_FILE + (32 * 1024)      /* Malloc Initial Pointer */
-#define XLOADER_MALLOC_SIZE         8 * (1024 * 1014)                  /* Malloc space size = 32 M Bytes */
+#define XLOADER_MALLOC_SIZE         32 * (1024 * 1014)                  /* Malloc space size = 32 M Bytes */
 
 /* Kernel Parameters */
 #define IGEP0020_MACHINE_ID             2344
