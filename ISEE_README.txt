@@ -1,8 +1,8 @@
 #
-# (C) Copyright 2009-2011 ISEE
+# (C) Copyright 2009-2012 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.3.0-3
+# Version: IGEP-X-Loader 2.4.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -36,14 +36,13 @@ Index
 4.1 MMC Boot
 4.2 Setup igep.ini file
 4.3 Boot Priority
-4.4 OneNand Partition settings
+4.4 Nand Partition settings
 4.4.1 Xloader partition
 4.4.2 Boot Partition
 4.4.3 Rootfs
 5 Build procedure
 5.1 Build with Ubuntu Cross Compiler gcc 4.5.1
-5.2 Build with IGEP SDK
-5.3 Build Native
+5.2 Build Native
 6 Contribution & Support & Report Bugs
 
 1 Summary:
@@ -59,7 +58,7 @@ loader for Embedded boards based on OMAP processors.
 
 * Added malloc/free functionality.
 * Added mtd framework and onenand support, removed the old onenand drivers.
-* Added fs jffs2 support using mtd & onenand support (Read Only).
+* Added fs jffs2 support using mtd & onenand/nand support (Read Only).
 * Added crc32, zlib, lzo. 
 * Jffs2 zlib & lzo compression support (Read Only).
 * Dual boot mmc & onenand with mmc highest priority.
@@ -85,6 +84,13 @@ loader for Embedded boards based on OMAP processors.
 * Support Kernels 2.6.35 and 2.6.37
 * Added support for boot a ARM binary executable
 * Support for Numonyx, Micron & hynix POP memories
+* This software must be build with compilers from 4.5.1
+
+[NEW in this Version]
+
+* Added Memory test feature
+* Added some boot information
+* New read_nand_cache function optimized for load from NAND
 
 2.2 Issues & Limitations
 ------------------------
@@ -124,7 +130,13 @@ loader for Embedded boards based on OMAP processors.
 ----
 [2.3.0-3] Add Support for execute ARM binaries
 [2.3.0-3] Bug Fixes related to I and D Cache
-
+----
+[2.4.0-1] Added Memory test feature
+[2.4.0-1] Added some boot information
+[2.4.0-1] New read_nand_cache function optimized for load from NAND
+[2.4.0-1] BUG resolved: Refresh Setup in Micron & Hynix Memories
+[2.4.0-1] BUG resolved: Reset Memory controller after initialize Malloc function
+[2.4.0-1] BUG resolved: Resolve problems updating the flash content under jffs2
 
 3 Status:
 ==========
@@ -166,7 +178,6 @@ Please find a igep.ini example inside the scripts directory.
 # Note this format permits use the characters
 # '#' and ';' as comment check file size restrictions
 
-[kernel]
 [kernel]
 ; Kernel load address, NOT Modify
 kaddress=0x80008000
@@ -314,7 +325,7 @@ b) MLO (x-loader) in MMC, igep.ini and zImage in Onenand.
 If only MLO it's provided this one try to load the other information from
 the Onenand.
 
-4.4 OneNand Partition settings
+4.4 Nand Partition settings
 -------------------------------
 We suggest use minimum 3 partitions on the OneNand.
 
@@ -330,45 +341,37 @@ Creating 3 MTD partitions on "omap2-onenand":
 
 You should copy the x-loader in the firsts 4 blocks (first 512 KiB), this is not a 
 formated partition due the ROM not permits boot from there, you should use tools:
-flash_eraseall and nandwrite for copy x-loader in the first blocks.
+flash_eraseall and writeloader for copy x-loader in the first blocks.
 
 Suggested procedure:
 
-nand_eraseall /dev/mtd0
-nandwrite -p /dev/mtd0 <x-loader>
+$ flash_eraseall /dev/mtd0
+$ writeloader -i <x-load.bin.ift> -o /dev/mtd0
 
-* Sign x-loader
-You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
-
-contrib/signGP x-load.bin 
-The signed x-loader it's named: x-load.bin.ift
-
-Due the Onenand 512 MiB has two dies it's necessary split the x-loader and convert it to a 1 die binary.
-This is a know OMAP/DM/AM OneNand/Nand boot limitation.
-
-This is the procedure for create the x-loader OneNand binary:
-You should execute: (You can use copy paste in your console)
-
-split -b 2K x-load.bin.ift split-
-for file in `ls split-a?`; do cat $file >> x-load-ddp.bin.ift; cat $file >> x-load-ddp.bin.ift; done
-
-This last command generate a file named x-load-ddp.bin.ift this is the x-loader for copy it in the OneNand.
+Where: x-load.bin.ift it's the bootloader signed file
 
 4.4.2 Boot Partition
 --------------------
-* fs used jffs2 zlib compressed filesystem.
+* fs used jffs2 zlib or lzo compressed filesystem.
 * Suggested size: 0xC00000 (12 MiB)
 
 First time creation:
-a) Use the same procedure described in point 4.2.1. Copy your jffs2 compressed image in the
-partition, it can be a empty file.
 
-b) Erase the partition and mount it as jffs2 filesystem then you can copy with cp command.
+a) boot from a microsd card as described in point 4.1
 
-Next Times:
-Copy the files using cp command, or edit directly.
+b) Erase the boot partition
+$ flash_eraseall /dev/mtd1
 
-when kernel boots you can enable mount this partition over /boot directory for access all boot content.
+c) mount the partition
+$ mount -t jffs2 /dev/mtdblock1 /mnt
+
+d) Copy igep.ini and kernel image
+You should copy minimum the igep.ini file and your desired kernel image as
+cp igep.ini /mnt
+cp zImage /mnt
+
+When you need update or modify the contents you should mount the partition 
+as point (c) and then edit or copy your desired files directly.
 
 4.4.3 Rootfs 
 ------------
@@ -379,7 +382,7 @@ when kernel boots you can enable mount this partition over /boot directory for a
 5 Build procedure
 =================
 
-5.1 Build with Ubuntu Cross Compiler gcc 4.5.1
+5.1 Build with Ubuntu Cross Compiler gcc 4.5.1 or 4.5.3
 
 * This is tested with Ubuntu 10.10
 
@@ -387,7 +390,7 @@ a) Install the cross compiler:
 apt-get install cpp-4.5-arm-linux-gnueabi g++-4.5-arm-linux-gnueabi 
 
 b) Configure the board
-make igep0020-sdcard_config
+make igep00x0_config
 
 c) Build
 make
@@ -398,33 +401,10 @@ contrib/signGP x-load.bin
 The signed x-loader it's named: x-load.bin.ift
 
 
-5.2 Build with IGEP SDK
-
-a) Source the enviroment
-source /usr/local/poky/eabi-glibc/environment-setup-arm-none-linux-gnueabi 
-
-b) Edit the file Makefile
-Find the define:
-
-And Set the variable as:
-CROSS_COMPILE = arm-none-linux-gnueabi-
-
-b) Configure the board
-make igep0020-sdcard_config
-
-c) build
-make
-
-d) Sign x-loader
-You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
-contrib/signGP x-load.bin 
-The signed x-loader it's named: x-load.bin.ift
-
-
-5.3 Build Native
+5.2 Build Native
 
 a) Configure the board
-make igep0020-sdcard_config
+make igep00x0_config
 
 b) Modify the config.mk file
 Edit the variable CFLAGS and add the option: -fno-stack-protector
