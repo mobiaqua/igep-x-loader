@@ -42,7 +42,7 @@
 #endif
 
 const char version_string[] =
-	"IGEP-X-Loader 2.3.0-3 (" __DATE__ " - " __TIME__ ")";
+	"IGEP-X-Loader 2.4.0-1 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {
@@ -64,10 +64,10 @@ typedef int (init_fnc_t) (void);
 init_fnc_t *init_sequence[] = {
 	cpu_init,		/* basic cpu dependent setup */
 	init_func_i2c,
-	board_init,		/* basic board dependent setup */
 #ifdef CFG_NS16550_SERIAL
  	serial_init,		/* serial communications setup */
 #endif
+	board_init,		/* basic board dependent setup */
 	print_info,
 	flash_setup,	     	/* board specific nand init */
   	NULL,
