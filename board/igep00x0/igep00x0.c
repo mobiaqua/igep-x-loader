@@ -241,56 +241,6 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
  * get_sys_clk_speed - determine reference oscillator speed
  *  based on known 32kHz clock and gptimer.
  *************************************************************/
- #ifdef __notdef
-u32 get_osc_clk_speed(void)
-{
-	u32 start, cstart, cend, cdiff, val;
-
-	val = __raw_readl(PRM_CLKSRC_CTRL);
-
-    /* If SYS_CLK is being divided by 2, remove for now */
-    val = (val & (~BIT7)) | BIT6;
-    __raw_writel(val, PRM_CLKSRC_CTRL);
-
-	/* enable timer2 */
-	val = __raw_readl(CM_CLKSEL_WKUP) | BIT0;
-	__raw_writel(val, CM_CLKSEL_WKUP);	/* select sys_clk for GPT1 */
-
-	/* Enable I and F Clocks for GPT1 */
-	val = __raw_readl(CM_ICLKEN_WKUP) | BIT0 | BIT2;
-	__raw_writel(val, CM_ICLKEN_WKUP);
-	val = __raw_readl(CM_FCLKEN_WKUP) | BIT0;
-	__raw_writel(val, CM_FCLKEN_WKUP);
-
-	__raw_writel(0, OMAP34XX_GPT1 + TLDR);		/* start counting at 0 */
-	__raw_writel(GPT_EN, OMAP34XX_GPT1 + TCLR);	/* enable clock */
-	/* enable 32kHz source */
-	/* enabled out of reset */
-	/* determine sys_clk via gauging */
-
-	start = 20 + __raw_readl(S32K_CR);	/* start time in 20 cycles */
-	while (__raw_readl(S32K_CR) < start) ;	/* dead loop till start time */
-	cstart = __raw_readl(OMAP34XX_GPT1 + TCRR);	/* get start sys_clk count */
-	while (__raw_readl(S32K_CR) < (start + 20)) ;	/* wait for 40 cycles */
-	cend = __raw_readl(OMAP34XX_GPT1 + TCRR);	/* get end sys_clk count */
-	cdiff = cend - cstart;	/* get elapsed ticks */
-
-	/* based on number of ticks assign speed */
-	if (cdiff > 19000)
-		return S38_4M;
-	else if (cdiff > 15200)
-		return S26M;
-	else if (cdiff > 13000)
-		return S24M;
-	else if (cdiff > 9000)
-		return S19_2M;
-	else if (cdiff > 7600)
-		return S13M;
-	else
-		return S12M;
-}
-#else
-
 u32 get_osc_clk_speed(void)
 {
 	u32 start, cstart, cend, cdiff, cdiv, val;
@@ -351,7 +301,6 @@ u32 get_osc_clk_speed(void)
 		return (S12M);
 }
 
-#endif
 
 /******************************************************************************
  * get_sys_clkin_sel() - returns the sys_clkin_sel field value based on
@@ -797,6 +746,9 @@ void config_sdram(int actima, int actimb)
 	__raw_writel(actimb, SDRC_ACTIM_CTRLB_0);
 	__raw_writel(actima, SDRC_ACTIM_CTRLA_1);
 	__raw_writel(actimb, SDRC_ACTIM_CTRLB_1);
+	
+	__raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_0);
+	__raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_1);
 
 	__raw_writel(SDP_SDRC_POWER_POP, SDRC_POWER);
 
@@ -1062,11 +1014,12 @@ int s_init(void)
 	per_clocks_enable();
 	gpmc_init ();
 
-	  mem_type = get_mem_type();
+	/* Memory Configuration */
+	mem_type = get_mem_type();
 
-	  if (mem_type == GPMC_ONENAND)
-		  config_multichip_package();
-	  else if (mem_type == GPMC_NAND) {
+	if (mem_type == GPMC_ONENAND)
+		config_multichip_package();
+	else if (mem_type == GPMC_NAND) {
 		  /*
 		     NOTE: The RAM has to be initialized since some MTD
 		     data structures don't fit in the 64 KB memory and
@@ -1078,11 +1031,11 @@ int s_init(void)
 		     Since the times are a minimum threshold, we use the slower
 		     memory configuration by default.
 		   */
-		  config_sdram_hynix();
+			config_sdram_mt29cxgxxmaxx();
+		  // config_sdram_hynix();
 		  config_nand_flash();
-	  } else
-		  return 1;
-
+	} else
+		return 1;
 	return 0;
 }
 
@@ -1112,8 +1065,42 @@ int board_init(void)
     }
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
+#ifdef __DEBUG_MEMORY_TEST    
+	// Do Memory stress 
+	// Address start 0x80000000 to 0x90000000
+	u32 pattern[] = {
+		0x10101010,
+		0x01010101,
+		0xF0F0F0F0,
+		0x0F0F0F0F,
+		0XFFFFFFFF,
+		0x00000000,
+	};
+	u32 *init_memory = (u32*) 0x80000000;
+	u32 i = 0;
+	u32 j = 0;
+	
+	printf("Memory Init TEST\n");
+	
+	while(pattern [j] != 0){
+		for(i=0; i < (256 * 1024 * 1024)/4; i++){
+			init_memory[i] = pattern[j];
+			if(init_memory[i] != pattern[j]){
+				printf("Write first stage Memory Error\n");
+			}
+		}
+		for(i=0; i < (256 * 1024 * 1024)/4; i++){
+			if(init_memory[i] != pattern[j]){
+				printf("Write second stage Memory Error\n");
+			}			
+		}		
+		printf("loop %d complete\n", j);
+		j++;
+	}
+	printf("Memory END TEST\n");
+#endif        
     // Setup Malloc memory
-    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
+    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);	
 
 	return 0;
 }
@@ -1750,15 +1737,26 @@ static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *d
 		*ret_id = p;
 	return 0;
 }
+#ifdef __DEBUG__
+void print_dirent (char* dname)
+{
+    struct mtdids *id;
+    struct part_info *part;
+    id = (struct mtdids *)(current_mtd_dev + 1);
+    part = (struct part_info *)(id + 1);
 
-void flash_init(void)
+	jffs2_1pass_ls(part, dname );	
+}
+#endif
+
+void flash_init (void)
 {
 
     struct mtdids *id;
     struct part_info *part;
     char *dev_name;
     u32 size;
-    char *dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
+    // char *dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
     u32 mem_type;
     int nand_maf_id, nand_dev_id;
 
@@ -1784,16 +1782,16 @@ void flash_init(void)
 	    printf("IGEP: Flash: unsupported sysboot sequence found\n");
 	    hang();
     }
-
+	
     if (mem_type == GPMC_ONENAND)
 	    onenand_scan(mtd_info, 1);
-    else {
+    else {		
 	    nand_scan(mtd_info, 1, &nand_maf_id, &nand_dev_id);
-	    if (nand_maf_id == NAND_MICRON_ID)
+/*	    if (nand_maf_id == NAND_MICRON_ID)
 		    config_sdram_mt29cxgxxmaxx();
 	    else if (nand_maf_id == NAND_HYNIX_ID)
-		    config_sdram_hynix();
-    }
+		    config_sdram_hynix(); */
+    }    
 
 #ifdef __DEBUG__
 	printf("OneNAND: ");
@@ -1848,7 +1846,7 @@ void flash_init(void)
 #else
     part->offset = 0x00000000;
 #endif
-
+	
     part->dev = current_mtd_dev;
     INIT_LIST_HEAD(&part->link);
 
@@ -1866,8 +1864,8 @@ void flash_init(void)
     INIT_LIST_HEAD(&current_mtd_dev->link);
     current_mtd_dev->num_parts = 1;
     INIT_LIST_HEAD(&current_mtd_dev->parts);
-    list_add(&part->link, &current_mtd_dev->parts);
-
+    list_add(&part->link, &current_mtd_dev->parts);    
+    
 	return 0;
 
 }
