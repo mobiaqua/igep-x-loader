@@ -72,8 +72,12 @@ static struct tag *params = (struct tag *) XLOADER_KERNEL_PARAMS;
 
 char *kImage_Name = NULL;
 char *kRdImage_Name = NULL;
+char *kImageAlt_Name = NULL;
 /* Default Boot kernel */
 int boot_kernel = 1;
+#ifdef K_VERIFY_CRC
+int verify_ker_crc = 0;
+#endif
 
 /* Initialize */
 static void init_memory_layout (void)
@@ -208,6 +212,9 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
 	if(!myImage->kbase_address) return -1;
 
 	while(linuxName && !found){
+#ifdef __DEBUG__
+		printf("linux kernel name: %s\n", linuxName);
+#endif		
 		/* Try load the linuxName [n] Image into kbase_address */
 		if(from == IGEP_MMC_BOOT)
             size = file_fat_read(linuxName, myImage->kbase_address , 0);
@@ -215,9 +222,8 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
             size = load_jffs2_file(linuxName, myImage->kbase_address);
         	/* If size > 0 then the image was loaded ok */
 		if(size > 0){
-#ifdef __DEBUG__
-            printf("load kernel %s ok, entry point = 0x%x size = %d\n", linuxName, myImage->kbase_address, size);
-#endif
+			printf("XLoader: kernel %s loaded from %s at 0x%x size = %d\n", linuxName, from ? "FLASH" : "MMC" ,myImage->kbase_address, size);
+			if(!rdImageName) return 1;
 			/* Update the size variable */
 			myImage->k_size = size;
 			/* if the ram disk dest address it's not supplied then calculate the address */
@@ -227,7 +233,7 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
             }
 			/* try to load the RAM disk into kImage_rd_address */
 			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea
-			 * to permit supply a different names for it */
+			 * to permit supply a different names for it */			 
 			if(from == IGEP_MMC_BOOT)
                 size = file_fat_read(rdImageName, myImage->kImage_rd_address, 0);
             else
@@ -235,6 +241,7 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
             /* Update Information if we get the ram disk image into memory */
 			if(size > 0){
                 myImage->rdImage_size = size;
+                printf("XLoader: RamDisk %s loaded from %s at 0x%x size = %d\n", rdImageName, from ? "FLASH" : "MMC" ,myImage->kImage_rd_address, size);
             }
 #ifdef __DEBUG__
             printf("kernel %s found first stage done\n", linuxName);
@@ -305,6 +312,24 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             }
             else boot_kernel=0;
         }
+#ifdef K_VERIFY_CRC        
+        else if(!strcmp(key, "Validate_kCRC")){
+			if(!strcmp(value, "0"))
+				verify_ker_crc = 0;
+			else
+				verify_ker_crc = 1;
+		}
+		else if(!strcmp(key, "kcrc")){
+			sscanf(value, "%u", &v);
+		}
+		else (!strcmp(key, "kImageAltName")){
+			/* if CRC fails on first kernel it boots this backup directly */
+            if(kImageAlt_Name) free(kImageAlt_Name);
+            kImageAlt_Name = malloc (strlen(value)+1);
+            memcpy(kImageAlt_Name, value, strlen(value));
+            kImageAlt_Name[strlen(value)] = '\0';			
+		}
+#endif		
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
@@ -371,18 +396,14 @@ int load_and_parse ()
     int bootr;
     bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_MMC_BOOT, cfg_handler, (void*) LMemoryLayout);
     if(bootr >= 0){
-#ifdef __DEBUG__
-        printf("Loaded %s from MMC\n", IGEP_MMC_BOOT);
-#endif
+        printf("XLoader: Configuration file igep.ini Loaded from MMC\n");
         return bootr;
     }
     bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_ONENAND_BOOT, cfg_handler, (void*) LMemoryLayout);
-#ifdef __DEBUG__
     if(bootr >= 0)
-        printf("Loaded %s from OneNand\n", IGEP_ONENAND_BOOT);
+		printf("XLoader: Configuration file igep.ini Loaded from Flash memory\n");        
     else
-        printf("Configuration file <not found>\n");
-#endif
+        printf("XLoader: Configuration file igep.ini not found\n");
     return bootr;
 }
 
@@ -390,8 +411,10 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
 {
     // load_kernel
     int bootr;
+    printf("XLoader: try load kernel from MMC\n");
     bootr = load_kernel (layout, IGEP_MMC_BOOT);
-    if(bootr > 0) return bootr;
+    if(bootr > 0) return bootr;    
+    printf("XLoader: try load kernel from Flash\n");
     bootr = load_kernel (layout, IGEP_ONENAND_BOOT);
     return bootr;
 }
@@ -402,7 +425,7 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
 */
 int boot_linux (/*int machine_id*/)
 {
-    int bootr = -1;
+	int bootr = -1;
     // int machine_id = IGEP0030_MACHINE_ID;
     void (*theKernel)(int zero, int arch, uint params);
     void (*theARMExec)(void);
@@ -418,15 +441,15 @@ int boot_linux (/*int machine_id*/)
     /* parse configuration file */
     if(load_and_parse() >= 0){
 #ifdef __DEBUG__
-        printf("Try load kernel\n");
+		printf("Try load kernel\n");
 #endif
-	/* If parse it's ok, it's a good moment for load
+		/* If parse it's ok, it's a good moment for load
         the kernel image from the mmc card */
         bootr = load_kernel_image (LMemoryLayout);
-	/* if bootr it's > 0 then we get right the kernel image */
+		/* if bootr it's > 0 then we get right the kernel image */
         if(bootr > 0){
             // If boot_kernel == 0 then we load a binary file and jump to it
-            if(!boot_kernel){
+			if(!boot_kernel){
                 printf("XLoader: Boot ARM binary mode: %s ...\n", kImage_Name);
                 cleanup_before_linux();
                 theARMExec = (void (*)(void)) LMemoryLayout->kbase_address;
@@ -462,6 +485,11 @@ int boot_linux (/*int machine_id*/)
                 printf("XLoader: IGEP Module 0032 : kernel boot ...\n");
             else printf("XLoader: Unknown %d : kernel boot ...\n", LMemoryLayout->machine_id);
             /* Kernel Boot */
+#ifdef __DEBUG__
+			printf("kernel %p size %d crc %08x\n", LMemoryLayout->kbase_address,
+                   LMemoryLayout->k_size, crc32(0, LMemoryLayout->kbase_address,
+                                                LMemoryLayout->k_size));
+#endif                                                
             theKernel (0, LMemoryLayout->machine_id, kparams);
         }else{
             if(bootr < 0)
