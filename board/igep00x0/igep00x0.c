@@ -43,9 +43,15 @@
 #include <linux/ctypes.h>
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
+#include <asm/arch/gp_timer.h>
 
+// GPIO_LED_USER0 (led red)
 #define GPIO_LED_USER0      27
+// GPIO_LED_USER1 (led green)
 #define GPIO_LED_USER1      26
+// GPIO_LED_USER2 (led power)
+#define GPIO_LED_USER2      28
+
 
 u32 mfr = 0, mid = 0;
 struct mtd_info *mtd_info = NULL;
@@ -100,7 +106,7 @@ extern dpll_param *get_36x_per_dpll_param(void);
  * Routine: delay
  * Description: spinning delay to use before udelay works
  ******************************************************/
-static inline void delay(unsigned long loops)
+static inline void delay (unsigned long loops)
 {
 	__asm__ volatile ("1:\n" "subs %0, %1, #1\n"
 			  "bne 1b":"=r" (loops):"0"(loops));
@@ -1064,7 +1070,9 @@ int s_init(void)
 		*/
 		config_nand_flash();
 	} else
-		return 1;
+        hang();
+    // Initialize GP Timer
+    timer_init();
 	return 0;
 }
 
@@ -1170,10 +1178,14 @@ int misc_init_r(void)
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
 	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
-
-	omap_request_gpio(GPIO_LED_USER0);
-	omap_set_gpio_direction(GPIO_LED_USER0, 0);
-	omap_set_gpio_dataout(GPIO_LED_USER0, 1);
+    // Turn Off USER1 led
+	omap_request_gpio(GPIO_LED_USER1);
+	omap_set_gpio_direction(GPIO_LED_USER1, 0);
+	omap_set_gpio_dataout(GPIO_LED_USER1, 0);
+    // Turn On USER2 led
+	omap_request_gpio(GPIO_LED_USER2);
+	omap_set_gpio_direction(GPIO_LED_USER2, 0);
+	omap_set_gpio_dataout(GPIO_LED_USER2, 1);
 
 	// Print Configuration Setup
 	if(is_cpu_family() == CPU_OMAP36XX){
@@ -1921,11 +1933,12 @@ int flash_setup(void)
 /* optionally do something */
 void board_hang(void)
 {
+    reset_timer();
     while(1){
         omap_set_gpio_dataout(GPIO_LED_USER0, 1);
-        delay(1000);
+        __udelay(500000);
         omap_set_gpio_dataout(GPIO_LED_USER0, 0);
-        delay(1000);
+        __udelay(500000);
     }
 }
 
