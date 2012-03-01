@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2012 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.4.0-1
+# Version: IGEP-X-Loader 2.4.0-2
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -85,12 +85,14 @@ loader for Embedded boards based on OMAP processors.
 * Added support for boot a ARM binary executable
 * Support for Numonyx, Micron & hynix POP memories
 * This software must be build with compilers from 4.5.1
+* Memory Autodetection
 
 [NEW in this Version]
 
-* Added Memory test feature
-* Added some boot information
-* New read_nand_cache function optimized for load from NAND
+* Resolved Memory Autodetection
+* Better hang board led control
+* New read_nand_cache function optimized for load from OneNand
+* Added Hw GPtimer functionality
 
 2.2 Issues & Limitations
 ------------------------
@@ -137,6 +139,11 @@ loader for Embedded boards based on OMAP processors.
 [2.4.0-1] BUG resolved: Refresh Setup in Micron & Hynix Memories
 [2.4.0-1] BUG resolved: Reset Memory controller after initialize Malloc function
 [2.4.0-1] BUG resolved: Resolve problems updating the flash content under jffs2
+----
+[2.4.0-2] Resolved Memory Autodetection
+[2.4.0-2] Better hang board led control
+[2.4.0-2] New read_nand_cache function optimized for load from OneNand
+[2.4.0-2] Added Hw GPtimer functionality
 
 3 Status:
 ==========
