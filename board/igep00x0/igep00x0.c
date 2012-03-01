@@ -47,6 +47,7 @@
 #define GPIO_LED_USER0      27
 #define GPIO_LED_USER1      26
 
+u32 mfr = 0, mid = 0;
 struct mtd_info *mtd_info = NULL;
 struct onenand_chip *onenand_chip = NULL;
 struct nand_chip *nand_chip = NULL;
@@ -91,6 +92,9 @@ extern dpll_param *get_36x_per_dpll_param(void);
 #define __raw_writel(v, a)	(*(volatile unsigned int *)(a) = (v))
 #define __raw_readw(a)		(*(volatile unsigned short *)(a))
 #define __raw_writew(v, a)	(*(volatile unsigned short *)(a) = (v))
+#define __raw_readb(a)		(*(volatile unsigned char *)(a))
+#define __raw_writeb(v, a)	(*(volatile unsigned char *)(a) = (v))
+
 
 /*******************************************************
  * Routine: delay
@@ -811,22 +815,49 @@ void config_nand_flash(void)
 	__raw_writel(0 , GPMC_CONFIG7 + GPMC_CONFIG_CS0);
 	delay(1000);
 
-        __raw_writel(M_NAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
-        __raw_writel(M_NAND_GPMC_CONFIG7, GPMC_CONFIG7 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG1, GPMC_CONFIG1 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG2, GPMC_CONFIG2 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG3, GPMC_CONFIG3 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG4, GPMC_CONFIG4 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG5, GPMC_CONFIG5 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG6, GPMC_CONFIG6 + GPMC_CONFIG_CS0);
+	__raw_writel(M_NAND_GPMC_CONFIG7, GPMC_CONFIG7 + GPMC_CONFIG_CS0);
 
-        __raw_writel(4144, GPMC_BASE + GPMC_ECC_CONFIG);
-        __raw_writel(0, GPMC_BASE + GPMC_ECC_CONTROL);
+	__raw_writel(4144, GPMC_BASE + GPMC_ECC_CONFIG);
+	__raw_writel(0, GPMC_BASE + GPMC_ECC_CONTROL);
 
-        /* Enable the GPMC Mapping */
-        __raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
+	/* Enable the GPMC Mapping */
+	__raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
 		      ((NAND_BASE_ADR>>24) & 0x3F) |
 		      (1<<6) ),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
-        delay(2000);
+	delay(2000);
+}
+
+/* nand_command: Send a flash command to the flash chip */
+static void nand_command (u8 command)
+{
+	struct gpmc* gpmc_cfg = (struct gpmc *)GPMC_BASE;
+	__raw_writeb(command, &gpmc_cfg->cs[0].nand_cmd);
+	if (command == NAND_CMD_RESET) {
+		unsigned char ret_val;
+		__raw_writeb(NAND_CMD_STATUS, &gpmc_cfg->cs[0].nand_cmd);
+		do {
+			/* Wait until ready */
+				ret_val = __raw_readb(&gpmc_cfg->cs[0].nand_dat);
+		} while ((ret_val & NAND_STATUS_READY) != NAND_STATUS_READY);
+	}
+}
+
+
+void read_nand_manufacturer_id (u32 *m, u32 *i)
+{
+	struct gpmc* gpmc_cfg = (struct gpmc *)GPMC_BASE;	
+	nand_command(NAND_CMD_RESET);
+	nand_command(NAND_CMD_READID);
+	__raw_writeb(0x0, &gpmc_cfg->cs[0].nand_adr);
+	delay(2000);
+    *m = __raw_readb(&gpmc_cfg->cs[0].nand_dat);
+    *i = __raw_readb(&gpmc_cfg->cs[0].nand_dat);
 }
 
 /*
@@ -1004,7 +1035,7 @@ void config_multichip_package()
  **********************************************************/
 int s_init(void)
 {
-	u32 mem_type;
+	u32 mem_type;	
 
 	watchdog_init();
 	try_unlock_memory();
@@ -1017,23 +1048,21 @@ int s_init(void)
 	/* Memory Configuration */
 	mem_type = get_mem_type();
 
-	if (mem_type == GPMC_ONENAND)
+	if (mem_type == GPMC_ONENAND){		
 		config_multichip_package();
-	else if (mem_type == GPMC_NAND) {
-		  /*
-		     NOTE: The RAM has to be initialized since some MTD
-		     data structures don't fit in the 64 KB memory and
-		     are stored in RAM.
-		     The problem is that each flash memory have different
-		     minimum timings constraints. So we have to use a
-		     default RAM configuration until we can get the correct
-		     NAND manufacturer id and reconfigure the RAM accordingly.
-		     Since the times are a minimum threshold, we use the slower
-		     memory configuration by default.
-		   */
-			config_sdram_mt29cxgxxmaxx();
-		  // config_sdram_hynix();
-		  config_nand_flash();
+	} else if (mem_type == GPMC_NAND) {
+		/*
+			NOTE: The RAM has to be initialized since some MTD
+		    data structures don't fit in the 64 KB memory and
+		    are stored in RAM.
+		    The problem is that each flash memory have different
+		    minimum timings constraints. So we have to use a
+		    default RAM configuration until we can get the correct
+		    NAND manufacturer id and reconfigure the RAM accordingly.
+		    Since the times are a minimum threshold, we use the slower
+		    memory configuration by default.
+		*/		
+		config_nand_flash();
 	} else
 		return 1;
 	return 0;
@@ -1065,6 +1094,15 @@ int board_init(void)
     }
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
+    if(get_mem_type() == GPMC_NAND){    
+		read_nand_manufacturer_id(&mfr, &mid);
+		if(mfr == NAND_MICRON_ID){
+			config_sdram_mt29cxgxxmaxx();			
+		} else {
+			config_sdram_hynix();
+		}
+	}
+   
 #ifdef __DEBUG_MEMORY_TEST    
 	// Do Memory stress 
 	// Address start 0x80000000 to 0x90000000
@@ -1098,7 +1136,7 @@ int board_init(void)
 		j++;
 	}
 	printf("Memory END TEST\n");
-#endif        
+#endif
     // Setup Malloc memory
     mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);	
 
@@ -1125,6 +1163,8 @@ int misc_init_r(void)
     char prod_id[16];
     u32 cpu_release;
     u8 rev;
+    u32 mem_type;
+    
     // Turn ON USER0 led
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
@@ -1155,7 +1195,13 @@ int misc_init_r(void)
 	    }
     }
     else printf("XLoader: Processor OMAP3530\n");
-
+    
+	// Show Memory Manufacturer
+	mem_type = get_mem_type();
+	if(mem_type == GPMC_ONENAND)
+		printf("XLoader: Memory Manufacturer: %s\n", "Numonyx");
+	else
+		printf("XLoader: Memory Manufacturer: %s (%x)\n", (mfr == NAND_MICRON_ID) ? "Micron" : "Hynix", mfr);    
 	return 0;
 }
 
@@ -1737,26 +1783,13 @@ static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *d
 		*ret_id = p;
 	return 0;
 }
-#ifdef __DEBUG__
-void print_dirent (char* dname)
-{
-    struct mtdids *id;
-    struct part_info *part;
-    id = (struct mtdids *)(current_mtd_dev + 1);
-    part = (struct part_info *)(id + 1);
-
-	jffs2_1pass_ls(part, dname );	
-}
-#endif
 
 void flash_init (void)
 {
-
     struct mtdids *id;
     struct part_info *part;
     char *dev_name;
     u32 size;
-    // char *dest = XLOADER_MALLOC_IPTR + XLOADER_MALLOC_SIZE + (1 * 1024 * 1024);
     u32 mem_type;
     int nand_maf_id, nand_dev_id;
 
@@ -1771,6 +1804,7 @@ void flash_init (void)
 	    onenand_chip->base = (void *)CONFIG_SYS_ONENAND_BASE;
 	    mtd_info->priv = onenand_chip;
 	    dev_name ="onenand0";
+	    onenand_scan(mtd_info, 1);
     } else if (mem_type == GPMC_NAND) {
 	    nand_chip = malloc(sizeof(struct nand_chip));
 	    memset(nand_chip, 0, sizeof(struct nand_chip));
@@ -1778,20 +1812,11 @@ void flash_init (void)
 	    nand_chip->options |= NAND_BUSWIDTH_16;
 	    mtd_info->priv = nand_chip;
 	    dev_name ="nand0";
+	    nand_scan(mtd_info, 1, &nand_maf_id, &nand_dev_id);
     } else {
 	    printf("IGEP: Flash: unsupported sysboot sequence found\n");
 	    hang();
     }
-	
-    if (mem_type == GPMC_ONENAND)
-	    onenand_scan(mtd_info, 1);
-    else {		
-	    nand_scan(mtd_info, 1, &nand_maf_id, &nand_dev_id);
-/*	    if (nand_maf_id == NAND_MICRON_ID)
-		    config_sdram_mt29cxgxxmaxx();
-	    else if (nand_maf_id == NAND_HYNIX_ID)
-		    config_sdram_hynix(); */
-    }    
 
 #ifdef __DEBUG__
 	printf("OneNAND: ");
