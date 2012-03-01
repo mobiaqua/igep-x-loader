@@ -25,7 +25,7 @@
 				<Option type="1" />
 				<Option compiler="armelfgcc" />
 				<ExtraCommands>
-					<Add before="make CROSS_COMPILE=arm-none-linux-gnueabi- igep0020-sdcard_config" />
+					<Add before="make CROSS_COMPILE=arm-linux-gnueabi- igep00x0_config" />
 				</ExtraCommands>
 				<MakeCommands>
 					<Build command="$make -f $makefile" />
@@ -101,10 +101,6 @@
 		<Unit filename="../fs/jffs2/jffs2_1pass.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../fs/jffs2/jffs2_nand_1pass.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="../fs/jffs2/jffs2_nand_private.h" />
 		<Unit filename="../fs/jffs2/jffs2_private.h" />
 		<Unit filename="../fs/jffs2/mini_inflate.c">
 			<Option compilerVar="CC" />
@@ -278,18 +274,19 @@
 		<Unit filename="../lib/dlmalloc.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../lib/ecc.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="../lib/ini_parser.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../lib/printf.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../mtd/nand_base.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../mtd/onenand_base.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="igep.ini" />
 		<Extensions>
 			<code_completion />
 			<envvars />
