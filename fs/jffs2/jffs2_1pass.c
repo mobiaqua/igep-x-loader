@@ -180,53 +180,6 @@ static char* strchr(const char * s, int c)
 static u8* nand_cache = NULL;
 static u32 nand_cache_off = (u32)-1;
 
-#ifdef __notdef
-static int read_nand_cached(u32 off, u32 size, u_char *buf)
-{
-	struct mtdids *id = current_part->dev->id;
-	u32 bytes_read = 0;
-	size_t retlen;
-	int cpy_bytes;
-
-	while (bytes_read < size) {
-		if ((off + bytes_read < nand_cache_off) ||
-		    (off + bytes_read >= nand_cache_off+NAND_CACHE_SIZE)) {
-			nand_cache_off = (off + bytes_read) & NAND_PAGE_MASK;
-			if (!nand_cache) {
-				/* This memory never gets freed but 'cause
-				   it's a bootloader, nobody cares */
-				nand_cache = malloc(NAND_CACHE_SIZE);
-				if (!nand_cache) {
-#ifdef __DEBUG__					
-					printf("read_nand_cached: can't alloc cache size %d bytes\n",
-					       NAND_CACHE_SIZE);
-#endif					       
-					return -1;
-				}
-			}
-
-			retlen = NAND_CACHE_SIZE;
-			if (nand_read(mtd_info, nand_cache_off, retlen,
-				      &retlen, nand_cache) != 0 ||
-			    retlen != NAND_CACHE_SIZE) {
-#ifdef __DEBUG__										
-				printf("read_nand_cached: error reading nand off %#x size %d bytes\n",
-				       nand_cache_off, NAND_CACHE_SIZE);
-#endif				       
-				return -1;
-			}
-		}
-		cpy_bytes = nand_cache_off + NAND_CACHE_SIZE - (off + bytes_read);
-		if (cpy_bytes > size - bytes_read)
-			cpy_bytes = size - bytes_read;
-		memcpy(buf + bytes_read,
-		       nand_cache + off + bytes_read - nand_cache_off,
-		       cpy_bytes);
-		bytes_read += cpy_bytes;
-	}
-	return bytes_read;
-}
-#else
 static int read_nand_cached(u32 off, u32 size, u_char *buf)
 {
 	u32 i = 0;
@@ -259,7 +212,6 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
-#endif
 
 static void *get_fl_mem_nand(u32 off, u32 size, void *ext_buf)
 {
@@ -321,52 +273,6 @@ static void put_fl_mem_nand(void *buf)
 static u8* onenand_cache;
 static u32 onenand_cache_off = (u32)-1;
 
-#ifdef __notdef
-static int read_onenand_cached(u32 off, u32 size, u_char *buf)
-{
-	u32 bytes_read = 0;
-	size_t retlen;
-	int cpy_bytes;
-
-	while (bytes_read < size) {
-		if ((off + bytes_read < onenand_cache_off) ||
-		    (off + bytes_read >= onenand_cache_off + ONENAND_CACHE_SIZE)) {
-			onenand_cache_off = (off + bytes_read) & ONENAND_PAGE_MASK;
-			if (!onenand_cache) {
-				/* This memory never gets freed but 'cause
-				   it's a bootloader, nobody cares */
-				onenand_cache = malloc(ONENAND_CACHE_SIZE);
-				if (!onenand_cache) {
-#if 0
-                    printf("read_onenand_cached: can't alloc cache size %d bytes\n",
-					       ONENAND_CACHE_SIZE);
-#endif
-					return -1;
-				}
-			}
-
-			retlen = ONENAND_CACHE_SIZE;
-			if (onenand_read(mtd_info, onenand_cache_off, retlen,
-						&retlen, onenand_cache) != 0 ||
-					retlen != ONENAND_CACHE_SIZE) {
-#if 0
-				printf("read_onenand_cached: error reading nand off %#x size %d bytes\n",
-					onenand_cache_off, ONENAND_CACHE_SIZE);
-#endif
-				return -1;
-			}
-		}
-		cpy_bytes = onenand_cache_off + ONENAND_CACHE_SIZE - (off + bytes_read);
-		if (cpy_bytes > size - bytes_read)
-			cpy_bytes = size - bytes_read;
-		memcpy(buf + bytes_read,
-		       onenand_cache + off + bytes_read - onenand_cache_off,
-		       cpy_bytes);
-		bytes_read += cpy_bytes;
-	}
-	return bytes_read;
-}
-#else
 static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 {
 	u32 i = 0;
@@ -399,7 +305,6 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 	memcpy(buf, &(onenand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
-#endif
 
 static void *get_fl_mem_onenand(u32 off, u32 size, void *ext_buf)
 {
@@ -977,132 +882,6 @@ jffs2_1pass_find_inode(struct b_lists * pL, const char *name, u32 pino)
 	return inode;
 }
 
-char *mkmodestr(unsigned long mode, char *str)
-{
-	static const char *l = "xwr";
-	int mask = 1, i;
-	char c;
-
-	switch (mode & S_IFMT) {
-		case S_IFDIR:    str[0] = 'd'; break;
-		case S_IFBLK:    str[0] = 'b'; break;
-		case S_IFCHR:    str[0] = 'c'; break;
-		case S_IFIFO:    str[0] = 'f'; break;
-		case S_IFLNK:    str[0] = 'l'; break;
-		case S_IFSOCK:   str[0] = 's'; break;
-		case S_IFREG:    str[0] = '-'; break;
-		default:         str[0] = '?';
-	}
-
-	for(i = 0; i < 9; i++) {
-		c = l[i%3];
-		str[9-i] = (mode & mask)?c:'-';
-		mask = mask<<1;
-	}
-
-	if(mode & S_ISUID) str[3] = (mode & S_IXUSR)?'s':'S';
-	if(mode & S_ISGID) str[6] = (mode & S_IXGRP)?'s':'S';
-	if(mode & S_ISVTX) str[9] = (mode & S_IXOTH)?'t':'T';
-	str[10] = '\0';
-	return str;
-}
-
-static inline void dump_stat(struct stat *st, const char *name)
-{
-	char str[20];
-	char s[64], *p;
-
-	if (st->st_mtime == (time_t)(-1)) /* some ctimes really hate -1 */
-		st->st_mtime = 1;
-
-	ctime_r((time_t *)&st->st_mtime, s/*,64*/); /* newlib ctime doesn't have buflen */
-
-	if ((p = strchr(s,'\n')) != NULL) *p = '\0';
-	if ((p = strchr(s,'\r')) != NULL) *p = '\0';
-
-/*
-	printf("%6lo %s %8ld %s %s\n", st->st_mode, mkmodestr(st->st_mode, str),
-		st->st_size, s, name);
-*/
-#if 0
-	printf(" %s %8ld %s %s", mkmodestr(st->st_mode,str), st->st_size, s, name);
-#endif
-}
-
-static inline u32 dump_inode(struct b_lists * pL, struct jffs2_raw_dirent *d, struct jffs2_raw_inode *i)
-{
-#if 0
-	char fname[256];
-	struct stat st;
-
-	if(!d || !i) return -1;
-
-	strncpy(fname, (char *)d->name, d->nsize);
-	fname[d->nsize] = '\0';
-
-	memset(&st,0,sizeof(st));
-
-	st.st_mtime = i->mtime;
-	st.st_mode = i->mode;
-	st.st_ino = i->ino;
-	st.st_size = i->isize;
-
-	dump_stat(&st, fname);
-
-	if (d->type == DT_LNK) {
-		unsigned char *src = (unsigned char *) (&i[1]);
-	        putstr(" -> ");
-		putnstr(src, (int)i->dsize);
-	}
-
-	putstr("\r\n");
-#endif
-	return 0;
-}
-
-/* list inodes with the given pino */
-static u32
-jffs2_1pass_list_inodes(struct b_lists * pL, u32 pino)
-{
-	struct b_node *b;
-	struct jffs2_raw_dirent *jDir;
-
-	for (b = pL->dir.listHead; b; b = b->next) {
-		jDir = (struct jffs2_raw_dirent *) get_node_mem(b->offset,
-								pL->readbuf);
-		if ((pino == jDir->pino) && (jDir->ino)) { /* ino=0 -> unlink */
-			u32 i_version = 0;
-			struct jffs2_raw_inode ojNode;
-			struct jffs2_raw_inode *jNode, *i = NULL;
-			struct b_node *b2 = pL->frag.listHead;
-
-			while (b2) {
-				jNode = (struct jffs2_raw_inode *)
-					get_fl_mem(b2->offset, sizeof(ojNode), &ojNode);
-				if (jNode->ino == jDir->ino && jNode->version >= i_version) {
-					i_version = jNode->version;
-					if (i)
-						put_fl_mem(i, NULL);
-
-					if (jDir->type == DT_LNK)
-						i = get_node_mem(b2->offset,
-								 NULL);
-					else
-						i = get_fl_mem(b2->offset,
-							       sizeof(*i),
-							       NULL);
-				}
-				b2 = b2->next;
-			}
-
-			dump_inode(pL, jDir, i);
-			put_fl_mem(i, NULL);
-		}
-		put_fl_mem(jDir, pL->readbuf);
-	}
-	return pino;
-}
-
 static u32
 jffs2_1pass_search_inode(struct b_lists * pL, const char *fname, u32 pino)
 {
@@ -1239,54 +1018,6 @@ jffs2_1pass_resolve_inode(struct b_lists * pL, u32 ino)
 	return jffs2_1pass_search_inode(pL, tmp, pino);
 }
 
-static u32
-jffs2_1pass_search_list_inodes(struct b_lists * pL, const char *fname, u32 pino)
-{
-	int i;
-	char tmp[256];
-	char working_tmp[256];
-	char *c;
-
-	/* discard any leading slash */
-	i = 0;
-	while (fname[i] == '/')
-		i++;
-	strcpy(tmp, &fname[i]);
-	working_tmp[0] = '\0';
-	while ((c = (char *) strchr(tmp, '/')))	/* we are still dired searching */
-	{
-		strncpy(working_tmp, tmp, c - tmp);
-		working_tmp[c - tmp] = '\0';
-		for (i = 0; i < strlen(c) - 1; i++)
-			tmp[i] = c[i + 1];
-		tmp[i] = '\0';
-		/* only a failure if we arent looking at top level */
-		if (!(pino = jffs2_1pass_find_inode(pL, working_tmp, pino)) &&
-		    (working_tmp[0])) {
-			putstr("find_inode failed for name=");
-			putstr(working_tmp);
-			putstr("\r\n");
-			return 0;
-		}
-	}
-
-	if (tmp[0] && !(pino = jffs2_1pass_find_inode(pL, tmp, pino))) {
-		putstr("find_inode failed for name=");
-		putstr(tmp);
-		putstr("\r\n");
-		return 0;
-	}
-	/* this is for the bare filename, directories have already been mapped */
-	if (!(pino = jffs2_1pass_list_inodes(pL, pino))) {
-		putstr("find_inode failed for name=");
-		putstr(tmp);
-		putstr("\r\n");
-		return 0;
-	}
-	return pino;
-
-}
-
 unsigned char
 jffs2_1pass_rescan_needed(struct part_info *part)
 {
@@ -1320,169 +1051,6 @@ jffs2_1pass_rescan_needed(struct part_info *part)
 	}
 	return 0;
 }
-
-#ifdef CONFIG_JFFS2_SUMMARY
-static u32 sum_get_unaligned32(u32 *ptr)
-{
-	u32 val;
-	u8 *p = (u8 *)ptr;
-
-	val = *p | (*(p + 1) << 8) | (*(p + 2) << 16) | (*(p + 3) << 24);
-
-	return val;
-}
-
-static u16 sum_get_unaligned16(u16 *ptr)
-{
-	u16 val;
-	u8 *p = (u8 *)ptr;
-
-	val = *p | (*(p + 1) << 8);
-
-	return val;
-}
-
-#define dbg_summary(...) do {} while (0);
-/*
- * Process the stored summary information - helper function for
- * jffs2_sum_scan_sumnode()
- */
-
-static int jffs2_sum_process_sum_data(struct part_info *part, uint32_t offset,
-				struct jffs2_raw_summary *summary,
-				struct b_lists *pL)
-{
-	void *sp;
-	int i, pass;
-	void *ret;
-
-	for (pass = 0; pass < 2; pass++) {
-		sp = summary->sum;
-
-		for (i = 0; i < summary->sum_num; i++) {
-			struct jffs2_sum_unknown_flash *spu = sp;
-			dbg_summary("processing summary index %d\n", i);
-
-			switch (sum_get_unaligned16(&spu->nodetype)) {
-				case JFFS2_NODETYPE_INODE: {
-				struct jffs2_sum_inode_flash *spi;
-					if (pass) {
-						spi = sp;
-
-						ret = insert_node(&pL->frag,
-							(u32)part->offset +
-							offset +
-							sum_get_unaligned32(
-								&spi->offset));
-						if (ret == NULL)
-							return -1;
-					}
-
-					sp += JFFS2_SUMMARY_INODE_SIZE;
-
-					break;
-				}
-				case JFFS2_NODETYPE_DIRENT: {
-					struct jffs2_sum_dirent_flash *spd;
-					spd = sp;
-					if (pass) {
-						ret = insert_node(&pL->dir,
-							(u32) part->offset +
-							offset +
-							sum_get_unaligned32(
-								&spd->offset));
-						if (ret == NULL)
-							return -1;
-					}
-
-					sp += JFFS2_SUMMARY_DIRENT_SIZE(
-							spd->nsize);
-
-					break;
-				}
-				default : {
-					uint16_t nodetype = sum_get_unaligned16(
-								&spu->nodetype);
-#ifdef __DEBUG__								
-					printf("Unsupported node type %x found"
-							" in summary!\n",
-							nodetype);
-#endif							
-					if ((nodetype & JFFS2_COMPAT_MASK) ==
-							JFFS2_FEATURE_INCOMPAT)
-						return -EIO;
-					return -EBADMSG;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-/* Process the summary node - called from jffs2_scan_eraseblock() */
-int jffs2_sum_scan_sumnode(struct part_info *part, uint32_t offset,
-			   struct jffs2_raw_summary *summary, uint32_t sumsize,
-			   struct b_lists *pL)
-{
-	struct jffs2_unknown_node crcnode;
-	int ret, ofs;
-	uint32_t crc;
-
-	ofs = part->sector_size - sumsize;
-
-	dbg_summary("summary found for 0x%08x at 0x%08x (0x%x bytes)\n",
-		    offset, offset + ofs, sumsize);
-
-	/* OK, now check for node validity and CRC */
-	crcnode.magic = JFFS2_MAGIC_BITMASK;
-	crcnode.nodetype = JFFS2_NODETYPE_SUMMARY;
-	crcnode.totlen = summary->totlen;
-	crc = crc32_no_comp(0, (uchar *)&crcnode, sizeof(crcnode)-4);
-
-	if (summary->hdr_crc != crc) {
-		dbg_summary("Summary node header is corrupt (bad CRC or "
-				"no summary at all)\n");
-		goto crc_err;
-	}
-
-	if (summary->totlen != sumsize) {
-		dbg_summary("Summary node is corrupt (wrong erasesize?)\n");
-		goto crc_err;
-	}
-
-	crc = crc32_no_comp(0, (uchar *)summary,
-			sizeof(struct jffs2_raw_summary)-8);
-
-	if (summary->node_crc != crc) {
-		dbg_summary("Summary node is corrupt (bad CRC)\n");
-		goto crc_err;
-	}
-
-	crc = crc32_no_comp(0, (uchar *)summary->sum,
-			sumsize - sizeof(struct jffs2_raw_summary));
-
-	if (summary->sum_crc != crc) {
-		dbg_summary("Summary node data is corrupt (bad CRC)\n");
-		goto crc_err;
-	}
-
-	if (summary->cln_mkr)
-		dbg_summary("Summary : CLEANMARKER node \n");
-
-	ret = jffs2_sum_process_sum_data(part, offset, summary, pL);
-	if (ret == -EBADMSG)
-		return 0;
-	if (ret)
-		return ret;		/* real error */
-
-	return 1;
-
-crc_err:
-	putstr("Summary node crc error, skipping summary information.\n");
-
-	return 0;
-}
-#endif /* CONFIG_JFFS2_SUMMARY */
 
 #ifdef DEBUG_FRAGMENTS
 static void
