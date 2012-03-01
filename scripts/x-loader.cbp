@@ -58,6 +58,9 @@
 		<Unit filename="../cpu/omap3/cpu.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../cpu/omap3/gp_timer.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../cpu/omap3/gpio.c">
 			<Option compilerVar="CC" />
 		</Unit>

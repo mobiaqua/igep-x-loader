@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep00x0/igep00x0.c" open="1" top="1" tabpos="3">
-		<Cursor position="29748" topLine="947" />
+	<File name="../board/igep00x0/igep00x0.c" open="0" top="0" tabpos="1">
+		<Cursor position="35130" topLine="1155" />
 	</File>
 	<File name="../board/igep00x0/platform.S" open="0" top="0" tabpos="0">
 		<Cursor position="9790" topLine="423" />
@@ -10,16 +10,19 @@
 	<File name="../cpu/omap3/cpu.c" open="0" top="0" tabpos="0">
 		<Cursor position="1675" topLine="4" />
 	</File>
+	<File name="../cpu/omap3/gp_timer.c" open="0" top="0" tabpos="0">
+		<Cursor position="2652" topLine="96" />
+	</File>
 	<File name="../cpu/omap3/gpio.c" open="0" top="0" tabpos="0">
-		<Cursor position="3841" topLine="15" />
+		<Cursor position="4094" topLine="144" />
 	</File>
 	<File name="../cpu/omap3/gpmc.c" open="0" top="0" tabpos="2">
 		<Cursor position="3546" topLine="101" />
 	</File>
-	<File name="../cpu/omap3/start.S" open="1" top="0" tabpos="2">
-		<Cursor position="6332" topLine="171" />
+	<File name="../cpu/omap3/start.S" open="0" top="0" tabpos="2">
+		<Cursor position="6332" topLine="170" />
 	</File>
-	<File name="../drivers/ns16550.c" open="1" top="0" tabpos="5">
+	<File name="../drivers/ns16550.c" open="0" top="0" tabpos="5">
 		<Cursor position="657" topLine="0" />
 	</File>
 	<File name="../drivers/serial.c" open="0" top="0" tabpos="0">
@@ -28,13 +31,10 @@
 	<File name="../include/asm/arch-arm1136/omap2430.h" open="0" top="0" tabpos="0">
 		<Cursor position="5224" topLine="126" />
 	</File>
-	<File name="../include/asm/arch-omap3/clocks.h" open="1" top="0" tabpos="4">
-		<Cursor position="881" topLine="1" />
+	<File name="../include/asm/arch-omap3/clocks.h" open="0" top="0" tabpos="4">
+		<Cursor position="881" topLine="0" />
 	</File>
-	<File name="../include/asm/arch-omap3/clocks343x.h" open="1" top="0" tabpos="0">
-		<Cursor position="0" topLine="0" />
-	</File>
-	<File name="../include/asm/arch/clocks343x.h" open="1" top="0" tabpos="1">
+	<File name="../include/asm/arch/clocks343x.h" open="0" top="0" tabpos="1">
 		<Cursor position="2204" topLine="33" />
 	</File>
 	<File name="../include/asm/arch-omap3/gpio.h" open="0" top="0" tabpos="0">
@@ -53,7 +53,7 @@
 		<Cursor position="2565" topLine="73" />
 	</File>
 	<File name="../include/configs/igep00x0.h" open="0" top="0" tabpos="0">
-		<Cursor position="2655" topLine="75" />
+		<Cursor position="2794" topLine="0" />
 	</File>
 	<File name="../include/configs/omap2430sdp.h" open="0" top="0" tabpos="0">
 		<Cursor position="2902" topLine="79" />
@@ -61,14 +61,17 @@
 	<File name="../include/configs/omap3evm.h" open="0" top="0" tabpos="0">
 		<Cursor position="3050" topLine="84" />
 	</File>
+	<File name="../include/linux/mtd/compat.h" open="0" top="0" tabpos="0">
+		<Cursor position="1036" topLine="7" />
+	</File>
 	<File name="../include/ns16550.h" open="0" top="0" tabpos="0">
 		<Cursor position="2140" topLine="62" />
 	</File>
 	<File name="../lib/board.c" open="0" top="0" tabpos="0">
-		<Cursor position="2876" topLine="78" />
+		<Cursor position="1710" topLine="54" />
 	</File>
-	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="0">
-		<Cursor position="11145" topLine="294" />
+	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="2">
+		<Cursor position="6936" topLine="186" />
 	</File>
 	<File name="../lib/cache-cp15.c" open="0" top="0" tabpos="0">
 		<Cursor position="1424" topLine="27" />
