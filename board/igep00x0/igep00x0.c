@@ -750,7 +750,7 @@ void config_sdram(int actima, int actimb)
 	__raw_writel(actimb, SDRC_ACTIM_CTRLB_0);
 	__raw_writel(actima, SDRC_ACTIM_CTRLA_1);
 	__raw_writel(actimb, SDRC_ACTIM_CTRLB_1);
-	
+
 	__raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_0);
 	__raw_writel(SDP_SDRC_RFR_CTRL_200, SDRC_RFR_CTRL_1);
 
@@ -851,7 +851,7 @@ static void nand_command (u8 command)
 
 void read_nand_manufacturer_id (u32 *m, u32 *i)
 {
-	struct gpmc* gpmc_cfg = (struct gpmc *)GPMC_BASE;	
+	struct gpmc* gpmc_cfg = (struct gpmc *)GPMC_BASE;
 	nand_command(NAND_CMD_RESET);
 	nand_command(NAND_CMD_READID);
 	__raw_writeb(0x0, &gpmc_cfg->cs[0].nand_adr);
@@ -1035,7 +1035,7 @@ void config_multichip_package()
  **********************************************************/
 int s_init(void)
 {
-	u32 mem_type;	
+	u32 mem_type;
 
 	watchdog_init();
 	try_unlock_memory();
@@ -1048,7 +1048,7 @@ int s_init(void)
 	/* Memory Configuration */
 	mem_type = get_mem_type();
 
-	if (mem_type == GPMC_ONENAND){		
+	if (mem_type == GPMC_ONENAND){
 		config_multichip_package();
 	} else if (mem_type == GPMC_NAND) {
 		/*
@@ -1061,7 +1061,7 @@ int s_init(void)
 		    NAND manufacturer id and reconfigure the RAM accordingly.
 		    Since the times are a minimum threshold, we use the slower
 		    memory configuration by default.
-		*/		
+		*/
 		config_nand_flash();
 	} else
 		return 1;
@@ -1094,17 +1094,18 @@ int board_init(void)
     }
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
-    if(get_mem_type() == GPMC_NAND){    
+    if(get_mem_type() == GPMC_NAND){
 		read_nand_manufacturer_id(&mfr, &mid);
 		if(mfr == NAND_MICRON_ID){
-			config_sdram_mt29cxgxxmaxx();			
+			config_sdram_mt29cxgxxmaxx();
 		} else {
 			config_sdram_hynix();
 		}
+		nand_command(NAND_CMD_RESET);
 	}
-   
-#ifdef __DEBUG_MEMORY_TEST    
-	// Do Memory stress 
+
+#ifdef __DEBUG_MEMORY_TEST
+	// Do Memory stress
 	// Address start 0x80000000 to 0x90000000
 	u32 pattern[] = {
 		0x10101010,
@@ -1117,9 +1118,9 @@ int board_init(void)
 	u32 *init_memory = (u32*) 0x80000000;
 	u32 i = 0;
 	u32 j = 0;
-	
+
 	printf("Memory Init TEST\n");
-	
+
 	while(pattern [j] != 0){
 		for(i=0; i < (256 * 1024 * 1024)/4; i++){
 			init_memory[i] = pattern[j];
@@ -1130,15 +1131,15 @@ int board_init(void)
 		for(i=0; i < (256 * 1024 * 1024)/4; i++){
 			if(init_memory[i] != pattern[j]){
 				printf("Write second stage Memory Error\n");
-			}			
-		}		
+			}
+		}
 		printf("loop %d complete\n", j);
 		j++;
 	}
 	printf("Memory END TEST\n");
 #endif
     // Setup Malloc memory
-    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);	
+    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
 
 	return 0;
 }
@@ -1164,7 +1165,7 @@ int misc_init_r(void)
     u32 cpu_release;
     u8 rev;
     u32 mem_type;
-    
+
     // Turn ON USER0 led
 	omap_request_gpio(GPIO_LED_USER0);
 	omap_set_gpio_direction(GPIO_LED_USER0, 0);
@@ -1195,13 +1196,13 @@ int misc_init_r(void)
 	    }
     }
     else printf("XLoader: Processor OMAP3530\n");
-    
+
 	// Show Memory Manufacturer
 	mem_type = get_mem_type();
 	if(mem_type == GPMC_ONENAND)
 		printf("XLoader: Memory Manufacturer: %s\n", "Numonyx");
 	else
-		printf("XLoader: Memory Manufacturer: %s (%x)\n", (mfr == NAND_MICRON_ID) ? "Micron" : "Hynix", mfr);    
+		printf("XLoader: Memory Manufacturer: %s (%x)\n", (mfr == NAND_MICRON_ID) ? "Micron" : "Hynix", mfr);
 	return 0;
 }
 
@@ -1871,7 +1872,7 @@ void flash_init (void)
 #else
     part->offset = 0x00000000;
 #endif
-	
+
     part->dev = current_mtd_dev;
     INIT_LIST_HEAD(&part->link);
 
@@ -1889,8 +1890,8 @@ void flash_init (void)
     INIT_LIST_HEAD(&current_mtd_dev->link);
     current_mtd_dev->num_parts = 1;
     INIT_LIST_HEAD(&current_mtd_dev->parts);
-    list_add(&part->link, &current_mtd_dev->parts);    
-    
+    list_add(&part->link, &current_mtd_dev->parts);
+
 	return 0;
 
 }
