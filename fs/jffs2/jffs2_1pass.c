@@ -115,6 +115,7 @@
 
 #include <common.h>
 #include <config.h>
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
 #include <malloc.h>
 #include <linux/stat.h>
 #include <linux/time.h>
@@ -145,16 +146,10 @@
 
 #include "summary.h"
 
-/* keeps pointer to currentlu processed partition */
+/* keeps pointer to currently processed partition */
 static struct part_info *current_part;
 
-static char* strchr(const char * s, int c)
-{
-	for(; *s != (char) c; ++s)
-		if (*s == '\0')
-			return NULL;
-	return (char *) s;
-}
+
 
 #if (defined(CONFIG_JFFS2_NAND) && \
      defined(CONFIG_CMD_NAND) )
@@ -185,7 +180,7 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 	u32 i = 0;
 	size_t retlen;
 	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / 4096;
-	if(!nand_cache){		
+	if(!nand_cache){
 		nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
 		for(i = 0; i < n_blocks; i++){
 			nand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, nand_cache + (i * 4096));
@@ -193,9 +188,9 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 				printf("BUG() read_nand return = %u != 4096\n", retlen);
 			}
 		}
-#ifdef __DEBUG_MEMORY_TEST			
+#ifdef __DEBUG_MEMORY_TEST
 		printf("Read Memory complete %08x\n", crc32(0, nand_cache, CONFIG_JFFS2_PART_SIZE));
-#endif		
+#endif
 	}
 	if(off < CONFIG_JFFS2_PART_OFFSET){
 		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
@@ -207,8 +202,8 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 	}
 	if(!buf){
 		printf("BUG() - NULL buffer pointer\n");
-		return 0;		
-	}	
+		return 0;
+	}
 	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
@@ -218,9 +213,9 @@ static void *get_fl_mem_nand(u32 off, u32 size, void *ext_buf)
 	u_char *buf = ext_buf ? (u_char*)ext_buf : (u_char*)malloc(size);
 
 	if (NULL == buf) {
-#ifdef __DEBUG__		
+#ifdef __DEBUG__
 		printf("get_fl_mem_nand: can't alloc %d bytes\n", size);
-#endif		
+#endif
 		return NULL;
 	}
 	if (read_nand_cached(off, size, buf) < 0) {
@@ -243,10 +238,10 @@ static void *get_node_mem_nand(u32 off, void *ext_buf)
 	if (!(ret = get_fl_mem_nand(off, node.magic ==
 			       JFFS2_MAGIC_BITMASK ? node.totlen : sizeof(node),
 			       ext_buf))) {
-#ifdef __DEBUG__					   
+#ifdef __DEBUG__
 		printf("off = %#x magic %#x type %#x node.totlen = %d\n",
 		       off, node.magic, node.nodetype, node.totlen);
-#endif		       
+#endif
 	}
 	return ret;
 }
@@ -286,9 +281,9 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 				printf("BUG() onenand_read return = %u != 4096\n", retlen);
 			}
 		}
-#ifdef __DEBUG_MEMORY_TEST			
+#ifdef __DEBUG_MEMORY_TEST
 		printf("Read Memory complete %08x\n", crc32(0, onenand_cache, CONFIG_JFFS2_PART_SIZE));
-#endif		
+#endif
 	}
 	if(off < CONFIG_JFFS2_PART_OFFSET){
 		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
@@ -300,8 +295,8 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 	}
 	if(!buf){
 		printf("BUG() - NULL buffer pointer\n");
-		return 0;		
-	}	
+		return 0;
+	}
 	memcpy(buf, &(onenand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
@@ -501,8 +496,7 @@ struct mem_block {
 };
 
 
-static void
-free_nodes(struct b_list *list)
+static void free_nodes(struct b_list *list)
 {
 	while (list->listMemBase != NULL) {
 		struct mem_block *next = list->listMemBase->next;
@@ -511,8 +505,7 @@ free_nodes(struct b_list *list)
 	}
 }
 
-static struct b_node *
-add_node(struct b_list *list)
+static struct b_node* add_node(struct b_list *list)
 {
 	u32 index = 0;
 	struct mem_block *memBase;
@@ -552,8 +545,7 @@ add_node(struct b_list *list)
 	return b;
 }
 
-static struct b_node *
-insert_node(struct b_list *list, u32 offset)
+static struct b_node* insert_node(struct b_list *list, u32 offset)
 {
 	struct b_node *new;
 #ifdef CONFIG_SYS_JFFS2_SORT_FRAGMENTS
@@ -567,7 +559,7 @@ insert_node(struct b_list *list, u32 offset)
 		return NULL;
 	}
 	new->offset = offset;
-	
+
 	// printf("insert_node: %x\n", offset);
 
 #ifdef CONFIG_SYS_JFFS2_SORT_FRAGMENTS
@@ -736,7 +728,7 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 		put_fl_mem(jNode, pL->readbuf);
 	}
 #endif
-	for (b = pL->frag.listHead; b != NULL; b = b->next) {		
+	for (b = pL->frag.listHead; b != NULL; b = b->next) {
 		jNode = (struct jffs2_raw_inode *) get_node_mem(b->offset,
 								pL->readbuf);
 		if ((inode == jNode->ino)) {
@@ -1181,9 +1173,9 @@ jffs2_1pass_build_lists(struct part_info * part)
 	scan_more:
 		while (ofs < sector_ofs + part->sector_size) {
 			if (ofs == prevofs) {
-#ifdef __DEBUG__				
+#ifdef __DEBUG__
 				printf("offset %08x already seen, skip\n", ofs);
-#endif				
+#endif
 				ofs += 4;
 				counter4++;
 				continue;
@@ -1335,7 +1327,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 	}
 
 	free(buf);
-// #ifdef __DEBUG__	
+// #ifdef __DEBUG__
 	printf("done.\n");		/* close off the dots */
 // #endif
 	/* We don't care if malloc failed - then each read operation will
@@ -1401,7 +1393,7 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 #endif
 		return 0;
 	}
-#ifdef __DEBUG__	
+#ifdef __DEBUG__
 	printf("(1) jffs2_1pass_load: %s (%x)\n", fname, inode);
 #endif
 	/* Resolve symlinks */
@@ -1411,7 +1403,7 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 #endif
 		return 0;
 	}
-#ifdef __DEBUG__	
+#ifdef __DEBUG__
 	printf("(2) jffs2_1pass_resolve_inode: %s (%x)\n", fname, inode);
 #endif
 	if ((ret = jffs2_1pass_read_inode(pl, inode, dest)) < 0) {
@@ -1420,17 +1412,19 @@ jffs2_1pass_load(char *dest, struct part_info * part, const char *fname)
 #endif
 		return 0;
 	}
-#ifdef __DEBUG__	
+#ifdef __DEBUG__
 	printf("(3) jffs2_1pass_read_inode: %s (%x)\n", fname, inode);
-#endif	
-#ifdef __DEBUG_MEMORY_TEST	
+#endif
+#ifdef __DEBUG_MEMORY_TEST
 	// Check Memory crc
 	printf("(2) Read Memory complete %08x\n", crc32(0, nand_cache, CONFIG_JFFS2_PART_SIZE));
-#endif	
-	
+#endif
+
 #ifdef __DEBUG__
 	printf("load: loaded '%s' to 0x%lx (%ld bytes)\n", fname,
 				(unsigned long) dest, ret);
 #endif
 	return ret;
 }
+
+#endif

@@ -471,7 +471,7 @@ unsigned char configure_mmc(mmc_card_data *mmc_card_cur)
 
 	if (mmc_card_cur->card_type == MMC_CARD)
 		mmc_card_cur->version = Card_CSD.spec_vers;
-	
+
 	trans_speed = Card_CSD.tran_speed;
 
 	ret_val = mmc_send_cmd(MMC_CMD4, MMC_DSR_DEFAULT << 16, resp);
@@ -543,8 +543,9 @@ int mmc_init(int verbose)
 		mmc_blk_dev.lba = 0x10000;
 		mmc_blk_dev.removable = 0;
 		mmc_blk_dev.block_read = mmc_bread;
-
+#ifdef IGEP00X_ENABLE_MMC_BOOT
 		fat_register_device(&mmc_blk_dev, 1);
+#endif
 		return 1;
 	}
 	else

@@ -60,6 +60,7 @@ struct nand_chip *nand_chip = NULL;
 struct mtd_device *current_mtd_dev = NULL;
 u8 current_mtd_partnum = 0;
 static __attribute__((unused)) char dev_name[] = "onenand0";
+int __malloc_initialized = 0;
 
 /* Used to index into DPLL parameter tables */
 struct dpll_param {
@@ -115,6 +116,12 @@ static inline void delay (unsigned long loops)
 void udelay (unsigned long usecs) {
 	delay(usecs);
 }
+
+int is_malloc_initialized ()
+{
+    return __malloc_initialized;
+}
+
 
 /*************************************************************
  *  get_device_type(): tell if GP/HS/EMU/TST
@@ -581,8 +588,8 @@ static void mpu_init_36xx(u32 sil_index, u32 clk_index)
 	sr32(CM_CLKSEL1_PLL_MPU, 0, 7, ptr->n);
 
 	/* LOCK MODE (EN_MPU_DPLL) : CM_CLKEN_PLL_IVA2[0:2] */
-	sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
- 	wait_on_value(BIT0, 1, CM_IDLEST_PLL_MPU, LDELAY);
+	// sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
+ 	// wait_on_value(BIT0, 1, CM_IDLEST_PLL_MPU, LDELAY);
 }
 
 static void iva_init_36xx(u32 sil_index, u32 clk_index)
@@ -648,10 +655,18 @@ void prcm_init(void)
 	}
 
 	if (is_cpu_family() == CPU_OMAP36XX) {
+        sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOW_POWER_BYPASS);
+        wait_on_value(ST_MPU_CLK, 0, CM_IDLEST_PLL_MPU, LDELAY);
+
+        sr32(PRM_CLKSRC_CTRL, 8, 1, 0);
+
 		dpll3_init_36xx(0, clk_index);
 		dpll4_init_36xx(0, clk_index);
 		mpu_init_36xx(0, clk_index);
 		iva_init_36xx(0, clk_index);
+
+		sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
+		wait_on_value(ST_MPU_CLK, 1, CM_IDLEST_PLL_MPU, LDELAY);
 	} else {
 		sil_index = get_cpu_rev() - 1;
 
@@ -1083,6 +1098,7 @@ int s_init(void)
 int board_init(void)
 {
     unsigned char data;
+
     if(is_cpu_family() == CPU_OMAP36XX){
         // Init TPS65950 - Voltage Selection (1.35V)
         // Calculation using this formula:
@@ -1092,6 +1108,9 @@ int board_init(void)
         // 1.4 V
         // --> data = 0x40;
         i2c_write(0x4B, 0xb9, 1, &data, 1);
+
+        // twl4030_pmrecv_vsel_cfg();
+
     }
     else {
         if (get_prod_id() == CPU_35XX_720MHZ_DEV){
@@ -1111,8 +1130,12 @@ int board_init(void)
 		}
 		nand_command(NAND_CMD_RESET);
 	}
-
-#ifdef __DEBUG_MEMORY_TEST
+#ifndef __DEBUG_MEMORY_TEST
+    // Setup Malloc memory
+    mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
+    __malloc_initialized = 1;
+#else
+// #define __DEBUG_MEMORY_TEST
 	// Do Memory stress
 	// Address start 0x80000000 to 0x90000000
 	u32 pattern[] = {
@@ -1124,11 +1147,12 @@ int board_init(void)
 		0x00000000,
 	};
 	u32 *init_memory = (u32*) 0x80000000;
+	u32 *sdie_init_memory = (u32*) 0x90000000;
 	u32 i = 0;
 	u32 j = 0;
 
-	printf("Memory Init TEST\n");
-
+	printf("Memory Init TEST (1)\n");
+#ifdef __notdef
 	while(pattern [j] != 0){
 		for(i=0; i < (256 * 1024 * 1024)/4; i++){
 			init_memory[i] = pattern[j];
@@ -1144,11 +1168,38 @@ int board_init(void)
 		printf("loop %d complete\n", j);
 		j++;
 	}
-	printf("Memory END TEST\n");
 #endif
+	printf("Memory END TEST (1)\n");
+	printf("Memory Init TEST (2)\n");
+	j = 0;
+    while(pattern [j] != 0){
+        printf("stage memset\n");
+        memset(init_memory, pattern[j], (256 * 1024 * 1024));
+        // memcpy(init_memory, pattern[j], (256 * 1024 * 1024));
+        printf("End memset stage\n");
+        printf("Start Verify stage (1)\n");
+        for(i=0; i < (256 * 1024 * 1024)/4; i++){
+			if(init_memory[i] != pattern[j]){
+				printf("Verify (memset) Memory Error at (%x)\n", i);
+			}
+        }
+        printf("End Verify stage (1)\n");
+        printf("Start memcpy stage (1)\n");
+        memcpy(sdie_init_memory, init_memory, (256 * 1024 * 1024));
+        for(i=0; i < (256 * 1024 * 1024)/4; i++){
+			if(init_memory[i] != sdie_init_memory[j]){
+				printf("Verify (memcpy) Memory Error at (%x)\n", i);
+			}
+        }
+        printf("End memcpy Verify stage\n");
+        printf("loop %d complete\n", j);
+        j++;
+    }
+	printf("Memory END TEST (2)\n");
     // Setup Malloc memory
     mem_malloc_init(XLOADER_MALLOC_IPTR, XLOADER_MALLOC_SIZE);
-
+    __malloc_initialized = 1;
+#endif
 	return 0;
 }
 
@@ -1782,18 +1833,19 @@ static int mtd_id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *d
 		*dev_type = MTD_DEV_TYPE_ONENAND;
 		p += 7;
 	} else {
-		printf("incorrect device type in %s\n", id);
+		// printf("incorrect device type in %s\n", id);
 		return 1;
 	}
 
 	if (!isdigit(*p)) {
-		printf("incorrect device number in %s\n", id);
+		// printf("incorrect device number in %s\n", id);
 		return 1;
 	}
 
-	*dev_num = simple_strtoul(p, (char **)&p, 0);
-	if (ret_id)
-		*ret_id = p;
+	// *dev_num = simple_strtoul(p, (char **)&p, 0);
+	*dev_num = 0;
+	/* if (ret_id)
+		*ret_id = p; */
 	return 0;
 }
 
@@ -1827,12 +1879,12 @@ void flash_init (void)
 	    dev_name ="nand0";
 	    nand_scan(mtd_info, 1, &nand_maf_id, &nand_dev_id);
     } else {
-	    printf("IGEP: Flash: unsupported sysboot sequence found\n");
+	    // printf("IGEP: Flash: unsupported sysboot sequence found\n");
 	    hang();
     }
 
 #ifdef __DEBUG__
-	printf("OneNAND: ");
+	printf("Flash Size: ");
 	print_size(mtd_info->size, "\n");
 #endif
 
@@ -1859,7 +1911,7 @@ void flash_init (void)
 
     if ((mtd_id_parse(dev_name, NULL, &id->type, &id->num) != 0) ||
             (mtd_device_validate(id->type, id->num, &size) != 0)) {
-			printf("incorrect device: %s%d\n", MTD_DEV_TYPE(id->type), id->num);
+			// printf("incorrect device: %s%d\n", MTD_DEV_TYPE(id->type), id->num);
 			free(current_mtd_dev);
 			return 1;
     }
@@ -1908,6 +1960,7 @@ void flash_init (void)
 
 }
 
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
 int load_jffs2_file (const char* filename, char* dest)
 {
     struct mtdids *id;
@@ -1916,6 +1969,7 @@ int load_jffs2_file (const char* filename, char* dest)
     part = (struct part_info *)(id + 1);
     return jffs2_1pass_load(dest , part, filename);
 }
+#endif
 
 /**********************************************************
  * Routine: flash_setup

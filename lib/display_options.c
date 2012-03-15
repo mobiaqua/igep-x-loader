@@ -23,6 +23,7 @@
 
 #include <config.h>
 #include <common.h>
+#ifdef __DEBUG__
 //#include <linux/ctypes.h>
 #include <asm/io.h>
 
@@ -73,4 +74,4 @@ void print_size(unsigned long long size, const char *s)
 	printf (" %ciB%s", c, s);
 }
 
-
+#endif

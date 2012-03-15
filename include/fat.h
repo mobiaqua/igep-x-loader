@@ -89,7 +89,7 @@
 #endif
 #define FAT_ERROR(arg)		printf(arg)
 
-#define ISDIRDELIM(c)   ((c) == '/' || (c) == '\\')
+// #define ISDIRDELIM(c)   ((c) == '/' || (c) == '\\')
 
 #define FSTYPE_NONE	(-1)
 
@@ -109,7 +109,7 @@
 #endif
 #endif
 
-#define TOLOWER(c)	if((c) >= 'A' && (c) <= 'Z'){(c)+=('a' - 'A');}
+// #define TOLOWER(c)	if((c) >= 'A' && (c) <= 'Z'){(c)+=('a' - 'A');}
 #define START(dent)	(FAT2CPU16((dent)->start) \
 			+ (mydata->fatsize != 32 ? 0 : \
 			  (FAT2CPU16((dent)->starthi) << 16)))

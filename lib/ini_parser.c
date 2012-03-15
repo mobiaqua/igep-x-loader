@@ -23,13 +23,12 @@
 
 #include <config.h>
 #include <common.h>
+#ifdef ENABLE_LOAD_INI_FILE
+#include <string.h>
 
 #define MAX_LINE 200
 #define MAX_SECTION 50
 #define MAX_NAME 50
-
-#define isspace(c)  (c ==  ' ' || c == '\f' || c == '\n' || c == '\r' ||\
-                                c == '\t' || c == '\v')
 
 #define NULL    0
 #define EOF     0x13
@@ -41,30 +40,25 @@ typedef struct tFILE {
     char file_address [IGEP_INI_FILE_MAX_SIZE];
 } FILE;
 
-// #define GLOBAL_XLOADER_WORK_MEMORY      0x80000000
-
 static FILE* xLoader_CFG = XLOADER_CFG_FILE;
-
-/* memset */
-void *(memset)(void *s, int c, int n)
-{
-    unsigned char *us = s;
-    unsigned char uc = c;
-    while (n-- != 0)
-        *us++ = uc;
-    return s;
-}
 
 static FILE* fopen (const char* filename, int from, const char* mode)
 {
     int i;
+    xLoader_CFG->file_size = 0;
+    xLoader_CFG->file_pos = 0;
     xLoader_CFG->filename = filename;
     for(i=0; i < IGEP_INI_FILE_MAX_SIZE; i++ ) xLoader_CFG->file_address[i] = EOF;
-    // memset(xLoader_CFG->file_address, EOF, 16*1024);
+#ifdef IGEP00X_ENABLE_MMC_BOOT
     if(from == IGEP_MMC_BOOT)
         xLoader_CFG->file_size = file_fat_read(filename, xLoader_CFG->file_address , 0);
+#endif
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
+#ifdef IGEP00X_ENABLE_MMC_BOOT
     else
+#endif
         xLoader_CFG->file_size = load_jffs2_file(filename, xLoader_CFG->file_address);
+#endif
     // printf("%s : file_size %d\n", filename, xLoader_CFG->file_size );
     xLoader_CFG->file_pos = 0;
     if(xLoader_CFG->file_size > 0){
@@ -81,30 +75,6 @@ void fclose (FILE* fp)
     fp->file_size = 0;
 }
 
-int strlen(const char* str)
-{
-  const char *s;
-  for (s = str; *s; ++s); /* 1 */
-  return(s - str); /* 2 */
-}
-
-/* Strip whitespace chars off end of given string, in place. Return s. */
-static char* rstrip(char* s)
-{
-    char* p = s + strlen(s);
-    while (p > s && isspace(*--p))
-        *p = '\0';
-    return s;
-}
-
-/* Return pointer to first non-whitespace char in given string. */
-static char* lskip(const char* s)
-{
-    while (*s && isspace(*s))
-        s++;
-    return (char*)s;
-}
-
 /* Return pointer to first char c or ';' comment in given string, or pointer to
    null at end of string if neither found. ';' must be prefixed by a whitespace
    character to register as a comment. */
@@ -118,26 +88,13 @@ static char* find_char_or_comment(const char* s, char c)
     return (char*)s;
 }
 
-char *strncpy(char *dest, const char *src, int max_size)
-{
-   char *save = dest;
-   while((*dest++ = *src++) && max_size--);
-   return save;
-}
-
-/* Version of strncpy that ensures dest (size bytes) is null-terminated. */
-static char* strncpy0(char* dest, const char* src, int size)
-{
-    strncpy(dest, src, size);
-    dest[size - 1] = '\0';
-    return dest;
-}
-
 int fgetc (FILE* fp)
 {
     return fp->file_address[fp->file_pos++];
 }
 
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
 char* fgets(char *buf, int bsize, FILE *fp)
 {
     int i;
@@ -174,17 +131,13 @@ char* fgets(char *buf, int bsize, FILE *fp)
     else
         return buf;
 }
+// #pragma GCC pop_options
 
 /* See documentation in header file. */
 int ini_parse(const char* filename, int from,
               int (*handler)(void*, const char*, const char*, const char*),
               void* user)
 {
-    /* Uses a fair bit of stack (use heap instead if you need to) */
-    char line[MAX_LINE];
-    char section[MAX_SECTION] = "";
-    char prev_name[MAX_NAME] = "";
-
     FILE* file;
     char* start;
     char* end;
@@ -197,8 +150,16 @@ int ini_parse(const char* filename, int from,
     if (!file)
         return -1;
 
+    char* line = malloc (MAX_LINE);
+    char* section = malloc (MAX_SECTION);
+    char* prev_name = malloc (MAX_NAME);
+
+    // while (fgets(line, sizeof(line), file) != NULL) { printf("%s\n", line); };
+    // return 100;
+
     /* Scan through file line by line */
-    while (fgets(line, sizeof(line), file) != NULL) {
+    while (fgets(line, MAX_LINE-1, file) != NULL) {
+        //printf("line: %d : %s\n", lineno, line);
         lineno++;
         start = lskip(rstrip(line));
 
@@ -219,7 +180,7 @@ int ini_parse(const char* filename, int from,
             end = find_char_or_comment(start + 1, ']');
             if (*end == ']') {
                 *end = '\0';
-                strncpy0(section, start + 1, sizeof(section));
+                strncpy0(section, start + 1, MAX_SECTION-1);
                 *prev_name = '\0';
             }
             else if (!error) {
@@ -234,8 +195,8 @@ int ini_parse(const char* filename, int from,
                 *end = '\0';
                 name = rstrip(start);
                 value = lskip(end + 1);
-                // printf("<%s> :: <%s>\n", start, end+1);
-                // printf("<%s> :: <%s> -> name<%s> value<%s>\n", start, end + 1, name, value);
+//                printf("<%s> :: <%s>\n", start, end+1);
+//                printf("<%s> :: <%s> -> name<%s> value<%s>\n", start, end + 1, name, value);
 #ifdef __notdef
                 end = find_char_or_comment(value, '\0');
                 if (*end == ';')
@@ -243,7 +204,7 @@ int ini_parse(const char* filename, int from,
 #endif
                 rstrip(value);
                 /* Valid name=value pair found, call handler */
-                strncpy0(prev_name, name, sizeof(prev_name));
+                strncpy0(prev_name, name, MAX_NAME-1);
                 if (!handler(user, section, name, value) && !error)
                     error = lineno;
             }
@@ -254,7 +215,13 @@ int ini_parse(const char* filename, int from,
         }
     }
 
+    free(line);
+    free(section);
+    free(prev_name);
+
     fclose(file);
 
     return error;
 }
+
+#endif

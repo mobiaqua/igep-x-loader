@@ -67,6 +67,8 @@
 		<Unit filename="../cpu/omap3/gpmc.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../cpu/omap3/memcpy.S" />
+		<Unit filename="../cpu/omap3/memset.S" />
 		<Unit filename="../cpu/omap3/mmc.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -249,6 +251,7 @@
 		<Unit filename="../include/onenand_uboot.h" />
 		<Unit filename="../include/part.h" />
 		<Unit filename="../include/setup.h" />
+		<Unit filename="../include/string.h" />
 		<Unit filename="../include/ubi_uboot.h" />
 		<Unit filename="../include/zlib.h" />
 		<Unit filename="../lib/_udivsi3.S" />
@@ -281,6 +284,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../lib/printf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../lib/string.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../mtd/nand_base.c">

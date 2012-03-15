@@ -51,7 +51,6 @@ typedef struct Linux_Memory_Layout {
 
 /* Linux Images */
 const char* LinuxImageNames [] = {
-        "kparam"   /* Use kparam first */
         "zImage",   /* jffs2 it's case sensitive */
         "zimage",   /* fat name it's not case sentitive */
         "vmlinuz",
@@ -83,10 +82,10 @@ int verify_ker_crc = 0;
 static void init_memory_layout (void)
 {
     // Initialize Linux Memory Layout struct
-    LMemoryLayout->machine_id = IGEP0030_MACHINE_ID;
-    LMemoryLayout->kbase_address = 0;
+    LMemoryLayout->machine_id = DEFAULT_BOARD_ID;
+    LMemoryLayout->kbase_address = DEFAULT_KADDRESS;
     LMemoryLayout->k_size = 0;
-    LMemoryLayout->kImage_rd_address = 0;
+    LMemoryLayout->kImage_rd_address = DEFAULT_KRADRRESS;
     LMemoryLayout->rdImage_size = 0;
     LMemoryLayout->kcmdposs = 0;
     LMemoryLayout->revision.rev = 0;
@@ -205,7 +204,7 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
     if(kImage_Name)
         linuxName = kImage_Name;
     else
-        linuxName = LinuxImageNames[++count];
+        linuxName = LinuxImageNames[0];
     if(kRdImage_Name)
         rdImageName = kRdImage_Name;
 
@@ -214,18 +213,26 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
 	while(linuxName && !found){
 #ifdef __DEBUG__
 		printf("linux kernel name: %s\n", linuxName);
-#endif		
+#endif
 		/* Try load the linuxName [n] Image into kbase_address */
+#ifdef IGEP00X_ENABLE_MMC_BOOT
 		if(from == IGEP_MMC_BOOT)
             size = file_fat_read(linuxName, myImage->kbase_address , 0);
+#endif
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
+#ifdef IGEP00X_ENABLE_MMC_BOOT
         else
+#endif
             size = load_jffs2_file(linuxName, myImage->kbase_address);
+#endif
         	/* If size > 0 then the image was loaded ok */
 		if(size > 0){
-			printf("XLoader: kernel %s loaded from %s at 0x%x size = %d\n", linuxName, from ? "FLASH" : "MMC" ,myImage->kbase_address, size);
-			if(!rdImageName) return 1;
 			/* Update the size variable */
 			myImage->k_size = size;
+			printf("XLoader: kernel %s loaded from %s at 0x%x size = %d (crc: %08x)\n", linuxName, from ? "FLASH" : "MMC" ,myImage->kbase_address, myImage->k_size,
+                    crc32(0, LMemoryLayout->kbase_address, LMemoryLayout->k_size));
+			if(!rdImageName) return 1;
+
 			/* if the ram disk dest address it's not supplied then calculate the address */
             if(!myImage->kImage_rd_address){
 				// Put the RD address rear the kernel address with MEM_PADD_BLOCKS for padding
@@ -233,11 +240,17 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
             }
 			/* try to load the RAM disk into kImage_rd_address */
 			/* TODO: the rd image now it's hardcoded here, maybe it's a good idea
-			 * to permit supply a different names for it */			 
+			 * to permit supply a different names for it */
+#ifdef IGEP00X_ENABLE_MMC_BOOT
 			if(from == IGEP_MMC_BOOT)
                 size = file_fat_read(rdImageName, myImage->kImage_rd_address, 0);
+#endif
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
+#ifdef IGEP00X_ENABLE_MMC_BOOT
             else
+#endif
                 size = load_jffs2_file(rdImageName, myImage->kImage_rd_address, 0);
+#endif
             /* Update Information if we get the ram disk image into memory */
 			if(size > 0){
                 myImage->rdImage_size = size;
@@ -259,13 +272,16 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
     return found;
 }
 
+#ifdef ENABLE_LOAD_INI_FILE
+// #pragma GCC push_options
+// #pragma GCC optimize ("O0")
 /* cfg_handler : Ini file variables from ini file parser */
 int cfg_handler ( void* usr_ptr, const char* section, const char* key, const char* value)
 {
     unsigned int v;
     int res;
 #ifdef __DEBUG__
-    printf("section: %s key: %s value: %s\n", section, key, value);
+    printf("DEBUG: section: %s key: %s value: %s\n", section, key, value);
 #endif
     /* SECTION: kernel */
     if(!strcmp(section, "kernel")){
@@ -312,7 +328,7 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             }
             else boot_kernel=0;
         }
-#ifdef K_VERIFY_CRC        
+#ifdef K_VERIFY_CRC
         else if(!strcmp(key, "Validate_kCRC")){
 			if(!strcmp(value, "0"))
 				verify_ker_crc = 0;
@@ -327,9 +343,9 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             if(kImageAlt_Name) free(kImageAlt_Name);
             kImageAlt_Name = malloc (strlen(value)+1);
             memcpy(kImageAlt_Name, value, strlen(value));
-            kImageAlt_Name[strlen(value)] = '\0';			
+            kImageAlt_Name[strlen(value)] = '\0';
 		}
-#endif		
+#endif
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
@@ -338,7 +354,8 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
     }
     return 1;
 }
-
+// #pragma GCC pop_options
+#endif
 /* --- ARMv7 Kernel Boot Prerequisites --- */
 
 /* cache_flush */
@@ -370,7 +387,6 @@ void cleanup_before_linux (void)
 
 	/* disable all interrupts */
 	disable_interrupts();
-
     if(is_cpu_family() == CPU_OMAP36XX){
         /* flush caches */
         cache_flush();
@@ -393,7 +409,8 @@ void cleanup_before_linux (void)
 
 int load_and_parse ()
 {
-    int bootr;
+    int bootr = 0;
+#ifdef ENABLE_LOAD_INI_FILE
     bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_MMC_BOOT, cfg_handler, (void*) LMemoryLayout);
     if(bootr >= 0){
         printf("XLoader: Configuration file igep.ini Loaded from MMC\n");
@@ -401,9 +418,33 @@ int load_and_parse ()
     }
     bootr = ini_parse(IGEP_BOOT_CFG_INI_FILE, IGEP_ONENAND_BOOT, cfg_handler, (void*) LMemoryLayout);
     if(bootr >= 0)
-		printf("XLoader: Configuration file igep.ini Loaded from Flash memory\n");        
-    else
-        printf("XLoader: Configuration file igep.ini not found\n");
+		printf("XLoader: Configuration file igep.ini Loaded from Flash memory\n");
+    else{
+        printf("XLoader: Configuration file igep.ini not found or invalid (%d), using defaults\n", bootr);
+        add_cmd_param("console", "ttyO2,115200n8");
+        add_cmd_param("mem", "430M");
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
+        add_cmd_param("root", "/dev/mtdblock2 rw rootwait");
+        add_cmd_param("rootfstype", "jffs2");
+#else
+#ifdef IGEP00X_ENABLE_MMC_BOOT
+        add_cmd_param("root", "/dev/mmcblk0p2 rw rootwait");
+#endif
+#endif
+    }
+#else
+    printf("XLoader: Configuration file igep.ini disabled, using defaults\n");
+    add_cmd_param("console", "ttyO2,115200n8");
+    add_cmd_param("mem", "430M");
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
+    add_cmd_param("root", "/dev/mtdblock2 rw rootwait");
+    add_cmd_param("rootfstype", "jffs2");
+#else
+#ifdef IGEP00X_ENABLE_MMC_BOOT
+    add_cmd_param("root", "/dev/mmcblk0p2 rw rootwait");
+#endif
+#endif
+#endif
     return bootr;
 }
 
@@ -411,11 +452,15 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
 {
     // load_kernel
     int bootr;
+#ifdef IGEP00X_ENABLE_MMC_BOOT
     printf("XLoader: try load kernel from MMC\n");
     bootr = load_kernel (layout, IGEP_MMC_BOOT);
-    if(bootr > 0) return bootr;    
+    if(bootr > 0) return bootr;
+#endif
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
     printf("XLoader: try load kernel from Flash\n");
     bootr = load_kernel (layout, IGEP_ONENAND_BOOT);
+#endif
     return bootr;
 }
 
@@ -489,7 +534,7 @@ int boot_linux (/*int machine_id*/)
 			printf("kernel %p size %d crc %08x\n", LMemoryLayout->kbase_address,
                    LMemoryLayout->k_size, crc32(0, LMemoryLayout->kbase_address,
                                                 LMemoryLayout->k_size));
-#endif                                                
+#endif
             theKernel (0, LMemoryLayout->machine_id, kparams);
         }else{
             if(bootr < 0)

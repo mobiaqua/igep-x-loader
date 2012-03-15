@@ -62,8 +62,8 @@ endif
 #########################################################################
 # X-LOAD objects....order is important (i.e. start must be first)
 
-OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o
- 
+#OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o cpu/$(CPU)/memcpy.o
+OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o
 
 LIBS += board/$(BOARDDIR)/lib$(BOARD).a
 LIBS += cpu/$(CPU)/lib$(CPU).a
@@ -83,9 +83,12 @@ SUBDIRS	=
 #########################################################################
 #########################################################################
 
-ALL = x-load.bin System.map
+ALL = x-load.bin System.map x-load.bin.ift
 
 all:		$(ALL)
+ 
+x-load.bin.ift: x-load.bin
+			contrib/signGP x-load.bin
  
 x-load.bin:	x-load
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@

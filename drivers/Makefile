@@ -26,7 +26,7 @@ include $(TOPDIR)/config.mk
 # CFLAGS += -DET_DEBUG -DDEBUG
 
 LIB	= libdrivers.a
-OBJS  = serial.o ns16550.o omap24xx_i2c.o
+OBJS  = serial.o ns16550.o omap24xx_i2c.o twl4030.o
 
 ## Disabled for now:
 ##	  cs8900.o ct69000.o dataflash.o dc2114x.o ds1722.o \

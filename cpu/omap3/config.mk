@@ -20,9 +20,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
-PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8
+PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common 
 
-PLATFORM_CPPFLAGS += -march=armv7-a
+PLATFORM_CPPFLAGS += -march=armv7-a -mfpu=neon -mcpu=cortex-a8
 # =========================================================================
 #
 # Supply options according to compiler version

@@ -18,6 +18,10 @@
 
 #ifdef CFG_PRINTF
 
+#ifndef __DEBUG_MEMORY_TEST
+char *printbuffer = NULL;
+#endif
+
 /* we use this so that we can do without the ctype library */
 #define is_digit(c)	((c) >= '0' && (c) <= '9')
 
@@ -289,18 +293,32 @@ void serial_printf (const char *fmt, ...)
 {
 	va_list args;
 	uint i;
-	char printbuffer[CFG_PBSIZE];
+#ifdef __DEBUG_MEMORY_TEST
+    char* puffer [CFG_PBSIZE];
+#else
+	if(printbuffer == NULL &&  is_malloc_initialized() )
+        printbuffer = malloc (CFG_PBSIZE);
+    else  if(!is_malloc_initialized()) return;
+#endif
 
 	va_start (args, fmt);
 
 	/* For this to work, printbuffer must be larger than
 	 * anything we ever want to print.
 	 */
-	i = vsprintf (printbuffer, fmt, args);
+#ifdef __DEBUG_MEMORY_TEST
+	i = vsprintf (puffer, fmt, args);
+#else
+    i = vsprintf (printbuffer, fmt, args);
+#endif
 	va_end (args);
 
+#ifdef __DEBUG_MEMORY_TEST
 	/* Print the string */
-	serial_puts (printbuffer);
+	serial_puts (puffer);
+#else
+    serial_puts (printbuffer);
+#endif
 }
 #endif
 

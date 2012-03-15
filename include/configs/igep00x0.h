@@ -222,7 +222,7 @@
 /* Kernel Parameters */
 #define IGEP0020_MACHINE_ID             2344
 #define IGEP0030_MACHINE_ID             2717
-#define IGEP0032_MACHINE_ID		3203
+#define IGEP0032_MACHINE_ID		        3203
 #define IGEP_BOOT_CFG_INI_FILE      "igep.ini"
 #define IGEP_MMC_BOOT               0
 #define IGEP_ONENAND_BOOT           1
@@ -230,10 +230,25 @@
 #define IGEP_CS1_MEMORY_SIZE        256 * (1024 * 1024)                 /* CS0 First Die Memory = 256 M Bytes*/
 #define IGEP_INI_FILE_MAX_SIZE      16 * 1024                           /* Max ini file size */
 
+/* DEFAULT VAR Values */
+#define DEFAULT_KADDRESS            0x80008000
+#define DEFAULT_KRADRRESS           0x81600000
+#define DEFAULT_BOARD_ID            IGEP0020_MACHINE_ID
+
 /* OMAP SYS_BOOT masks */
 #define IGEP00X0_SYSBOOT_MASK           0x1f
 #define IGEP00X0_SYSBOOT_NAND           0x0f
 #define IGEP00X0_SYSBOOT_ONENAND        0x10
+
+/* Linux Loader */
+#define IGEP00X_ENABLE_MMC_BOOT
+#define IGEP00X_ENABLE_FLASH_BOOT
+
+/* DEBUG Memory */
+// #define __DEBUG_MEMORY_TEST
+
+/* INI PARSER */
+#define ENABLE_LOAD_INI_FILE
 
 #endif /* __CONFIG_H */
 

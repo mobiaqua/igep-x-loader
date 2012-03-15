@@ -37,6 +37,7 @@
 
 #include <common.h>
 #include <config.h>
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
 #include <jffs2/jffs2.h>
 #include <jffs2/mini_inflate.h>
 #include <malloc.h>
@@ -46,3 +47,5 @@ long zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
 {
     return (decompress_block(cpage_out, data_in + 2, (void *) ldr_memcpy));
 }
+
+#endif

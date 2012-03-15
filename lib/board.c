@@ -42,12 +42,14 @@
 #endif
 
 const char version_string[] =
-	"IGEP-X-Loader 2.4.0-2 (" __DATE__ " - " __TIME__ ")";
+	"IGEP-X-Loader 2.4.0-3 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {
 #ifdef CFG_PRINTF
-    printf("\n\n%s\n", version_string);
+    const char clear [] = {0x1b, 0x5b, '2', 'J', 0 };
+    printf("%s", clear);
+    printf("\n%s\n", version_string);
 #endif
 	return 0;
 }
@@ -99,9 +101,10 @@ void start_armboot (void)
 	/* Initialize MMC */
 	mmc_init(1);
 
+#ifdef IGEP00X_ENABLE_MMC_BOOT
 	/* Initialize fat dynamic structures */
 	init_fat();
-
+#endif
 	/* Load the Linux kernel */
 	/* boot_linux() should never return */
 	boot_linux();

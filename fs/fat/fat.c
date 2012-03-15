@@ -25,23 +25,15 @@
  * MA 02111-1307 USA
  */
 
-#include <common.h>
 #include <config.h>
+
+#ifdef IGEP00X_ENABLE_MMC_BOOT
+
+#include <common.h>
 #include <fat.h>
 #include <asm/byteorder.h>
 #include <part.h>
-
-/*
- * Convert a string to lowercase.
- */
-static void
-downcase(char *str)
-{
-	while (*str != '\0') {
-		TOLOWER(*str);
-		str++;
-	}
-}
+#include <string.h>
 
 static  block_dev_desc_t *cur_dev = NULL;
 static unsigned long part_offset = 0;
@@ -50,49 +42,6 @@ static int cur_part = 1;
 #define DOS_PART_TBL_OFFSET	0x1be
 #define DOS_PART_MAGIC_OFFSET	0x1fe
 #define DOS_FS_TYPE_OFFSET	0x36
-
-int strncmp(const char * cs,const char * ct,size_t count)
-{
-        register signed char __res = 0;
-
-        while (count) {
-                if ((__res = *cs - *ct++) != 0 || !*cs++)
-                        break;
-                count--;
-        }
-
-        return __res;
-}
-
-char * strcpy(char * dest,const char *src)
-{
-        char *tmp = dest;
-
-        while ((*dest++ = *src++) != '\0')
-                /* nothing */;
-        return tmp;
-}
-
-int strcmp(const char * cs,const char * ct)
-{
-        register signed char __res;
-
-        while (1) {
-                if ((__res = *cs - *ct++) != 0 || !*cs++)
-                        break;
-        }
-
-        return __res;
-}
-void * memcpy(void * dest,const void *src,size_t count)
-{
-        char *tmp = (char *) dest, *s = (char *) src;
-
-        while (count--)
-                *tmp++ = *s++;
-
-        return dest;
-}
 
 
 int disk_read (__u32 startblock, __u32 getsize, __u8 * bufptr)
@@ -170,23 +119,6 @@ fat_register_device(block_dev_desc_t *dev_desc, int part_no)
 	}
 #endif
 	return 0;
-}
-
-
-/*
- * Get the first occurence of a directory delimiter ('/' or '\') in a string.
- * Return index into string if found, -1 otherwise.
- */
-static int
-dirdelim(char *str)
-{
-	char *start = str;
-
-	while (*str != '\0') {
-		if (ISDIRDELIM(*str)) return str - start;
-		str++;
-	}
-	return -1;
 }
 
 /*
@@ -1064,3 +996,5 @@ void init_fat (void)
     get_dentfromdir_block = malloc (MAX_CLUSTSIZE);
     get_vfatname_block = malloc(MAX_CLUSTSIZE);
 }
+
+#endif

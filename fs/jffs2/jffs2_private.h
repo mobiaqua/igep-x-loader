@@ -22,6 +22,11 @@ struct b_list {
 	struct mem_block *listMemBase;
 };
 
+/*struct b_ilist{
+    __u32 ino;
+    struct b_list frag;
+};*/
+
 struct b_lists {
 	struct b_list dir;
 	struct b_list frag;

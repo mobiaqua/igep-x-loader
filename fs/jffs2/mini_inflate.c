@@ -24,6 +24,7 @@
  */
 
 #include <config.h>
+#ifdef IGEP00X_ENABLE_FLASH_BOOT
 #include <jffs2/mini_inflate.h>
 #include <malloc.h>
 
@@ -392,3 +393,5 @@ long decompress_block(unsigned char *dest, unsigned char *source,
 #endif
 	return stream->error ? -stream->error : stream->decoded;
 }
+
+#endif
