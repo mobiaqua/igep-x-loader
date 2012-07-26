@@ -62,6 +62,9 @@ static ulong timestamp;
 static ulong lastinc;
 static struct gptimer *timer_base = (struct gptimer *) CONFIG_SYS_TIMERBASE;
 
+static unsigned long long iticks = 0, eticks = 0;
+
+
 ulong get_timer_masked(void);
 
 /*
@@ -156,4 +159,19 @@ unsigned long long get_ticks(void)
 ulong get_tbclk(void)
 {
 	return CONFIG_SYS_HZ;
+}
+
+void set_time_mark_start ()
+{
+    iticks = get_ticks();
+}
+
+void set_time_mark_end ()
+{
+    eticks = get_ticks();
+}
+
+unsigned long long get_mark_elapsed_time ()
+{
+    return eticks - iticks;
 }
