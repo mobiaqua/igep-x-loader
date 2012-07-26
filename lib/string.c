@@ -48,22 +48,6 @@ int strcmp(const char * cs,const char * ct)
         return __res;
 }
 
-// #define __fmemcpy
-
-#ifdef __notdef
-void * memcpy(void * dest,const void *src,size_t count)
-{
-        char *tmp = (char *) dest, *s = (char *) src;
-
-        while (count--)
-                *tmp++ = *s++;
-
-        return dest;
-}
-#else
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 void* s_memcpy (void * dest,const void *src,size_t count)
 {
         char *tmp = (char *) dest, *s = (char *) src;
@@ -74,34 +58,19 @@ void* s_memcpy (void * dest,const void *src,size_t count)
         return dest;
 }
 
-void* memcpy(void* dest, const void* src, size_t count)
+void* memcpy (void* dest, const void* src, size_t count)
 {
-    int i = 0;
     u32* pDest = (u32*)dest;
     u32* pSrc = (u32*)src;
-    u8* bpDest = NULL;
-    u8* bpSrc = NULL;
-
+    // Source and Dest 4 bytes Address Aligned ?
     if(((int)pDest % 4) || ((int)pSrc % 4)){
         return s_memcpy(dest, src, count);
     }
-    // printf("memcpy start: dest: 0x%x ori: 0x%x size: %u\n", dest, src, count);
-    while(count >= 4){
-        // printf("(%d) dest: 0x%x ori: 0x%x count: %d\n", i, dest, src, count);
-        *pDest++ = *pSrc++;
-        count -= 4;
-    }
-    bpDest = (u8*) pDest;
-    bpSrc = (u8*) pSrc;
-    while (count--)
-    {
-        *bpDest++ = *bpSrc++;
-    }
-    // printf("memcpy end: dest: 0x%x ori: 0x%x size: %u\n", dest, src, ++count);
-    return (dest);
-}
-#pragma GCC pop_options
-#endif
+    // Assembly optimized ArmV7 memcpy function
+    fmemcpy(dest, src, count);
+    return dest;
+}__attribute__((optimize("O0")));
+
 
 /*
  * Get the first occurence of a directory delimiter ('/' or '\') in a string.
