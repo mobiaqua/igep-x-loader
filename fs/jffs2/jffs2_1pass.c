@@ -126,7 +126,6 @@
 #include <linux/mtd/mtd.h>
 #include <onenand_uboot.h>
 #include <nand_uboot.h>
-
 #include "jffs2_private.h"
 
 #define	NODE_CHUNK	1024	/* size of memory allocation chunk in b_nodes */
@@ -175,17 +174,20 @@ static struct part_info *current_part;
 static u8* nand_cache = NULL;
 static u32 nand_cache_off = (u32)-1;
 
-static int read_nand_cached(u32 off, u32 size, u_char *buf)
+#define CACHE_BLOCK_SIZE    (4 * 1024)
+
+static int read_nand_cached (u32 off, u32 size, u_char *buf)
 {
 	u32 i = 0;
 	size_t retlen;
-	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / 4096;
+	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / CACHE_BLOCK_SIZE;
 	if(!nand_cache){
 		nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
 		for(i = 0; i < n_blocks; i++){
-			nand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, nand_cache + (i * 4096));
-			if(retlen != 4096){
-				printf("BUG() read_nand return = %u != 4096\n", retlen);
+			nand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * CACHE_BLOCK_SIZE), CACHE_BLOCK_SIZE, &retlen, nand_cache + (i * CACHE_BLOCK_SIZE));
+			if(retlen != CACHE_BLOCK_SIZE){
+			    return -1;
+				// printf("BUG() read_nand return = %u != 4096\n", retlen);
 			}
 		}
 #ifdef __DEBUG_MEMORY_TEST
@@ -193,16 +195,16 @@ static int read_nand_cached(u32 off, u32 size, u_char *buf)
 #endif
 	}
 	if(off < CONFIG_JFFS2_PART_OFFSET){
-		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
-		return 0;
+		// printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
+		return -1;
 	}
 	if(off > (CONFIG_JFFS2_PART_SIZE + CONFIG_JFFS2_PART_OFFSET)){
-		printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
-		return 0;
+		// printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
+		return -1;
 	}
 	if(!buf){
-		printf("BUG() - NULL buffer pointer\n");
-		return 0;
+		// printf("BUG() - NULL buffer pointer\n");
+		return -1;
 	}
 	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
@@ -278,7 +280,8 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 		for(i = 0; i < n_blocks; i++){
 			onenand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * 4096), 4096, &retlen, onenand_cache + (i * 4096));
 			if(retlen != 4096){
-				printf("BUG() onenand_read return = %u != 4096\n", retlen);
+				// printf("BUG() onenand_read return = %u != 4096\n", retlen);
+				return -1;
 			}
 		}
 #ifdef __DEBUG_MEMORY_TEST
@@ -286,16 +289,16 @@ static int read_onenand_cached (u32 off, u32 size, u_char *buf)
 #endif
 	}
 	if(off < CONFIG_JFFS2_PART_OFFSET){
-		printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
-		return 0;
+		// printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
+		return 1;
 	}
 	if(off > (CONFIG_JFFS2_PART_SIZE + CONFIG_JFFS2_PART_OFFSET)){
-		printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
-		return 0;
+		// printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
+		return -1;
 	}
 	if(!buf){
-		printf("BUG() - NULL buffer pointer\n");
-		return 0;
+		// printf("BUG() - NULL buffer pointer\n");
+		return -1;
 	}
 	memcpy(buf, &(onenand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
@@ -841,6 +844,7 @@ jffs2_1pass_find_inode(struct b_lists * pL, const char *name, u32 pino)
 	/* we need to search all and return the inode with the highest version */
 	for(b = pL->dir.listHead; b; b = b->next, counter++) {
 		jDir = (struct jffs2_raw_dirent *) get_node_mem(b->offset, pL->readbuf);
+		// printf("%s\n", (char *)jDir->name);
 		if ((pino == jDir->pino) && (len == jDir->nsize) &&
 		    (jDir->ino) &&	/* 0 for unlink */
 		    (!strncmp((char *)jDir->name, name, len))) {	/* a match */
