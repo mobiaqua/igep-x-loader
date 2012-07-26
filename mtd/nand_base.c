@@ -41,6 +41,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand_ecc.h>
+#include <asm/arch/gpmc.h>
 
 #ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
@@ -334,6 +335,16 @@ void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 		buf[i] = readb(chip->IO_ADDR_R);
 }
 
+#ifdef __GPMC_PREFETCH_ENGINE__
+static inline void ioread32_rep(void *addr, u32 *dst, int count)
+{
+    while (--count >= 0) {
+        u32 data = __raw_readl(addr);
+        *dst = data;
+        dst++;
+    }
+}
+
 /**
  * nand_read_buf16 - [DEFAULT] read chip data into buffer
  * @mtd:	MTD device structure
@@ -342,16 +353,54 @@ void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
  *
  * Default read function for 16bit buswith
  */
+
 void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
 {
-	int i;
+	int i, ret;
+	uint32_t r_count = 0;
 	struct nand_chip *chip = mtd->priv;
-	u16 *p = (u16 *) buf;
-	len >>= 1;
+    u16 *p = (u16 *) buf;
 
-	for (i = 0; i < len; i++)
-		p[i] = readw(chip->IO_ADDR_R);
+    if (len % 4) {
+        for (i = 0; i < len % 4; i++)
+            p[i] = readw(chip->IO_ADDR_R);
+        p = (u32 *) (buf + len % 4);
+        len -= len % 4;
+    }
+
+	ret = gpmc_prefetch_enable(0, PREFETCH_FIFOTHRESHOLD_MAX, 0x0, len, 0x0);
+	if(ret){
+        len >>= 1;
+        for (i = 0; i < len; i++)
+            p[i] = readw(chip->IO_ADDR_R);
+	}
+	else{
+        do {
+            r_count = gpmc_read_status(GPMC_PREFETCH_FIFO_CNT);
+            if(r_count == -1) printf("1\n"); else if(r_count == 0) printf("2\n");
+            r_count = r_count >> 2;
+            ioread32_rep(chip->IO_ADDR_R, p, r_count);
+            p += r_count << 1;
+            len -= r_count << 2;
+        } while (len);
+        gpmc_prefetch_reset(0);
+	}
 }
+#else
+void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
+{
+	int i, ret;
+	struct nand_chip *chip = mtd->priv;
+
+    // dma_copy(chip->IO_ADDR_R, buf, len>>2, 1);
+
+    // while(dma_is_busy());
+    u16 *p = (u16 *) buf;
+    len >>= 1;
+    for (i = 0; i < len; i++)
+        p[i] = readw(chip->IO_ADDR_R);
+}
+#endif
 
 /*
  * Wait for the ready pin, after a command
@@ -362,7 +411,6 @@ void nand_wait_ready(struct mtd_info *mtd)
 	struct nand_chip *chip = mtd->priv;
 	u32 timeo = (CONFIG_SYS_HZ * 20) / 1000;
 	u32 ready = 0;
-
 	/* wait until command is processed or timeout occures */
 	if (chip->dev_ready) {
 		ready = chip->dev_ready(mtd);
@@ -1098,9 +1146,9 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 
 		readlen -= bytes;
 
-		if (!readlen)
+		if (!readlen){
 			break;
-
+		}
 		/* For subsequent reads align to page boundary. */
 		col = 0;
 		/* Increment page address */
