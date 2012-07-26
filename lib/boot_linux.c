@@ -229,8 +229,12 @@ int load_kernel (struct Linux_Memory_Layout *myImage, int from)
 		if(size > 0){
 			/* Update the size variable */
 			myImage->k_size = size;
+#ifdef __CHECK_MEMORY_CRC__
 			printf("XLoader: kernel %s loaded from %s at 0x%x size = %d (crc: %08x)\n", linuxName, from ? "FLASH" : "MMC" ,myImage->kbase_address, myImage->k_size,
                     crc32(0, LMemoryLayout->kbase_address, LMemoryLayout->k_size));
+#else
+			printf("XLoader: kernel %s loaded from %s at 0x%x size = %d\n", linuxName, from ? "FLASH" : "MMC" ,myImage->kbase_address, myImage->k_size);
+#endif
 			if(!rdImageName) return 1;
 
 			/* if the ram disk dest address it's not supplied then calculate the address */
@@ -480,17 +484,21 @@ int boot_linux (/*int machine_id*/)
 #endif
     /* initialize internal variables */
     init_memory_layout();
+
 #ifdef __DEBUG__
     printf("Parse configuration file\n");
 #endif
+
     /* parse configuration file */
     if(load_and_parse() >= 0){
 #ifdef __DEBUG__
 		printf("Try load kernel\n");
 #endif
+
 		/* If parse it's ok, it's a good moment for load
         the kernel image from the mmc card */
         bootr = load_kernel_image (LMemoryLayout);
+
 		/* if bootr it's > 0 then we get right the kernel image */
         if(bootr > 0){
             // If boot_kernel == 0 then we load a binary file and jump to it
