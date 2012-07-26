@@ -25,6 +25,23 @@
 #ifndef _IGEP_GPMC_H_
 #define _IGEP_GPMC_H_
 
+#ifdef __GPMC_PREFETCH_ENGINE__
+#define PREFETCH_FIFOTHRESHOLD_MAX      0x40
+#define PREFETCH_FIFOTHRESHOLD(val)     ((val) << 8)
+#define CS_NUM_SHIFT		24
+#define ENABLE_PREFETCH		(0x1 << 7)
+#define DMA_MPU_MODE		2
+#define GPMC_PREFETCH_CONFIG1	0x1e0
+#define GPMC_PREFETCH_CONFIG2	0x1e4
+#define GPMC_PREFETCH_CONTROL	0x1ec
+#define GPMC_PREFETCH_STATUS	0x1f0
+#define GPMC_PREFETCH_STATUS_FIFO_CNT(val)      ((val >> 24) & 0x7F)
+#define GPMC_PREFETCH_STATUS_COUNT(val) (val & 0x00003fff)
+#define GPMC_PREFETCH_FIFO_CNT  0x00000007 /* bytes available in FIFO for r/w */
+#define GPMC_PREFETCH_COUNT     0x00000008 /* remaining bytes to be read/write*/
+#define GPMC_STATUS_BUFFER      0x00000009 /* 1: buffer is available to write */
+#endif
+
 struct gpmc_cs {
 	u32 config1;		/* 0x00 */
 	u32 config2;		/* 0x04 */
@@ -92,5 +109,8 @@ struct ctrl {
 
 void gpmc_init (void);
 void setup_net_chip (unsigned int);
-
+int gpmc_prefetch_enable(int cs, int fifo_th, int dma_mode,
+				unsigned int u32_count, int is_write);
+int gpmc_prefetch_reset(int cs);
+int gpmc_read_status(int cmd);
 #endif

@@ -33,7 +33,6 @@ void gpmc_init (void)
 	udelay(1000);
 }
 
-
 /*
  * Routine: setup_net_chip
  * Description: Setting up the configuration GPMC registers specific to the
@@ -95,3 +94,104 @@ void setup_net_chip (u32 processor)
 	writel(GPIO0, &gpio3_base->setdataout);
 
 }
+
+#ifdef __GPMC_PREFETCH_ENGINE__
+static void gpmc_write_reg(int idx, u32 val)
+{
+    // struct gpmc* gpmc_base = (struct gpmc *)GPMC_BASE;
+	__raw_writel(val, GPMC_BASE + idx);
+}
+
+static u32 gpmc_read_reg(int idx)
+{
+    //struct gpmc* gpmc_base = (struct gpmc *)GPMC_BASE;
+	return __raw_readl(GPMC_BASE + idx);
+}
+
+
+/**
+ * gpmc_read_status - read access request to get the different gpmc status
+ * @cmd: command type
+ * @return status
+ */
+int gpmc_read_status(int cmd)
+{
+	int	status = -1;
+	u32	regval = 0;
+
+	switch (cmd) {
+	case GPMC_PREFETCH_FIFO_CNT:
+		regval = gpmc_read_reg(GPMC_PREFETCH_STATUS);
+		status = GPMC_PREFETCH_STATUS_FIFO_CNT(regval);
+		break;
+
+	case GPMC_PREFETCH_COUNT:
+		regval = gpmc_read_reg(GPMC_PREFETCH_STATUS);
+		status = GPMC_PREFETCH_STATUS_COUNT(regval);
+		break;
+
+	default:
+            return -1;
+	}
+	return status;
+}
+
+
+/**
+ * gpmc_prefetch_enable - configures and starts prefetch transfer
+ * @cs: cs (chip select) number
+ * @fifo_th: fifo threshold to be used for read/ write
+ * @dma_mode: dma mode enable (1) or disable (0)
+ * @u32_count: number of bytes to be transferred
+ * @is_write: prefetch read(0) or write post(1) mode
+ */
+int gpmc_prefetch_enable(int cs, int fifo_th, int dma_mode,
+				unsigned int u32_count, int is_write)
+{
+
+	if (fifo_th > PREFETCH_FIFOTHRESHOLD_MAX) {
+		// pr_err("gpmc: fifo threshold is not supported\n");
+		return -1;
+	} else if (!(gpmc_read_reg(GPMC_PREFETCH_CONTROL))) {
+		/* Set the amount of bytes to be prefetched */
+		gpmc_write_reg(GPMC_PREFETCH_CONFIG2, u32_count);
+
+		/* Set dma/mpu mode, the prefetch read / post write and
+		 * enable the engine. Set which cs is has requested for.
+		 */
+		gpmc_write_reg(GPMC_PREFETCH_CONFIG1, ((cs << CS_NUM_SHIFT) |
+					PREFETCH_FIFOTHRESHOLD(fifo_th) |
+					ENABLE_PREFETCH |
+					(dma_mode << DMA_MPU_MODE) |
+					(0x1 & is_write)));
+
+		/*  Start the prefetch engine */
+		gpmc_write_reg(GPMC_PREFETCH_CONTROL, 0x1);
+	} else {
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ * gpmc_prefetch_reset - disables and stops the prefetch engine
+ */
+int gpmc_prefetch_reset(int cs)
+{
+	u32 config1;
+
+	/* check if the same module/cs is trying to reset */
+	config1 = gpmc_read_reg(GPMC_PREFETCH_CONFIG1);
+	if (((config1 >> CS_NUM_SHIFT) & 0x7) != cs)
+		return -1;
+
+	/* Stop the PFPW engine */
+	gpmc_write_reg(GPMC_PREFETCH_CONTROL, 0x0);
+
+	/* Reset/disable the PFPW engine */
+	gpmc_write_reg(GPMC_PREFETCH_CONFIG1, 0x0);
+
+	return 0;
+}
+#endif
