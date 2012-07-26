@@ -54,7 +54,7 @@ include $(TOPDIR)/config.mk
 
 ifndef CROSS_COMPILE
 #CROSS_COMPILE = arm-none-linux-gnueabi-
-CROSS_COMPILE = arm-linux-gnueabi-
+CROSS_COMPILE = arm-poky-linux-gnueabi-
 #CROSS_COMPILE = arm-linux-
 export	CROSS_COMPILE
 endif
@@ -62,8 +62,9 @@ endif
 #########################################################################
 # X-LOAD objects....order is important (i.e. start must be first)
 
-#OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o cpu/$(CPU)/memcpy.o
-OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o
+OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o cpu/$(CPU)/memcpy.o 
+#OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o cpu/$(CPU)/memcpy-hybrid.o 
+#OBJS  = cpu/$(CPU)/start.o cpu/$(CPU)/cache.o cpu/$(CPU)/memset.o
 
 LIBS += board/$(BOARDDIR)/lib$(BOARD).a
 LIBS += cpu/$(CPU)/lib$(CPU).a
@@ -89,6 +90,7 @@ all:		$(ALL)
  
 x-load.bin.ift: x-load.bin
 			contrib/signGP x-load.bin
+			cp x-load.bin.ift MLO
  
 x-load.bin:	x-load
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
