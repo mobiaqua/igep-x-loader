@@ -1,37 +1,40 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep00x0/igep00x0.c" open="1" top="0" tabpos="2">
-		<Cursor position="67522" topLine="1900" />
+	<File name="../board/igep00x0/igep00x0.c" open="1" top="0" tabpos="3">
+		<Cursor position="25076" topLine="815" />
 	</File>
-	<File name="../board/igep00x0/platform.S" open="1" top="1" tabpos="9">
+	<File name="../board/igep00x0/platform.S" open="0" top="0" tabpos="9">
 		<Cursor position="4623" topLine="284" />
 	</File>
 	<File name="../cpu/omap3/cpu.c" open="0" top="0" tabpos="0">
-		<Cursor position="1675" topLine="4" />
+		<Cursor position="1675" topLine="10" />
 	</File>
 	<File name="../cpu/omap3/gp_timer.c" open="0" top="0" tabpos="0">
-		<Cursor position="2652" topLine="96" />
+		<Cursor position="2956" topLine="101" />
 	</File>
 	<File name="../cpu/omap3/gpio.c" open="0" top="0" tabpos="0">
 		<Cursor position="4094" topLine="144" />
 	</File>
-	<File name="../cpu/omap3/gpmc.c" open="0" top="0" tabpos="2">
-		<Cursor position="3546" topLine="101" />
+	<File name="../cpu/omap3/gpmc.c" open="1" top="0" tabpos="2">
+		<Cursor position="4397" topLine="111" />
 	</File>
 	<File name="../cpu/omap3/memcpy.S" open="0" top="0" tabpos="0">
 		<Cursor position="0" topLine="27" />
 	</File>
 	<File name="../cpu/omap3/mmc.c" open="0" top="0" tabpos="0">
-		<Cursor position="13568" topLine="522" />
+		<Cursor position="5457" topLine="226" />
 	</File>
 	<File name="../cpu/omap3/start.S" open="0" top="0" tabpos="2">
 		<Cursor position="2671" topLine="87" />
 	</File>
-	<File name="../drivers/ns16550.c" open="1" top="0" tabpos="7">
-		<Cursor position="1333" topLine="33" />
+	<File name="../drivers/dma.c" open="1" top="0" tabpos="6">
+		<Cursor position="1808" topLine="42" />
 	</File>
-	<File name="../drivers/serial.c" open="1" top="0" tabpos="6">
+	<File name="../drivers/ns16550.c" open="0" top="0" tabpos="7">
+		<Cursor position="1333" topLine="29" />
+	</File>
+	<File name="../drivers/serial.c" open="0" top="0" tabpos="6">
 		<Cursor position="2106" topLine="47" />
 	</File>
 	<File name="../fs/fat/fat.c" open="0" top="0" tabpos="0">
@@ -43,8 +46,11 @@
 	<File name="../fs/jffs2/compr_zlib.c" open="0" top="0" tabpos="0">
 		<Cursor position="1650" topLine="4" />
 	</File>
-	<File name="../fs/jffs2/jffs2_1pass.c" open="0" top="0" tabpos="4">
-		<Cursor position="5604" topLine="105" />
+	<File name="../fs/jffs2/jffs2_1pass.c" open="0" top="0" tabpos="1">
+		<Cursor position="7190" topLine="167" />
+	</File>
+	<File name="../fs/jffs2/jffs2_private.h" open="0" top="0" tabpos="2">
+		<Cursor position="451" topLine="0" />
 	</File>
 	<File name="../fs/jffs2/mini_inflate.c" open="0" top="0" tabpos="0">
 		<Cursor position="1194" topLine="0" />
@@ -58,14 +64,26 @@
 	<File name="../include/asm/arch/clocks343x.h" open="0" top="0" tabpos="1">
 		<Cursor position="2204" topLine="33" />
 	</File>
+	<File name="../include/asm/arch-omap3/cpu.h" open="0" top="0" tabpos="0">
+		<Cursor position="1980" topLine="39" />
+	</File>
 	<File name="../include/asm/arch-omap3/gpio.h" open="0" top="0" tabpos="0">
 		<Cursor position="3726" topLine="85" />
 	</File>
-	<File name="../include/asm/arch-omap3/mem.h" open="0" top="0" tabpos="0">
-		<Cursor position="20092" topLine="574" />
+	<File name="../include/asm/arch-omap3/gpmc.h" open="0" top="0" tabpos="0">
+		<Cursor position="1218" topLine="71" />
 	</File>
-	<File name="../include/common.h" open="0" top="0" tabpos="0">
-		<Cursor position="3197" topLine="95" />
+	<File name="../include/asm/arch-omap3/mem.h" open="1" top="0" tabpos="1">
+		<Cursor position="21991" topLine="671" />
+	</File>
+	<File name="../include/asm/arch-omap3/mmc_host_def.h" open="0" top="0" tabpos="0">
+		<Cursor position="1883" topLine="20" />
+	</File>
+	<File name="../include/asm/arch-omap3/omap3.h" open="0" top="0" tabpos="0">
+		<Cursor position="1062" topLine="12" />
+	</File>
+	<File name="../include/common.h" open="1" top="0" tabpos="5">
+		<Cursor position="2910" topLine="81" />
 	</File>
 	<File name="../include/configs/igep0030-flash.h" open="0" top="0" tabpos="0">
 		<Cursor position="2580" topLine="73" />
@@ -73,8 +91,8 @@
 	<File name="../include/configs/igep0030-sdcard.h" open="0" top="0" tabpos="0">
 		<Cursor position="2565" topLine="73" />
 	</File>
-	<File name="../include/configs/igep00x0.h" open="1" top="0" tabpos="1">
-		<Cursor position="8234" topLine="209" />
+	<File name="../include/configs/igep00x0.h" open="0" top="0" tabpos="3">
+		<Cursor position="3330" topLine="89" />
 	</File>
 	<File name="../include/configs/omap2430sdp.h" open="0" top="0" tabpos="0">
 		<Cursor position="2902" topLine="79" />
@@ -85,35 +103,41 @@
 	<File name="../include/linux/mtd/compat.h" open="0" top="0" tabpos="0">
 		<Cursor position="1036" topLine="7" />
 	</File>
+	<File name="../include/linux/mtd/mtd.h" open="0" top="0" tabpos="0">
+		<Cursor position="1898" topLine="57" />
+	</File>
+	<File name="../include/linux/mtd/nand.h" open="0" top="0" tabpos="6">
+		<Cursor position="2098" topLine="44" />
+	</File>
 	<File name="../include/ns16550.h" open="0" top="0" tabpos="0">
 		<Cursor position="2140" topLine="62" />
 	</File>
 	<File name="../include/string.h" open="0" top="0" tabpos="0">
 		<Cursor position="644" topLine="0" />
 	</File>
-	<File name="../lib/board.c" open="1" top="0" tabpos="8">
-		<Cursor position="1546" topLine="36" />
+	<File name="../lib/board.c" open="0" top="0" tabpos="8">
+		<Cursor position="2606" topLine="82" />
 	</File>
-	<File name="../lib/boot_linux.c" open="1" top="0" tabpos="5">
-		<Cursor position="13907" topLine="399" />
+	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="5">
+		<Cursor position="13268" topLine="461" />
 	</File>
 	<File name="../lib/cache-cp15.c" open="0" top="0" tabpos="0">
-		<Cursor position="1424" topLine="27" />
+		<Cursor position="1469" topLine="79" />
 	</File>
 	<File name="../lib/display_options.c" open="0" top="0" tabpos="0">
 		<Cursor position="1842" topLine="0" />
 	</File>
-	<File name="../lib/ini_parser.c" open="1" top="0" tabpos="3">
+	<File name="../lib/ini_parser.c" open="0" top="0" tabpos="3">
 		<Cursor position="3862" topLine="130" />
 	</File>
 	<File name="../lib/printf.c" open="0" top="0" tabpos="0">
-		<Cursor position="13076" topLine="493" />
+		<Cursor position="2761" topLine="237" />
 	</File>
-	<File name="../lib/string.c" open="1" top="0" tabpos="4">
+	<File name="../lib/string.c" open="0" top="0" tabpos="4">
 		<Cursor position="1239" topLine="37" />
 	</File>
-	<File name="../mtd/nand_base.c" open="0" top="0" tabpos="0">
-		<Cursor position="8390" topLine="237" />
+	<File name="../mtd/nand_base.c" open="1" top="1" tabpos="4">
+		<Cursor position="11753" topLine="373" />
 	</File>
 	<File name="igep.ini" open="0" top="0" tabpos="0">
 		<Cursor position="1665" topLine="37" />

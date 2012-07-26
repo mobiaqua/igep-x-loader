@@ -76,6 +76,9 @@
 		<Unit filename="../disk/part.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../drivers/dma.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../drivers/ns16550.c">
 			<Option compilerVar="CC" />
 		</Unit>
