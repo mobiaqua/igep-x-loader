@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep00x0/igep00x0.c" open="1" top="0" tabpos="3">
-		<Cursor position="25076" topLine="815" />
+	<File name="../board/igep00x0/igep00x0.c" open="1" top="1" tabpos="3">
+		<Cursor position="17698" topLine="600" />
 	</File>
 	<File name="../board/igep00x0/platform.S" open="0" top="0" tabpos="9">
 		<Cursor position="4623" topLine="284" />
@@ -29,13 +29,13 @@
 		<Cursor position="2671" topLine="87" />
 	</File>
 	<File name="../drivers/dma.c" open="1" top="0" tabpos="6">
-		<Cursor position="1808" topLine="42" />
+		<Cursor position="1808" topLine="69" />
 	</File>
-	<File name="../drivers/ns16550.c" open="0" top="0" tabpos="7">
-		<Cursor position="1333" topLine="29" />
+	<File name="../drivers/ns16550.c" open="1" top="0" tabpos="8">
+		<Cursor position="772" topLine="22" />
 	</File>
-	<File name="../drivers/serial.c" open="0" top="0" tabpos="6">
-		<Cursor position="2106" topLine="47" />
+	<File name="../drivers/serial.c" open="1" top="0" tabpos="9">
+		<Cursor position="2198" topLine="42" />
 	</File>
 	<File name="../fs/fat/fat.c" open="0" top="0" tabpos="0">
 		<Cursor position="1162" topLine="18" />
@@ -46,8 +46,8 @@
 	<File name="../fs/jffs2/compr_zlib.c" open="0" top="0" tabpos="0">
 		<Cursor position="1650" topLine="4" />
 	</File>
-	<File name="../fs/jffs2/jffs2_1pass.c" open="0" top="0" tabpos="1">
-		<Cursor position="7190" topLine="167" />
+	<File name="../fs/jffs2/jffs2_1pass.c" open="1" top="0" tabpos="7">
+		<Cursor position="11484" topLine="254" />
 	</File>
 	<File name="../fs/jffs2/jffs2_private.h" open="0" top="0" tabpos="2">
 		<Cursor position="451" topLine="0" />
@@ -115,8 +115,8 @@
 	<File name="../include/string.h" open="0" top="0" tabpos="0">
 		<Cursor position="644" topLine="0" />
 	</File>
-	<File name="../lib/board.c" open="0" top="0" tabpos="8">
-		<Cursor position="2606" topLine="82" />
+	<File name="../lib/board.c" open="1" top="0" tabpos="10">
+		<Cursor position="1893" topLine="49" />
 	</File>
 	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="5">
 		<Cursor position="13268" topLine="461" />
@@ -136,8 +136,8 @@
 	<File name="../lib/string.c" open="0" top="0" tabpos="4">
 		<Cursor position="1239" topLine="37" />
 	</File>
-	<File name="../mtd/nand_base.c" open="1" top="1" tabpos="4">
-		<Cursor position="11753" topLine="373" />
+	<File name="../mtd/nand_base.c" open="1" top="0" tabpos="4">
+		<Cursor position="31066" topLine="1075" />
 	</File>
 	<File name="igep.ini" open="0" top="0" tabpos="0">
 		<Cursor position="1665" topLine="37" />
