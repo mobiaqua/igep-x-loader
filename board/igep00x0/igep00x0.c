@@ -592,6 +592,7 @@ static void mpu_init_36xx(u32 sil_index, u32 clk_index)
  	// wait_on_value(BIT0, 1, CM_IDLEST_PLL_MPU, LDELAY);
 }
 
+#ifdef __ENABLE_IVA__
 static void iva_init_36xx(u32 sil_index, u32 clk_index)
 {
 	dpll_param *ptr;
@@ -621,6 +622,7 @@ static void iva_init_36xx(u32 sil_index, u32 clk_index)
 
  	wait_on_value(BIT0, 1, CM_IDLEST_PLL_IVA2, LDELAY);
 }
+#endif
 
 /******************************************************************************
  * prcm_init() - inits clocks for PRCM as defined in clocks.h
@@ -663,8 +665,9 @@ void prcm_init(void)
 		dpll3_init_36xx(0, clk_index);
 		dpll4_init_36xx(0, clk_index);
 		mpu_init_36xx(0, clk_index);
+#ifdef __ENABLE_IVA__
 		iva_init_36xx(0, clk_index);
-
+#endif
 		sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
 		wait_on_value(ST_MPU_CLK, 1, CM_IDLEST_PLL_MPU, LDELAY);
 	} else {
