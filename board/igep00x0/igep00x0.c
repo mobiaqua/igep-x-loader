@@ -879,7 +879,7 @@ void read_nand_manufacturer_id (u32 *m, u32 *i)
 	nand_command(NAND_CMD_RESET);
 	nand_command(NAND_CMD_READID);
 	__raw_writeb(0x0, &gpmc_cfg->cs[0].nand_adr);
-	delay(2000);
+	while(!omap_spl_dev_ready(0));
     *m = __raw_readb(&gpmc_cfg->cs[0].nand_dat);
     *i = __raw_readb(&gpmc_cfg->cs[0].nand_dat);
 }
