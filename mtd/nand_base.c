@@ -460,6 +460,7 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 	chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
 
     if(column != -1 || page_addr != -1){
+        // Set Address
         // Write Address: NAND_ALE
         // A0 : A10 column
         if(column != -1){
@@ -931,6 +932,7 @@ int nand_correct_data(struct mtd_info *mtd, unsigned char *buf,
 				   ((struct nand_chip *)mtd->priv)->ecc.size);
 }
 
+#ifdef __notdef
 /**
  * nand_read_page_swecc - [REPLACABLE] software ecc based page read function
  * @mtd:	mtd info structure
@@ -971,6 +973,13 @@ static int nand_read_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
 	}
 	return 0;
 }
+#else
+static int nand_read_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
+				uint8_t *buf, int page)
+{
+
+}
+#endif
 
 #ifdef __notdef
 /**
