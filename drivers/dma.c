@@ -48,7 +48,7 @@ void dma_copy(unsigned int source, unsigned int dest,
 
 
 	/* Init. parameters */
-	DMA4.DataType = 0x1; // DMA4_CSDPi[1:0]
+	DMA4.DataType = 0x1; // DMA4_CSDPi[1:0] -> 0: 8 bits .. 1: 16 bits .. 2: 32 bits
 	DMA4.ReadPortAccessType = 0; // DMA4_CSDPi[8:7]
 	DMA4.WritePortAccessType = 0; // DMA4_CSDPi[15:14]
 	DMA4.SourceEndiansim = 0; // DMA4_CSDPi[21]
@@ -64,8 +64,8 @@ void dma_copy(unsigned int source, unsigned int dest,
 	DMA4.SourceFrameIndex = 1; // DMA4_CSFIi
 	DMA4.DestinationElementIndex = 1; // DMA4_CDEIi
 	DMA4.DestinationFrameIndex = 1; // DMA4_CDFIi
-	DMA4.ReadPortAccessMode = 1; // DMA4_CCRi[13:12] - Post increment
-	DMA4.WritePortAccessMode = 3; // DMA4_CCRi[15:14] - Double index
+	DMA4.ReadPortAccessMode = 0; // DMA4_CCRi[13:12] - Constat address mode
+	DMA4.WritePortAccessMode = 2; // DMA4_CCRi[15:14] - Double index
 	DMA4.ReadPriority = 0; // DMA4_CCRi[6]
 	DMA4.WritePriority = 0; // DMA4_CCRi[23]
 	DMA4.ReadRequestNumber = 0; // DMA4_CCRi[4:0]
