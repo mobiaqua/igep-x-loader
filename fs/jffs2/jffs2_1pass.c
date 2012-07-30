@@ -171,11 +171,164 @@ static struct part_info *current_part;
 #endif
 #define NAND_CACHE_SIZE (NAND_CACHE_PAGES*NAND_PAGE_SIZE)
 
+#define CACHE_BLOCK_SIZE    (2 * 1024)
+
 static u8* nand_cache = NULL;
 static u32 nand_cache_off = (u32)-1;
 
-#define CACHE_BLOCK_SIZE    (4 * 1024)
+typedef enum Nand_read_st {
+    n_sync_prepare,
+    n_read,
+    /* Next Configuratuion */
+    nr_init,
+    nr_wait,
+    nr_next
 
+}Nand_read_st;
+
+static Nand_read_st r_state = n_sync_prepare;
+
+extern void* __async_open_read_page (struct mtd_info *mtd, loff_t from);
+extern int __async_read_is_ready (void* handle);
+extern int __async_read_now (void* handle, u8* data);
+extern void __async_read_next (void* handle);
+extern void __async_close_read_page (void* handle);
+
+extern void __async_dma_copy_done (void* handle);
+extern int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata);
+
+static int load_memory_cache ()
+{
+    // Read Nand Handle
+    void* dhandle = NULL;
+    // Index Block
+    int actual_block = 0;
+    // Get Number Blocks to Read
+    u32 n_blocks = CONFIG_JFFS2_PART_SIZE / CACHE_BLOCK_SIZE;
+    // Block Processing flag
+    int ProcBlock = 1;
+    // Get Memory Cache
+    nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
+
+    for(actual_block = 0; actual_block < n_blocks; actual_block++){
+        ProcBlock = 1;
+        while(ProcBlock){
+            switch(r_state){
+                case n_sync_prepare:
+                case nr_init:
+                    // Open first block
+                    // printf("jffs2 -> Open: %d\n", actual_block);
+                    dhandle = __async_open_read_page(mtd_info, CONFIG_JFFS2_PART_OFFSET +  (actual_block * CACHE_BLOCK_SIZE));
+                    __async_dma_read_next (dhandle, NULL, nand_cache + (actual_block * CACHE_BLOCK_SIZE));
+                    actual_block--;
+                    r_state = nr_wait;
+                    break;
+                case nr_wait:
+                    // Wait
+                    __async_dma_copy_done(dhandle);
+                    ProcBlock = 0;
+                    r_state = nr_next;
+                    break;
+                case nr_next:
+                    if((actual_block+1) >= n_blocks){
+                        //printf("jffs2 -> Process ECC for last block: %d\n", actual_block);
+                        __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), NULL);
+                    } else{
+                        if( ! ((actual_block+1) % 256) ){
+                            //printf("jffs2 -> Change Window: %d: Process %d\n", actual_block+1, actual_block);
+                            __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), NULL);
+                            __async_close_read_page(dhandle);
+                            r_state = nr_init;
+                            ProcBlock = 0;
+                            break;
+                        }
+                        else{
+                            // printf("jffs2 -> Read Next %d: Process %d\n", actual_block+1, actual_block);
+                            __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), nand_cache + ((actual_block + 1) * CACHE_BLOCK_SIZE));
+                        }
+                    }
+                    r_state = nr_wait;
+                    break;
+            }
+        }
+    }
+    return 0;
+}
+
+static int read_nand_cached (u32 off, u32 size, u_char *buf)
+{
+	u32 i = 0;
+	size_t retlen;
+	void* dhandle = NULL;
+	u32 n_blocks = CONFIG_JFFS2_PART_SIZE / CACHE_BLOCK_SIZE;
+	if(!nand_cache){
+		// nand_cache = malloc (CONFIG_JFFS2_PART_SIZE);
+#ifdef __DEBUG__
+		serial_getc();
+		set_time_mark_start();
+#endif
+        load_memory_cache();
+#ifdef __notdef
+		for(i = 0; i < n_blocks; i++){
+#ifdef __notdef
+			nand_read(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * CACHE_BLOCK_SIZE), CACHE_BLOCK_SIZE, &retlen, nand_cache + (i * CACHE_BLOCK_SIZE));
+			if(retlen != CACHE_BLOCK_SIZE){
+			    return -1;
+				// printf("BUG() read_nand return = %u != 4096\n", retlen);
+			}
+#else
+			switch(r_state){
+                case n_sync_prepare:
+                    //printf("1\n");
+                    dhandle = __async_open_read_page(mtd_info, CONFIG_JFFS2_PART_OFFSET + (i * CACHE_BLOCK_SIZE));
+                    // while(!__async_read_is_ready());
+                    __async_read_next(dhandle);
+                    // while(!__async_read_is_ready(dhandle));
+                    __async_read_now(dhandle ,nand_cache + (i * CACHE_BLOCK_SIZE));
+                    __async_read_next(dhandle);
+                    r_state = n_read;
+                    break;
+                case n_read:
+                    // while(!__async_read_is_ready(dhandle));
+                    __async_read_now(dhandle, nand_cache + (i * CACHE_BLOCK_SIZE));
+                    if( (i+1) % 256 )
+                        __async_read_next(dhandle);
+                    else{
+                        __async_close_read_page(dhandle);
+                        r_state = n_sync_prepare;
+                        // while(!__async_read_is_ready());
+                    }
+                    break;
+			}
+#endif
+		}
+#endif
+#ifdef __DEBUG__
+		set_time_mark_end();
+		printf("load time: %d\n", get_mark_elapsed_time());
+#endif
+#ifdef __DEBUG_MEMORY_TEST
+		printf("Read Memory complete %08x\n", crc32(0, nand_cache, CONFIG_JFFS2_PART_SIZE));
+#endif
+	}
+	if(off < CONFIG_JFFS2_PART_OFFSET){
+		// printf("BUG() - off (%x) < CONFIG_JFFS2_PART_OFFSET\n", off);
+		return -1;
+	}
+	if(off > (CONFIG_JFFS2_PART_SIZE + CONFIG_JFFS2_PART_OFFSET)){
+		// printf("BUG() - off (%x) > CONFIG_JFFS2_PART_SIZE(%x)\n", off, CONFIG_JFFS2_PART_SIZE);
+		return -1;
+	}
+	if(!buf){
+		// printf("BUG() - NULL buffer pointer\n");
+		return -1;
+	}
+	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
+	return size;
+
+}
+
+#ifdef __notdef
 static int read_nand_cached (u32 off, u32 size, u_char *buf)
 {
 	u32 i = 0;
@@ -209,6 +362,7 @@ static int read_nand_cached (u32 off, u32 size, u_char *buf)
 	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
+#endif
 
 static void *get_fl_mem_nand(u32 off, u32 size, void *ext_buf)
 {
@@ -1111,7 +1265,7 @@ dump_dirents(struct b_lists *pL)
 }
 #endif
 
-#define DEFAULT_EMPTY_SCAN_SIZE	4096
+#define DEFAULT_EMPTY_SCAN_SIZE	2048
 
 static inline uint32_t EMPTY_SCAN_SIZE(uint32_t sector_size)
 {

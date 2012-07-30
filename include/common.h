@@ -108,6 +108,8 @@ void 	udelay (unsigned long usec);
 
 /* Extended Commands for Large page devices */
 #define NAND_CMD_READSTART	0x30
+#define NAND_CMD_CACHE_READ	0x31
+#define NAND_CMD_CACHE_END  0x3F
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

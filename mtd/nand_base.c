@@ -309,7 +309,7 @@ static void nand_select_chip(struct mtd_info *mtd, int chipnr)
 
 	switch (chipnr) {
 	case -1:
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE, 0 | NAND_CTRL_CHANGE);
+		// chip->cmd_ctrl(mtd, NAND_CMD_NONE, 0 | NAND_CTRL_CHANGE);
 		break;
 	case 0:
 		break;
@@ -392,13 +392,13 @@ void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
 	int i, ret;
 	struct nand_chip *chip = mtd->priv;
 
-    // dma_copy(chip->IO_ADDR_R, buf, len>>2, 1);
+    dma_copy(chip->IO_ADDR_R, buf, len>>2, 2);
 
-    // while(dma_is_busy());
-    u16 *p = (u16 *) buf;
+    while(dma_is_busy());
+/*    u16 *p = (u16 *) buf;
     len >>= 1;
     for (i = 0; i < len; i++)
-        p[i] = readw(chip->IO_ADDR_R);
+        p[i] = readw(chip->IO_ADDR_R); */
 }
 #endif
 
@@ -415,7 +415,7 @@ void nand_wait_ready(struct mtd_info *mtd)
 	if (chip->dev_ready) {
 		ready = chip->dev_ready(mtd);
 		while(!ready) {
-			udelay(chip->chip_delay);
+			// udelay(chip->chip_delay);
 			ready = chip->dev_ready(mtd);
 		}
 	} else
@@ -445,34 +445,41 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 		command = NAND_CMD_READ0;
 	}
 
+    if(command == NAND_CMD_CACHE_READ){
+        chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
+        // nand_wait_ready(mtd);
+        return;
+    }
+
+    if(command == NAND_CMD_CACHE_END){
+        chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
+        return ;
+    }
+
 	/* Command latch cycle */
-	chip->cmd_ctrl(mtd, command & 0xff,
-		       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
+	chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
 
-	if (column != -1 || page_addr != -1) {
-		int ctrl = NAND_CTRL_CHANGE | NAND_NCE | NAND_ALE;
-
-		/* Serially input address */
-		if (column != -1) {
-			/* Adjust columns for 16 bit buswidth */
+    if(column != -1 || page_addr != -1){
+        // Write Address: NAND_ALE
+        // A0 : A10 column
+        if(column != -1){
 			if (chip->options & NAND_BUSWIDTH_16)
 				column >>= 1;
-			chip->cmd_ctrl(mtd, column, ctrl);
-			ctrl &= ~NAND_CTRL_CHANGE;
-			chip->cmd_ctrl(mtd, column >> 8, ctrl);
-		}
-		if (page_addr != -1) {
-			chip->cmd_ctrl(mtd, page_addr, ctrl);
-			chip->cmd_ctrl(mtd, page_addr >> 8,
-				       NAND_NCE | NAND_ALE);
-			/* One more address cycle for devices > 128MiB */
-			if (chip->chipsize > (128 << 20))
-				chip->cmd_ctrl(mtd, page_addr >> 16,
-					       NAND_NCE | NAND_ALE);
-		}
-	}
-	chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE | NAND_CTRL_CHANGE);
-
+            // Send A0 to A7
+            chip->cmd_ctrl(mtd, column, NAND_ALE);
+            // Send A7 to A10
+            chip->cmd_ctrl(mtd, column >> 8, NAND_ALE);
+        }
+        if (page_addr != -1) {
+            // Send A11 to A18
+            chip->cmd_ctrl(mtd, page_addr, NAND_ALE);
+            // Send A19 to A26
+            chip->cmd_ctrl(mtd, page_addr >> 8, NAND_ALE);
+            /* One more address cycle for devices > 128MiB */
+            if (chip->chipsize > (128 << 20))
+                chip->cmd_ctrl(mtd, page_addr >> 16, NAND_ALE);
+        }
+    }
 	/*
 	 * program and erase have their own busy handlers
 	 * status, sequential in, and deplete1 need no delay
@@ -501,60 +508,29 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 		return;
 
 	case NAND_CMD_PARAM:
-		udelay(chip->chip_delay);
-		chip->cmd_ctrl(mtd, NAND_CMD_STATUS,
-			       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE,
-			       NAND_NCE | NAND_CTRL_CHANGE);
+		chip->cmd_ctrl(mtd, NAND_CMD_STATUS, NAND_CLE);
 		while (!(chip->read_byte(mtd) & NAND_STATUS_READY) &&
 			(rst_sts_cnt--));
-
+        // after that send a Reset to the device
 	case NAND_CMD_RESET:
-		udelay(chip->chip_delay);
-		chip->cmd_ctrl(mtd, NAND_CMD_STATUS,
-			       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE,
-			       NAND_NCE | NAND_CTRL_CHANGE);
-		while (!(chip->read_byte(mtd) & NAND_STATUS_READY) &&
-			(rst_sts_cnt--));
-		chip->cmd_ctrl(mtd, NAND_CMD_READSTART,
-			       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE,
-			       NAND_NCE | NAND_CTRL_CHANGE);
-		if (chip->dev_ready)
-			break;
+		chip->cmd_ctrl(mtd, NAND_CMD_READSTART, NAND_CLE);
 		return;
-
 	case NAND_CMD_RNDOUT:
+        /* Random data out */
 		/* No ready / busy check necessary */
-		chip->cmd_ctrl(mtd, NAND_CMD_RNDOUTSTART,
-			       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE,
-			       NAND_NCE | NAND_CTRL_CHANGE);
+		chip->cmd_ctrl(mtd, NAND_CMD_RNDOUTSTART, NAND_CLE);
 		return;
-
 	case NAND_CMD_READ0:
-		chip->cmd_ctrl(mtd, NAND_CMD_READSTART,
-			       NAND_NCE | NAND_CLE | NAND_CTRL_CHANGE);
-		chip->cmd_ctrl(mtd, NAND_CMD_NONE,
-			       NAND_NCE | NAND_CTRL_CHANGE);
-
+        /* READ Command */
+		chip->cmd_ctrl(mtd, NAND_CMD_READSTART, NAND_CLE);
 		/* This applies to read commands */
-	default:
-		/*
-		 * If we don't have access to the busy pin, we apply the given
-		 * command delay
-		 */
-		if (!chip->dev_ready) {
-			udelay(chip->chip_delay);
-			return;
-		}
+        break;
 	}
 
 	/* Apply this short delay always to ensure that we do wait tWB in
 	 * any case on any machine. */
-	ndelay(100);
-
+	// ndelay(100);
+    /* Get Nand Ready */
 	nand_wait_ready(mtd);
 }
 
@@ -996,6 +972,7 @@ static int nand_read_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
 	return 0;
 }
 
+#ifdef __notdef
 /**
  * nand_transfer_oob - [Internal] Transfer oob to client buffer
  * @chip:	nand chip structure
@@ -1043,6 +1020,146 @@ static uint8_t *nand_transfer_oob(struct nand_chip *chip, uint8_t *oob,
 	}
 	return NULL;
 }
+#else
+static uint8_t *nand_transfer_oob(struct nand_chip *chip, uint8_t *oob,
+				  struct mtd_oob_ops *ops, size_t len)
+{
+
+}
+#endif
+
+struct TrData{
+    u32 realpage, page, col;
+    struct mtd_info *mtd;
+    loff_t from;
+    // Next
+    u8* tmp_buffer;
+    u8* rbuffer;
+}TrData;
+
+void* __async_open_read_page (struct mtd_info *mtd, loff_t from)
+{
+	struct TrData *i = malloc(sizeof(TrData));
+	struct nand_chip *chip = mtd->priv;
+	i->realpage = (u32)(from >> chip->page_shift);
+	i->page = i->realpage & chip->pagemask;
+	i->col = (int)(from & (mtd->writesize - 1));
+	i->mtd = mtd;
+	i->from = from;
+	i->tmp_buffer = malloc (i->mtd->writesize +i->mtd->oobsize);
+	// Send page Read
+	chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, i->page);
+	return (void*) i;
+}
+
+int __async_read_is_ready (void* handle)
+{
+    struct TrData *data_handle = handle;
+    struct nand_chip *chip = data_handle->mtd->priv;
+    return chip->dev_ready(data_handle->mtd);
+}
+
+/* Copy the page and get the ECC */
+int __async_read_now (void* handle, u8* data)
+{
+    struct TrData *data_handle = handle;
+	struct nand_chip *chip = data_handle->mtd->priv;
+	// -> nand_read_page_swecc
+    chip->ecc.read_page(data_handle->mtd, chip, data, data_handle->page);
+    return data_handle->mtd->writesize;
+}
+
+static void __async_read_page_raw (void* handle, u8* buff)
+{
+    struct TrData *data_handle = handle;
+	struct nand_chip *chip = data_handle->mtd->priv;
+	data_handle->rbuffer = buff; /*save real buffer*/
+    dma_copy (chip->IO_ADDR_R, data_handle->tmp_buffer, (data_handle->mtd->writesize + data_handle->mtd->oobsize)>>2, 2);
+}
+
+
+static int __async_calc_ecc (struct mtd_info *mtd, struct nand_chip *chip, uint8_t *buf)
+{
+	int i, eccsize = chip->ecc.size;
+	int eccbytes = chip->ecc.bytes;
+	int eccsteps = chip->ecc.steps;
+	uint8_t *p = buf;
+	uint8_t *ecc_calc = chip->buffers->ecccalc;
+	uint8_t *ecc_code = chip->buffers->ecccode;
+	uint32_t *eccpos = chip->ecc.layout->eccpos;
+
+	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
+		chip->ecc.calculate(mtd, p, &ecc_calc[i]);
+
+	for (i = 0; i < chip->ecc.total; i++)
+		ecc_code[i] = chip->oob_poi[eccpos[i]];
+//		printf("code %d calc %d\n", ecc_code[i], ecc_calc[i]);
+
+	eccsteps = chip->ecc.steps;
+	p = buf;
+
+	for (i = 0 ; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
+		int stat;
+		stat = chip->ecc.correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
+		if (stat < 0)
+			mtd->ecc_stats.failed++;
+		else
+			mtd->ecc_stats.corrected += stat;
+	}
+	return 0;
+}
+
+/* Copy the page and get the ECC
+    Control sequence:
+    1 Call -> prevData = NULL and Next data = 1st pointer
+    2 Call -> prevdata = 1st pointer and next = 2st
+    ...
+    last call -> next data = NULL
+*/
+int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata)
+{
+    struct TrData *data_handle = handle;
+	struct nand_chip *chip = data_handle->mtd->priv;
+	// -> nand_read_page_swecc
+	if(prevData){
+	    // Copy Previous page
+        memcpy(prevData, data_handle->tmp_buffer, data_handle->mtd->writesize);
+        memcpy(chip->oob_poi, data_handle->tmp_buffer + data_handle->mtd->writesize, data_handle->mtd->oobsize);
+	}
+	if(nextdata){
+	    // Start Async DMA Copy
+	    __async_read_next(data_handle);
+        __async_read_page_raw(handle, nextdata);
+	}
+	if(prevData){
+	    // Calc ECC previous page
+	    __async_calc_ecc(data_handle->mtd, chip, prevData);
+	}
+    return data_handle->mtd->writesize;
+}
+
+/* Wait dma to complete the copy */
+void __async_dma_copy_done (void* handle)
+{
+    while(dma_is_busy());
+}
+
+void __async_read_next (void* handle)
+{
+    struct TrData *data_handle = handle;
+    struct nand_chip *chip = data_handle->mtd->priv;
+    chip->cmdfunc(data_handle->mtd, NAND_CMD_CACHE_READ, 0x00, 0);
+}
+
+void __async_close_read_page (void* handle)
+{
+    struct TrData *data_handle = handle;
+    struct nand_chip *chip = data_handle->mtd->priv;
+    chip->cmdfunc(data_handle->mtd, NAND_CMD_CACHE_END, 0x00, 0);
+    while(!__async_read_is_ready(handle));
+    free(data_handle->tmp_buffer);
+    free(data_handle);
+}
 
 /**
  * nand_do_read_ops - [Internal] Read data with ECC
@@ -1053,6 +1170,7 @@ static uint8_t *nand_transfer_oob(struct nand_chip *chip, uint8_t *oob,
  *
  * Internal function. Called with chip held.
  */
+#ifdef __notdef
 static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			    struct mtd_oob_ops *ops)
 {
@@ -1095,12 +1213,13 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 
 			/* Now read the page into the buffer */
 			if (ops->mode == MTD_OOB_RAW)
-				ret = chip->ecc.read_page_raw(mtd, chip,
-						bufpoi, page);
+				ret = chip->ecc.read_page_raw(mtd, chip, bufpoi, page);
+
 			else if (!aligned && NAND_SUBPAGE_READ(chip) && !oob)
 				ret = chip->ecc.read_subpage(mtd, chip, col, bytes, bufpoi);
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi, page);
+
 			if (ret < 0)
 				break;
 
@@ -1181,6 +1300,13 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 
 	return	mtd->ecc_stats.corrected - stats.corrected ? -EUCLEAN : 0;
 }
+#else
+static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+			    struct mtd_oob_ops *ops)
+{
+
+}
+#endif
 
 /**
  * nand_read - [MTD Interface] MTD compability function for nand_do_read_ecc
