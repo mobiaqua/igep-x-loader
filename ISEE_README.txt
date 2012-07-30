@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2012 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.4.0-2
+# Version: IGEP-X-Loader 2.5.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -84,15 +84,14 @@ loader for Embedded boards based on OMAP processors.
 * Support Kernels 2.6.35 and 2.6.37
 * Added support for boot a ARM binary executable
 * Support for Numonyx, Micron & hynix POP memories
-* This software must be build with compilers from 4.5.1
 * Memory Autodetection
 
 [NEW in this Version]
 
-* Resolved Memory Autodetection
-* Better hang board led control
-* New read_nand_cache function optimized for load from OneNand
-* Added Hw GPtimer functionality
+* Added DMA Copy Support
+* Added NAND async driver Support
+* Change memcpy function
+* This version support ISEE toolchain yocto 1.2
 
 2.2 Issues & Limitations
 ------------------------
@@ -110,7 +109,7 @@ loader for Embedded boards based on OMAP processors.
 
 * Remove compilation warnings.
 
-2.4 Version Changes
+2.5 Version Changes
 -------------------
 [2.1.0-1] This version only can be build with gcc linaro 4.5.2 other compilers be not supported.
 [2.1.0-1] Removed some uncontrolled "printf" with incorrect information.
@@ -144,6 +143,12 @@ loader for Embedded boards based on OMAP processors.
 [2.4.0-2] Better hang board led control
 [2.4.0-2] New read_nand_cache function optimized for load from OneNand
 [2.4.0-2] Added Hw GPtimer functionality
+----
+[2.5.0-1] Added DMA driver
+[2.5.0-1] Added Memcpy optimized function
+[2.5.0-1] Improved boot speed
+[2.5.0-1] Improve Nand driver support Micron & Hynix Memories
+[2.5.0-1] x-load.bin.ift and MLO generation 
 
 3 Status:
 ==========
@@ -165,7 +170,7 @@ loader for Embedded boards based on OMAP processors.
 4.1 MMC Boot
 ------------
 Get a new mmc and create two partitions, the first one must be fat (you can follow 
-this howto: http://code.google.com/p/beagleboard/wiki/LinuxBootDiskFormat)
+this howto: http://labs.isee.biz/index.php/How_to_boot_from_MicroSD_Card)
 In this first partition (boot partition) you should copy:
 
 * x-loader.bin.ift (you must rename this file to MLO) / This is a signed image using contrib/signGP tool
@@ -174,8 +179,8 @@ In this first partition (boot partition) you should copy:
 
 Don't use a uImage kernel format (from uboot), only kernel formats be supported.
 
-Compilation Example:
-$make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- zImage modules
+Kernel Compilation Example:
+$make ARCH=arm CROSS_COMPILE=arm-poky-linux-gnueabi- zImage modules
 
 Read the kernel documentation about kernel images.
 
@@ -389,12 +394,12 @@ as point (c) and then edit or copy your desired files directly.
 5 Build procedure
 =================
 
-5.1 Build with Ubuntu Cross Compiler gcc 4.5.1 or 4.5.3
+5.1 Build with ISEE SDK Yocto toolchain 1.2.1.1
 
-* This is tested with Ubuntu 10.10
+Download the right toolchain and install it in your host machine.
 
-a) Install the cross compiler:
-apt-get install cpp-4.5-arm-linux-gnueabi g++-4.5-arm-linux-gnueabi 
+a) Setup the build enviroment:
+source /opt/poky/1.2/environment-setup-armv7a-vfp-neon-poky-linux-gnueabi
 
 b) Configure the board
 make igep00x0_config
@@ -402,11 +407,11 @@ make igep00x0_config
 c) Build
 make
 
-d) Sign x-loader
-You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
-contrib/signGP x-load.bin 
-The signed x-loader it's named: x-load.bin.ift
+The result will be two files:
 
+* x-load.bin.ift
+* MLO
+You can use MLO for boot from a microsd card or flash.
 
 5.2 Build Native
 
