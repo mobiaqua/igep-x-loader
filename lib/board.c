@@ -83,6 +83,7 @@ void start_armboot (void)
 	uchar *buf;
 	int *first_instruction;
 	block_dev_desc_t *dev_desc = NULL;
+    u8* splash = 0;
 #ifdef CONFIG_ONENAND
 	unsigned int onenand_features;
 #endif
@@ -105,6 +106,15 @@ void start_armboot (void)
 	/* Initialize fat dynamic structures */
 	init_fat();
 #endif
+
+/*    splash = malloc (1024 * 768 * 4);
+    if(file_fat_read("splash.dat", splash, 0))
+        enable_video_buffer(splash);
+    else */
+        enable_video_color(0x001E90FF);
+    printf("Enable Video - press key to continue boot\n");
+    serial_getc();
+
 	/* Load the Linux kernel */
 	/* boot_linux() should never return */
 	boot_linux();

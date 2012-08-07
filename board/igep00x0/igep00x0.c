@@ -44,6 +44,7 @@
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 #include <asm/arch/gp_timer.h>
+#include <asm/arch/dss.h>
 
 // GPIO_LED_USER0 (led red)
 #define GPIO_LED_USER0      27
@@ -51,6 +52,8 @@
 #define GPIO_LED_USER1      26
 // GPIO_LED_USER2 (led power)
 #define GPIO_LED_USER2      28
+// GPIO TFP410 Enable Video
+#define GPIO_DVI_PUP        170
 
 
 u32 mfr = 0, mid = 0;
@@ -102,7 +105,85 @@ extern dpll_param *get_36x_per_dpll_param(void);
 #define __raw_readb(a)		(*(volatile unsigned char *)(a))
 #define __raw_writeb(v, a)	(*(volatile unsigned char *)(a) = (v))
 
+/*
+ * Display Configuration
+ */
 
+#define DVI_ISEE_ORANGE_COLOR		0x00FF8000
+#define DVI_ISEE_DEFAULT_COLOR      0x001E90FF
+
+#ifdef __VENC_OUTPUT__
+
+#define VENC_HEIGHT			0x00ef
+#define VENC_WIDTH			0x027f
+
+/*
+ * Configure VENC in DSS for Beagle to generate Color Bar
+ *
+ * Kindly refer to OMAP TRM for definition of these values.
+ */
+static const struct venc_regs venc_config_std_tv = {
+	.status					= 0x0000001B,
+	.f_control				= 0x00000040,
+	.vidout_ctrl				= 0x00000000,
+	.sync_ctrl				= 0x00008000,
+	.llen					= 0x00008359,
+	.flens					= 0x0000020C,
+	.hfltr_ctrl				= 0x00000000,
+	.cc_carr_wss_carr			= 0x043F2631,
+	.c_phase				= 0x00000024,
+	.gain_u					= 0x00000130,
+	.gain_v					= 0x00000198,
+	.gain_y					= 0x000001C0,
+	.black_level				= 0x0000006A,
+	.blank_level				= 0x0000005C,
+	.x_color				= 0x00000000,
+	.m_control				= 0x00000001,
+	.bstamp_wss_data			= 0x0000003F,
+	.s_carr					= 0x21F07C1F,
+	.line21					= 0x00000000,
+	.ln_sel					= 0x00000015,
+	.l21__wc_ctl				= 0x00001400,
+	.htrigger_vtrigger			= 0x00000000,
+	.savid__eavid				= 0x069300F4,
+	.flen__fal				= 0x0016020C,
+	.lal__phase_reset			= 0x00060107,
+	.hs_int_start_stop_x			= 0x008D034E,
+	.hs_ext_start_stop_x			= 0x000F0359,
+	.vs_int_start_x				= 0x01A00000,
+	.vs_int_stop_x__vs_int_start_y		= 0x020501A0,
+	.vs_int_stop_y__vs_ext_start_x		= 0x01AC0024,
+	.vs_ext_stop_x__vs_ext_start_y		= 0x020D01AC,
+	.vs_ext_stop_y				= 0x00000006,
+	.avid_start_stop_x			= 0x03480079,
+	.avid_start_stop_y			= 0x02040024,
+	.fid_int_start_x__fid_int_start_y	= 0x0001008A,
+	.fid_int_offset_y__fid_ext_start_x	= 0x01AC0106,
+	.fid_ext_start_y__fid_ext_offset_y	= 0x01060006,
+	.tvdetgp_int_start_stop_x		= 0x00140001,
+	.tvdetgp_int_start_stop_y		= 0x00010001,
+	.gen_ctrl				= 0x00FF0000,
+	.output_control				= 0x0000000D,
+	.dac_b__dac_c				= 0x00000000
+};
+
+#endif
+
+/*
+ * Configure Timings for DVI D
+ */
+struct panel_config dvid_cfg = {
+	.timing_h	= 0x1a4024c9, /* Horizontal timing */
+	.timing_v	= 0x02c00509, /* Vertical timing */
+	.pol_freq	= 0x00007028, /* Pol Freq */
+	.divisor	= 0x00010001, /* 96MHz Pixel Clock */
+	.lcd_size	= 0x02ff03ff, /* 1024x768 */
+	.panel_type	= 0x01, /* TFT */
+	.data_lines	= 0x03, /* 24 Bit RGB */
+	.load_mode	= 0x02, /* Frame Mode */
+    .frame_buffer = 0,
+	.panel_color	= DVI_ISEE_DEFAULT_COLOR /* ORANGE */
+};
 /*******************************************************
  * Routine: delay
  * Description: spinning delay to use before udelay works
@@ -378,6 +459,9 @@ static void dpll3_init_34xx(u32 sil_index, u32 clk_index)
 
 	sr32(CM_CLKSEL_GFX,  0, 3, GFX_DIV_34X);	/* gfx */
 	sr32(CM_CLKSEL_WKUP, 1, 2, WKUP_RSM);		/* reset mgr */
+
+	sr32(CM_FCLKEN_DSS, 0, 32, FCK_DSS_ON);
+	sr32(CM_ICLKEN_DSS, 0, 32, ICK_DSS_ON);
 
 	/* FREQSEL (CORE_DPLL_FREQSEL): CM_CLKEN_PLL[4:7] */
 	sr32(CM_CLKEN_PLL,   4, 4, ptr->fsel);
@@ -1357,6 +1441,7 @@ void per_clocks_enable(void)
 	sr32(CM_ICLKEN_WKUP, 2, 1, 0x1);
 
 	sr32(CM_FCLKEN_IVA2, 0, 32, FCK_IVA2_ON);
+
 	sr32(CM_FCLKEN1_CORE, 0, 32, FCK_CORE1_ON);
 	sr32(CM_ICLKEN1_CORE, 0, 32, ICK_CORE1_ON);
 	sr32(CM_ICLKEN2_CORE, 0, 32, ICK_CORE2_ON);
@@ -2011,4 +2096,35 @@ void raise(void)
  *****************************************************************************/
 void abort(void)
 {
+}
+
+static void enable_tfp410 (void)
+{
+	omap_request_gpio(GPIO_DVI_PUP);
+	omap_set_gpio_direction(GPIO_DVI_PUP, 0);
+	omap_set_gpio_dataout(GPIO_DVI_PUP, 0);
+	__udelay(200);
+    omap_set_gpio_dataout(GPIO_DVI_PUP, 1);
+}
+
+void enable_video_color (u32 color)
+{
+    if(dvid_cfg.panel_color != color)
+        dvid_cfg.panel_color = color;
+    omap3_dss_panel_config(&dvid_cfg);
+    enable_tfp410();
+    omap3_dss_enable();
+}
+
+void enable_video_buffer (u8* databuffer)
+{
+    dvid_cfg.frame_buffer = databuffer;
+    omap3_dss_panel_config(&dvid_cfg);
+    enable_tfp410();
+    omap3_dss_enable();
+}
+
+void disable_video (void)
+{
+    return 0;
 }

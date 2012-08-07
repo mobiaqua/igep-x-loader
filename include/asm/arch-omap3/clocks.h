@@ -31,8 +31,8 @@
 #define S38_4M		38400000
 
 #define FCK_IVA2_ON	0x00000001
-#define FCK_CORE1_ON	0x03fffe29
-#define ICK_CORE1_ON	0x3ffffffb
+#define FCK_CORE1_ON	0x033ffe29
+#define ICK_CORE1_ON	0x3f3ffffb
 #define ICK_CORE2_ON	0x0000001f
 #define FCK_WKUP_ON	0x000000e9
 #define ICK_WKUP_ON	0x0000003f
