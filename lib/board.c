@@ -94,6 +94,13 @@ void start_armboot (void)
 			hang ();
 	}
 
+/*    splash = malloc (1024 * 768 * 4);
+    if(file_fat_read("splash.dat", splash, 0))
+        enable_video_buffer(splash);
+    else */
+    enable_video_color(0x001E90FF);
+
+
 	/* Execute board specific misc init */
 	misc_init_r();
 
@@ -106,14 +113,6 @@ void start_armboot (void)
 	/* Initialize fat dynamic structures */
 	init_fat();
 #endif
-
-/*    splash = malloc (1024 * 768 * 4);
-    if(file_fat_read("splash.dat", splash, 0))
-        enable_video_buffer(splash);
-    else */
-        enable_video_color(0x001E90FF);
-    printf("Enable Video - press key to continue boot\n");
-    serial_getc();
 
 	/* Load the Linux kernel */
 	/* boot_linux() should never return */
