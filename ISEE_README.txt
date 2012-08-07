@@ -92,6 +92,7 @@ loader for Embedded boards based on OMAP processors.
 * Added NAND async driver Support
 * Change memcpy function
 * This version support ISEE toolchain yocto 1.2
+* Added DSS Video Driver
 
 2.2 Issues & Limitations
 ------------------------
@@ -149,6 +150,8 @@ loader for Embedded boards based on OMAP processors.
 [2.5.0-1] Improved boot speed
 [2.5.0-1] Improve Nand driver support Micron & Hynix Memories
 [2.5.0-1] x-load.bin.ift and MLO generation 
+[2.5.0-1] Added DSS Video Driver 
+
 
 3 Status:
 ==========
