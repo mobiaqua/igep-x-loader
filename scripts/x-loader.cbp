@@ -85,6 +85,9 @@
 		<Unit filename="../drivers/omap24xx_i2c.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../drivers/omap3_dss.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../drivers/serial.c">
 			<Option compilerVar="CC" />
 		</Unit>

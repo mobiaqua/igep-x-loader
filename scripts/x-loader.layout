@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release_ARM" />
-	<File name="../board/igep00x0/igep00x0.c" open="0" top="0" tabpos="3">
-		<Cursor position="34630" topLine="1133" />
+	<File name="../board/igep00x0/igep00x0.c" open="1" top="0" tabpos="1">
+		<Cursor position="73377" topLine="2068" />
 	</File>
-	<File name="../board/igep00x0/platform.S" open="0" top="0" tabpos="9">
-		<Cursor position="4623" topLine="284" />
+	<File name="../board/igep00x0/platform.S" open="1" top="0" tabpos="7">
+		<Cursor position="5208" topLine="284" />
 	</File>
 	<File name="../common/cmd_load.c" open="0" top="0" tabpos="0">
 		<Cursor position="1383" topLine="24" />
@@ -16,8 +16,8 @@
 	<File name="../cpu/omap3/gp_timer.c" open="0" top="0" tabpos="0">
 		<Cursor position="2956" topLine="101" />
 	</File>
-	<File name="../cpu/omap3/gpio.c" open="0" top="0" tabpos="0">
-		<Cursor position="4094" topLine="144" />
+	<File name="../cpu/omap3/gpio.c" open="1" top="0" tabpos="6">
+		<Cursor position="2756" topLine="64" />
 	</File>
 	<File name="../cpu/omap3/gpmc.c" open="0" top="0" tabpos="2">
 		<Cursor position="4397" topLine="111" />
@@ -40,6 +40,9 @@
 	<File name="../drivers/ns16550.c" open="0" top="0" tabpos="8">
 		<Cursor position="772" topLine="22" />
 	</File>
+	<File name="../drivers/omap3_dss.c" open="1" top="1" tabpos="9">
+		<Cursor position="0" topLine="79" />
+	</File>
 	<File name="../drivers/serial.c" open="0" top="0" tabpos="9">
 		<Cursor position="2198" topLine="42" />
 	</File>
@@ -61,20 +64,23 @@
 	<File name="../fs/jffs2/mini_inflate.c" open="0" top="0" tabpos="0">
 		<Cursor position="1194" topLine="0" />
 	</File>
+	<File name="../include/asm/arch-arm1136/omap2420.h" open="0" top="0" tabpos="0">
+		<Cursor position="6287" topLine="140" />
+	</File>
 	<File name="../include/asm/arch-arm1136/omap2430.h" open="0" top="0" tabpos="0">
 		<Cursor position="5224" topLine="126" />
 	</File>
 	<File name="../include/asm/arch-omap3/clocks.h" open="0" top="0" tabpos="4">
-		<Cursor position="881" topLine="0" />
+		<Cursor position="1393" topLine="0" />
 	</File>
 	<File name="../include/asm/arch/clocks343x.h" open="0" top="0" tabpos="1">
 		<Cursor position="2204" topLine="33" />
 	</File>
-	<File name="../include/asm/arch-omap3/cpu.h" open="0" top="0" tabpos="0">
-		<Cursor position="2239" topLine="45" />
+	<File name="../include/asm/arch-omap3/cpu.h" open="1" top="0" tabpos="4">
+		<Cursor position="6558" topLine="160" />
 	</File>
 	<File name="../include/asm/arch-omap3/gpio.h" open="0" top="0" tabpos="0">
-		<Cursor position="3726" topLine="85" />
+		<Cursor position="2388" topLine="50" />
 	</File>
 	<File name="../include/asm/arch-omap3/gpmc.h" open="0" top="0" tabpos="0">
 		<Cursor position="1218" topLine="71" />
@@ -85,8 +91,17 @@
 	<File name="../include/asm/arch-omap3/mmc_host_def.h" open="0" top="0" tabpos="0">
 		<Cursor position="1883" topLine="20" />
 	</File>
-	<File name="../include/asm/arch-omap3/omap3.h" open="0" top="0" tabpos="0">
-		<Cursor position="1062" topLine="12" />
+	<File name="../include/asm/arch-omap3/mux.h" open="1" top="0" tabpos="0">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="../include/asm/arch/mux.h" open="1" top="0" tabpos="2">
+		<Cursor position="13105" topLine="248" />
+	</File>
+	<File name="../include/asm/arch-omap3/omap3.h" open="1" top="0" tabpos="3">
+		<Cursor position="1255" topLine="30" />
+	</File>
+	<File name="../include/asm/arch-omap3/sys_proto.h" open="0" top="0" tabpos="0">
+		<Cursor position="1093" topLine="0" />
 	</File>
 	<File name="../include/common.h" open="0" top="0" tabpos="5">
 		<Cursor position="2910" topLine="81" />
@@ -121,11 +136,11 @@
 	<File name="../include/string.h" open="0" top="0" tabpos="0">
 		<Cursor position="644" topLine="0" />
 	</File>
-	<File name="../lib/board.c" open="0" top="0" tabpos="10">
-		<Cursor position="1452" topLine="7" />
+	<File name="../lib/board.c" open="1" top="0" tabpos="5">
+		<Cursor position="2687" topLine="61" />
 	</File>
-	<File name="../lib/boot_linux.c" open="0" top="0" tabpos="5">
-		<Cursor position="13268" topLine="461" />
+	<File name="../lib/boot_linux.c" open="1" top="0" tabpos="8">
+		<Cursor position="7152" topLine="201" />
 	</File>
 	<File name="../lib/cache-cp15.c" open="0" top="0" tabpos="0">
 		<Cursor position="1469" topLine="79" />
