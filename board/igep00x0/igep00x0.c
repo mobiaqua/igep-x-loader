@@ -1178,6 +1178,26 @@ int s_init(void)
 	return 0;
 }
 
+typedef enum MEM_SZ { M512, M256 } tMEM_SZ;
+
+static tMEM_SZ mem_size = M512;
+
+tMEM_SZ get_Mem (void)
+{
+    u32 *sdie_init_memory = (u32*) 0x90000000;
+    sdie_init_memory[0] = 0xA5F0;
+    invalidate_dcache(get_device_type());
+    if(sdie_init_memory[0] == 0xA5F0)
+        return M512;
+    else
+        return M256;
+}
+
+int IS_MEM_512 ()
+{
+    return mem_size == M512;
+}
+
 /*****************************************
  * Routine: board_init
  * Description: Early hardware init.
@@ -1215,6 +1235,7 @@ int board_init(void)
 		} else {
 			config_sdram_hynix();
 		}
+        mem_size = get_Mem ();
 		nand_command(NAND_CMD_RESET);
 	}
 #ifndef __DEBUG_MEMORY_TEST
@@ -1299,6 +1320,13 @@ static char *rev_s[OMAP3730_MAX_RELEASES] = {
   "Unknown",
 };
 
+static int have_dsp = 0;
+
+int DSP_PRESENT ()
+{
+    return have_dsp == 1;
+}
+
 /*******************************************************
  * Routine: misc_init_r
  * Description: Init ethernet (done here so udelay works)
@@ -1340,7 +1368,7 @@ int misc_init_r(void)
 #endif
 	    switch(cpu_id){
             case 0x0c00:
-            case 0x0e00: printf("XLoader: Processor DM3730 - ES%s\n", rev_s[rev]); break;
+            case 0x0e00: printf("XLoader: Processor DM3730 - ES%s\n", rev_s[rev]); have_dsp = 1; break;
             case 0x5c00:
             case 0x5e00: printf("XLoader: Processor AM3703 - ES%s\n", rev_s[rev]); break;
 	    }

@@ -132,11 +132,13 @@ static void setup_memory_tags (void)
     params->u.mem.start = OMAP34XX_SDRC_CS0;
     params->u.mem.size = IGEP_CS0_MEMORY_SIZE;
     params = tag_next (params);
-    params->hdr.tag = ATAG_MEM;
-    params->hdr.size = tag_size (tag_mem32);
-    params->u.mem.start = OMAP34XX_SDRC_CS1;
-    params->u.mem.size = IGEP_CS1_MEMORY_SIZE;
-    params = tag_next (params);
+    if(IS_MEM_512()){
+        params->hdr.tag = ATAG_MEM;
+        params->hdr.size = tag_size (tag_mem32);
+        params->u.mem.start = OMAP34XX_SDRC_CS1;
+        params->u.mem.size = IGEP_CS1_MEMORY_SIZE;
+        params = tag_next (params);
+    }
 }
 
 /* setup_commandline_tag: Set the command line kernel variable in the var list */
@@ -354,7 +356,18 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
         /* All variables in this section should be a kernel parameters */
-        add_cmd_param(key, value);
+        if(!IS_MEM_512()){
+            if(DSP_PRESENT())
+                add_cmd_param(key, value);
+            else{
+                if(!strcmp(key, "mem") || !strcmp(key, "MEM"))
+                    add_cmd_param(key, "256M");
+                else
+                    add_cmd_param(key, value);
+            }
+        }
+        else
+            add_cmd_param(key, value);
     }
     return 1;
 }
