@@ -447,14 +447,31 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 
     if(command == NAND_CMD_CACHE_READ){
         chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
+	ndelay(100);
+        /* Get Nand Ready */
+	nand_wait_ready(mtd);
+	ndelay(20);
         // nand_wait_ready(mtd);
         return;
     }
 
     if(command == NAND_CMD_CACHE_END){
         chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
+	ndelay(100);
+    /* Get Nand Ready */
+	nand_wait_ready(mtd);
+	ndelay(20);
         return ;
     }
+    
+    if(command == NAND_CMD_RESET){
+		chip->cmd_ctrl(mtd, NAND_CMD_RESET, NAND_CLE);
+		ndelay(100);
+		/* Get Nand Ready */
+		nand_wait_ready(mtd);
+		ndelay(20);
+		return;
+	}    
 
 	/* Command latch cycle */
 	chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
@@ -530,9 +547,10 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 
 	/* Apply this short delay always to ensure that we do wait tWB in
 	 * any case on any machine. */
-	// ndelay(100);
+	ndelay(100);
     /* Get Nand Ready */
 	nand_wait_ready(mtd);
+	ndelay(20);
 }
 
 /**
@@ -1165,6 +1183,8 @@ void __async_close_read_page (void* handle)
     struct TrData *data_handle = handle;
     struct nand_chip *chip = data_handle->mtd->priv;
     chip->cmdfunc(data_handle->mtd, NAND_CMD_CACHE_END, 0x00, 0);
+    while(!__async_read_is_ready(handle));
+    chip->cmdfunc(data_handle->mtd, NAND_CMD_RESET, 0x00, 0);
     while(!__async_read_is_ready(handle));
     free(data_handle->tmp_buffer);
     free(data_handle);
