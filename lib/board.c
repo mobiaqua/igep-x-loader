@@ -42,7 +42,7 @@
 #endif
 
 const char version_string[] =
-	"IGEP-X-Loader 2.5.0-1 (" __DATE__ " - " __TIME__ ")";
+	"IGEP-X-Loader 2.5.0-2 (" __DATE__ " - " __TIME__ ")";
 
 int print_info(void)
 {
@@ -93,13 +93,6 @@ void start_armboot (void)
 		if ((*init_fnc_ptr)() != 0)
 			hang ();
 	}
-
-/*    splash = malloc (1024 * 768 * 4);
-    if(file_fat_read("splash.dat", splash, 0))
-        enable_video_buffer(splash);
-    else */
-    enable_video_color(0x001E90FF);
-
 
 	/* Execute board specific misc init */
 	misc_init_r();

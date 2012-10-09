@@ -250,5 +250,10 @@
 /* INI PARSER */
 #define ENABLE_LOAD_INI_FILE
 
+/* DSS Video */
+#define DVI_ISEE_ORANGE_COLOR		0x00FF8000
+#define DVI_ISEE_DEFAULT_COLOR      0x001E90FF
+#define DSS_VIDEO_MEMORY_SIZE		(1024 * 768 * 4) /* Memory limit: 3145728 */
+
 #endif /* __CONFIG_H */
 

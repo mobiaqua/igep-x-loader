@@ -109,9 +109,6 @@ extern dpll_param *get_36x_per_dpll_param(void);
  * Display Configuration
  */
 
-#define DVI_ISEE_ORANGE_COLOR		0x00FF8000
-#define DVI_ISEE_DEFAULT_COLOR      0x001E90FF
-
 #ifdef __VENC_OUTPUT__
 
 #define VENC_HEIGHT			0x00ef
@@ -182,7 +179,7 @@ struct panel_config dvid_cfg = {
 	.data_lines	= 0x03, /* 24 Bit RGB */
 	.load_mode	= 0x02, /* Frame Mode */
     .frame_buffer = 0,
-	.panel_color	= DVI_ISEE_DEFAULT_COLOR /* ORANGE */
+	.panel_color	= DVI_ISEE_DEFAULT_COLOR
 };
 /*******************************************************
  * Routine: delay

@@ -46,6 +46,8 @@ typedef struct Linux_Memory_Layout {
     int kcmdposs;                       // Internal command counter
     struct tag_revision revision;       // Revision ID
     struct tag_serialnr serial;         // Serial ID
+    unsigned int dss;					// Video Display output (1 = Enabled - 0 = Disabled)
+    unsigned int dss_color;				// Video Color
     char kcmdline[KERNEL_MAX_CMDLINE];  // Kernel command line
 } l_my;
 
@@ -72,6 +74,7 @@ static struct tag *params = (struct tag *) XLOADER_KERNEL_PARAMS;
 char *kImage_Name = NULL;
 char *kRdImage_Name = NULL;
 char *kImageAlt_Name = NULL;
+char *dss_bitmap = NULL;
 /* Default Boot kernel */
 int boot_kernel = 1;
 #ifdef K_VERIFY_CRC
@@ -91,6 +94,8 @@ static void init_memory_layout (void)
     LMemoryLayout->revision.rev = 0;
     LMemoryLayout->serial.low = 0;
     LMemoryLayout->serial.high = 0;
+    LMemoryLayout->dss = 0;
+    LMemoryLayout->dss_color = DVI_ISEE_DEFAULT_COLOR;
     LMemoryLayout->kcmdline[0] = '\0';
 }
 
@@ -344,7 +349,7 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
 		else if(!strcmp(key, "kcrc")){
 			sscanf(value, "%u", &v);
 		}
-		else (!strcmp(key, "kImageAltName")){
+		else if(!strcmp(key, "kImageAltName")){
 			/* if CRC fails on first kernel it boots this backup directly */
             if(kImageAlt_Name) free(kImageAlt_Name);
             kImageAlt_Name = malloc (strlen(value)+1);
@@ -352,6 +357,20 @@ int cfg_handler ( void* usr_ptr, const char* section, const char* key, const cha
             kImageAlt_Name[strlen(value)] = '\0';
 		}
 #endif
+		else if(!strcmp(key, "dss")){
+			sscanf(value, "%u", &v);
+			LMemoryLayout->dss = v;
+		}
+		else if(!strcmp(key, "dss_color")){
+			sscanf(value, "0x%x", &v);
+			LMemoryLayout->dss_color = v;
+		}
+		else if(!strcmp(key, "dss_bitmap")){
+			if(dss_bitmap) free(dss_bitmap);
+			dss_bitmap = malloc (strlen(value)+1);
+			memcpy(dss_bitmap, value, strlen(value));
+			dss_bitmap[strlen(value)] = '\0';
+		}
     }
     /* SECTION: Kernel parameters */
     if(!strcmp(section, "kparams")){
@@ -481,6 +500,27 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
     return bootr;
 }
 
+void setup_video (void)
+{
+    char* splash = NULL;
+    int fsize = 0;
+    if(LMemoryLayout->dss){
+		if(dss_bitmap){
+			splash = malloc (DSS_VIDEO_MEMORY_SIZE);
+			if(fsize = file_fat_read(dss_bitmap, splash, 0) > 0){
+				enable_video_buffer(splash);
+			} else if (fsize = load_jffs2_file(dss_bitmap, splash) > 0) {
+				enable_video_buffer(splash);
+			}
+			else {
+				enable_video_color(LMemoryLayout->dss_color);	
+			}
+		}
+		else
+			enable_video_color(LMemoryLayout->dss_color);
+	}
+}
+
 /* Main Linux boot
 *  If all it's ok this function never returns because at latest it
 *  Jump directly to the kernel image.
@@ -504,6 +544,8 @@ int boot_linux (/*int machine_id*/)
 
     /* parse configuration file */
     if(load_and_parse() >= 0){
+		/* Configure the Video Setup */
+		setup_video();
 #ifdef __DEBUG__
 		printf("Try load kernel\n");
 #endif
