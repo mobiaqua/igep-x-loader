@@ -231,21 +231,23 @@ static int load_memory_cache ()
                     break;
                 case nr_next:
                     if((actual_block+1) >= n_blocks){
-                        //printf("jffs2 -> Process ECC for last block: %d\n", actual_block);
+                        // printf("jffs2 -> Process ECC for last block: %d\n", actual_block);
                         __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), NULL);
                     } else{
-                        if( ! ((actual_block+1) % 256) ){
-                            //printf("jffs2 -> Change Window: %d: Process %d\n", actual_block+1, actual_block);
+                        /*if( ! ((actual_block+1) % (10 * 1024) )){
+                            printf("jffs2 -> Change Window: %d: Process %d\n", actual_block+1, actual_block);
                             __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), NULL);
+                            printf("1\n");
                             __async_close_read_page(dhandle);
+                            printf("2\n");
                             r_state = nr_init;
                             ProcBlock = 0;
                             break;
                         }
-                        else{
+                        else{*/
                             // printf("jffs2 -> Read Next %d: Process %d\n", actual_block+1, actual_block);
                             __async_dma_read_next (dhandle, nand_cache + (actual_block * CACHE_BLOCK_SIZE), nand_cache + ((actual_block + 1) * CACHE_BLOCK_SIZE));
-                        }
+                        /*} */
                     }
                     r_state = nr_wait;
                     break;
