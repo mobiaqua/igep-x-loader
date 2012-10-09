@@ -37,6 +37,8 @@ DMA4_t DMA4;
 #define DMA4_CSFI_CH10 (*((volatile unsigned int *) (0x480560A8 + 0x60*10)))
 #define DMA4_CDEI_CH10 (*((volatile unsigned int *) (0x480560AC + 0x60*10)))
 #define DMA4_CDFI_CH10 (*((volatile unsigned int *) (0x480560B0 + 0x60*10)))
+#define DMA4_CSRI_CH10 (*((volatile unsigned int *) (0x4805608C + 0x60*10)))
+#define DMA4_CDACI_CH10 (*((volatile unsigned int *) (0x4805608B + 0x60*10)))
 
 void dma_copy(unsigned int source, unsigned int dest,
 	      unsigned int row_size,
@@ -48,7 +50,7 @@ void dma_copy(unsigned int source, unsigned int dest,
 
 
 	/* Init. parameters */
-	DMA4.DataType = 0x1; // DMA4_CSDPi[1:0] -> 0: 8 bits .. 1: 16 bits .. 2: 32 bits
+	DMA4.DataType = 0x2; // DMA4_CSDPi[1:0] -> 0: 8 bits .. 1: 16 bits .. 2: 32 bits
 	DMA4.ReadPortAccessType = 0; // DMA4_CSDPi[8:7]
 	DMA4.WritePortAccessType = 0; // DMA4_CSDPi[15:14]
 	DMA4.SourceEndiansim = 0; // DMA4_CSDPi[21]
@@ -86,8 +88,8 @@ void dma_copy(unsigned int source, unsigned int dest,
 	RegVal = ((RegVal & ~(0x3 << 16)) | (DMA4.WriteMode << 16));
 	RegVal = ((RegVal & ~(0x1 << 6)) | (DMA4.SourcePacked << 6));
 	RegVal = ((RegVal & ~(0x1 << 13)) | (DMA4.DestinationPacked << 13));
-	RegVal = RegVal | (0x3 << 7);
-	RegVal = RegVal | (0x3 << 14);
+	RegVal = RegVal | (0x0 << 7);
+	RegVal = RegVal | (0x0 << 14);
 	// Write CSDP
 	DMA4_CSDP_CH10 = RegVal;
 	/* b) Set the number of element per frame CEN[23:0]*/
@@ -129,6 +131,35 @@ int dma_is_busy ()
 {
     return DMA4_CCR_CH10 & (1<< 7);
 }
+
+#define DMA_DROP		1 << 1
+#define DMA_HALF		1 << 2
+#define DMA_FRAME		1 << 3
+#define DMA_LAST		1 << 4
+#define DMA_BLOCK		1 << 5
+#define DMA_SYNC		1 << 6
+#define DMA_PKT			1 << 7
+#define DMA_TX_ERROR	1 << 8
+#define DMA_SUPER_ERR	1 << 10
+#define DMA_ALIGN_ERR	1 << 11
+#define DMA_DRAIN_END	1 << 12
+#define DMA_SUPER_BLOCK	1 << 14
+
+u32 dma_get_channel_status ()
+{
+	return DMA4_CSRI_CH10;
+}
+
+void dma_reset_status ()
+{
+	DMA4_CSRI_CH10 = 0;
+}
+
+/*u32 dma_current_dest_address ()
+{
+	return DMA4_CDACI_CH10;
+}*/
+
 
 #ifdef __notdef
 unsigned int do_dma_test(unsigned int source, unsigned int dest,
