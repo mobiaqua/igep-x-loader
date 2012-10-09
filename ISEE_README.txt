@@ -2,7 +2,7 @@
 # (C) Copyright 2009-2012 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.5.0-1
+# Version: IGEP-X-Loader 2.5.0-2
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -93,6 +93,7 @@ loader for Embedded boards based on OMAP processors.
 * Change memcpy function
 * This version support ISEE toolchain yocto 1.2
 * Added DSS Video Driver
+* Added DSS igep.ini variables
 
 2.2 Issues & Limitations
 ------------------------
@@ -104,11 +105,13 @@ loader for Embedded boards based on OMAP processors.
   This is not a real limitation due all ini file it's 
   copied into the RAM memory.
 * Malloc it's limited to 32 MiB (this is not a real issue)
+* Video Memory it's limited to 1024 x 768 x 4
 
 2.3 TODO
 --------
 
 * Remove compilation warnings.
+* Improve boot selection mode and priority.
 
 2.5 Version Changes
 -------------------
@@ -151,7 +154,12 @@ loader for Embedded boards based on OMAP processors.
 [2.5.0-1] Improve Nand driver support Micron & Hynix Memories
 [2.5.0-1] x-load.bin.ift and MLO generation 
 [2.5.0-1] Added DSS Video Driver 
-
+----
+[2.5.0-2] Fix DMA driver misconfiguration
+[2.5.0-2] Improve GPMC timming setup
+[2.5.0-2] Added igep.ini DSS configuration Variables
+[2.5.0-2] Added support for new Micron & Hynix Memories
+[2.5.0-2] Bug fixes  
 
 3 Status:
 ==========
@@ -213,6 +221,12 @@ kImageName=zImage
 MachineID=2344
 ; Boot Mode = binary or kernel
 Mode=kernel
+; DSS Video Activation (0 disbale - !=0 enable)
+dss=1
+; DSS color, enabled if not bitmap is used and dss=1 (hex data)
+dss_color=0x00FF8000
+; DSS Bitmap image filename (string)
+dss_bitmap=splash.dat
 
 [kparams]
 ; IGEP configuration set
@@ -316,9 +330,19 @@ IGEP0020_MACHINE_ID             2344
 IGEP0030_MACHINE_ID             2717
 IGEP0032_MACHINE_ID				3203
 
-* Mode
+* Mode=<string>
 kernel : Boot a Linux kernel 
 binary : Boot ARM binary
+
+* dss=<boolean (0 or 1)>
+0 : Disbale DSS Video
+1 : Enable DSS Video
+
+* dss_color=<hex value>
+0x00FF8000
+
+* dss_bitmap=<string>
+bitmap file name.
 
 ---- [kparams] ----
 Kernel parameters, all these parameters are passed directly to the kernel using the
@@ -439,5 +463,6 @@ The signed x-loader it's named: x-load.bin.ift
 ======================================
 Contributions to this project be welcome and you can send your patches to support@iseebcn.com
 or you can use the igep forum for it.
-You can access to IGEP-x-Loader repository using our git at git.igep.es
+You can access to IGEP-x-Loader repository using our git at git.isee.biz
 IGEP IRC Channel: http://webchat.freenode.net/?channels=igep
+BUG Tracking: http://bug.isee.biz
