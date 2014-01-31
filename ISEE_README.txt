@@ -85,15 +85,16 @@ loader for Embedded boards based on OMAP processors.
 * Added support for boot a ARM binary executable
 * Support for Numonyx, Micron & hynix POP memories
 * Memory Autodetection
-
-[NEW in this Version]
-
 * Added DMA Copy Support
 * Added NAND async driver Support
 * Change memcpy function
-* This version support ISEE toolchain yocto 1.2
+* Support ISEE toolchain yocto 1.2
 * Added DSS Video Driver
 * Added DSS igep.ini variables
+
+[NEW in this Version]
+
+* Change MPU boot up speed
 
 2.2 Issues & Limitations
 ------------------------
@@ -160,7 +161,8 @@ loader for Embedded boards based on OMAP processors.
 [2.5.0-2] Added igep.ini DSS configuration Variables
 [2.5.0-2] Added support for new Micron & Hynix Memories
 [2.5.0-2] Bug fixes  
-
+----
+[2.5.0-3] platform.S: downgrade MPU boot clock from 1GHz to 800 MHz
 3 Status:
 ==========
 
