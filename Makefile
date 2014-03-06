@@ -71,6 +71,7 @@ LIBS += cpu/$(CPU)/lib$(CPU).a
 LIBS += lib/lib$(ARCH).a
 LIBS += fs/fat/libfat.a
 LIBS += fs/jffs2/libjffs2.a
+LIBS += fs/raw/libraw.a
 LIBS += disk/libdisk.a
 LIBS += drivers/libdrivers.a
 LIBS += common/libcommon.a
