@@ -255,5 +255,7 @@
 #define DVI_ISEE_DEFAULT_COLOR      0x001E90FF
 #define DSS_VIDEO_MEMORY_SIZE		(1024 * 768 * 4) /* Memory limit: 3145728 */
 
+#define __GPMC_PREFETCH_ENGINE__
+#define NAND_ADDR_MAP               0x20000000
 #endif /* __CONFIG_H */
 
