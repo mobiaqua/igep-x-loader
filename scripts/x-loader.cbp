@@ -91,6 +91,9 @@
 		<Unit filename="../drivers/serial.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../drivers/twl4030.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../fs/fat/fat.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -117,16 +120,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../fs/jffs2/summary.h" />
-		<Unit filename="../include/asm/arch-arm1136/bits.h" />
-		<Unit filename="../include/asm/arch-arm1136/clocks.h" />
-		<Unit filename="../include/asm/arch-arm1136/clocks242x.h" />
-		<Unit filename="../include/asm/arch-arm1136/clocks243x.h" />
-		<Unit filename="../include/asm/arch-arm1136/mem.h" />
-		<Unit filename="../include/asm/arch-arm1136/omap2420.h" />
-		<Unit filename="../include/asm/arch-arm1136/omap2430.h" />
-		<Unit filename="../include/asm/arch-arm1136/sizes.h" />
-		<Unit filename="../include/asm/arch-arm1136/sys_info.h" />
-		<Unit filename="../include/asm/arch-arm926ejs/sizes.h" />
 		<Unit filename="../include/asm/arch-omap3/bits.h" />
 		<Unit filename="../include/asm/arch/bits.h" />
 		<Unit filename="../include/asm/arch-omap3/clocks.h" />
@@ -135,6 +128,7 @@
 		<Unit filename="../include/asm/arch/clocks343x.h" />
 		<Unit filename="../include/asm/arch-omap3/cpu.h" />
 		<Unit filename="../include/asm/arch/cpu.h" />
+		<Unit filename="../include/asm/arch-omap3/dma.h" />
 		<Unit filename="../include/asm/arch-omap3/gpio.h" />
 		<Unit filename="../include/asm/arch/gpio.h" />
 		<Unit filename="../include/asm/arch-omap3/gpmc.h" />
