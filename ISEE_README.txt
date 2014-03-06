@@ -1,8 +1,8 @@
 #
-# (C) Copyright 2009-2012 ISEE
+# (C) Copyright 2009-2014 ISEE
 # Manel Caro (mcaro@iseebcn.com)
 #
-# Version: IGEP-X-Loader 2.5.0-2
+# Version: IGEP-X-Loader 2.6.0-1
 # 
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -41,7 +41,7 @@ Index
 4.4.2 Boot Partition
 4.4.3 Rootfs
 5 Build procedure
-5.1 Build with Ubuntu Cross Compiler gcc 4.5.1
+5.1 Build with Ubuntu/Linaro Cross Compiler gcc 4.6.2
 5.2 Build Native
 6 Contribution & Support & Report Bugs
 
@@ -94,7 +94,14 @@ loader for Embedded boards based on OMAP processors.
 
 [NEW in this Version]
 
-* Change MPU boot up speed
+* New DMA driver
+* Nand Prefetch engine
+* Nand GPMC access bug fixes
+* Nand Driver bug fixes
+* Activate VSIM LDO in TPS65950
+* Remove support for OMAP35xx processors
+* Support arm-linux-gnueabihf-gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+* This Version only support hard float toolchain included in Ubuntu 12.04 LTS
 
 2.2 Issues & Limitations
 ------------------------
@@ -107,12 +114,13 @@ loader for Embedded boards based on OMAP processors.
   copied into the RAM memory.
 * Malloc it's limited to 32 MiB (this is not a real issue)
 * Video Memory it's limited to 1024 x 768 x 4
+* This Version NOT support ISEE yocto toolchain
+* This Version is ONLY tested with ubuntu/linaro hard float toolchain
 
 2.3 TODO
 --------
 
 * Remove compilation warnings.
-* Improve boot selection mode and priority.
 
 2.5 Version Changes
 -------------------
@@ -163,18 +171,27 @@ loader for Embedded boards based on OMAP processors.
 [2.5.0-2] Bug fixes  
 ----
 [2.5.0-3] platform.S: downgrade MPU boot clock from 1GHz to 800 MHz
+----
+[2.6.0-1] New DMA driver API
+[2.6.0-1] New Prefetch Engine Nand access
+[2.6.0-1] Nand Bug fixes
+[2.6.0-1] Jffs2 improve performance
+[2.6.0-1] Activate VSIM LDO
+[2.6.0-1] Bug fixes
+
+
 3 Status:
 ==========
 
 * Support IGEP0020 Revision B & C family boards.
-	- Tested with IGEPv2 (DM3730@1Ghz and 512/512 MB Ram/Onenand)
-        - Tested with IGEPv2 (AM3703@1Ghz and 512/512 MB Ram/Onenand)
-	- Tested with IGEPv2 (OMAP3530@720Mhz and 512/512 MB Ram/Onenand)
+	- Tested with IGEPv2 (DM3730@1Ghz and 512/512 MB Ram - hynix & Micron)
+    - Tested with IGEPv2 (AM3703@1Ghz and 512/512 MB Ram - hynix & Micron)
 * Support IGEP0030 Revisions D & E family Modules.
 	- Tested with IGEP Module (DM3730@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
 	- Tested with IGEP Module (AM3703@1Ghz and 512/512 MB Ram/Onenand) + BaseBoard Revision A
 	- Tested with IGEP Module (DM3730@1Ghz and 128/256 MB Ram/Onenand) + BaseBoard Revision A/B
 	- Tested with IGEP Module (AM3703@1Ghz and 128/256 MB Ram/Onenand) + BaseBoard Revision A/B
+	- Tested with IGEP Module (DM3730@1Ghz and 128/256 MB Ram hynix & Micron Memories) + BaseBoard Revision A/B/C
 	
 
 4 Settings & Configuration:
@@ -423,26 +440,20 @@ as point (c) and then edit or copy your desired files directly.
 5 Build procedure
 =================
 
-5.1 Build with ISEE SDK Yocto toolchain 1.2.1.1
+5.1 Build with Ubuntu/Linaro gcc 4.6.2 Hard floating
 
-Download the right toolchain and install it in your host machine.
+Using Ubuntu 12.04 LTS intall arm toolchain 4.6.2
 
-a) Setup the build enviroment:
-source /opt/poky/1.2/environment-setup-armv7a-vfp-neon-poky-linux-gnueabi
+a) Configure
+make igep00x0_config CROSS_COMPILE=arm-linux-gnueabihf-
 
-b) Configure the board
-make igep00x0_config
+b) Build
+make CROSS_COMPILE=arm-linux-gnueabihf-
 
-c) Build
-make
+c) Copy generated MLO file to your board
 
-The result will be two files:
 
-* x-load.bin.ift
-* MLO
-You can use MLO for boot from a microsd card or flash.
-
-5.2 Build Native
+5.2 Build Native (Only hard floating)
 
 a) Configure the board
 make igep00x0_config
@@ -455,11 +466,7 @@ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -fno-stack-protector
 c) build 
 make CROSS_COMPILE=""
 
-d) Sign x-loader
-You should execute contrib/signGP for sign the xloader that resides inside the flash memory.
-contrib/signGP x-load.bin 
-The signed x-loader it's named: x-load.bin.ift
-
+d) Replace the bootloader
 
 6 Contribution & Support & Report Bugs
 ======================================
