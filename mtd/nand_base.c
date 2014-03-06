@@ -336,6 +336,7 @@ void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 }
 
 #ifdef __GPMC_PREFETCH_ENGINE__
+#ifdef __notdef
 static inline void ioread32_rep(void *addr, u32 *dst, int count)
 {
     while (--count >= 0) {
@@ -386,6 +387,40 @@ void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
         gpmc_prefetch_reset(0);
 	}
 }
+#else
+void nand_read_buf16 (struct mtd_info *mtd, uint8_t *buf, int len)
+{
+    // Setup DMA tranfer (setup channel 10)
+    dma_gpmc_transfer(10, NAND_ADDR_MAP, buf, len);
+    // Enable prefetch engine
+    if(gpmc_prefetch_enable(0, PREFETCH_FIFOTHRESHOLD_MAX, 1, len, 0))
+    {
+        hang();
+    }
+    // prefetch_read_buff(buf, len);
+    // Wait Completition
+    while(!dma_is_transfer_complete(10));
+    // if transfer is complete reset prefetch engine and stop it
+    gpmc_prefetch_reset(0);
+}
+
+void async_nand_read_buf16 (uint8_t *buf, int len)
+{
+    dma_gpmc_transfer(10, NAND_ADDR_MAP, buf, len);
+    // Enable prefetch engine
+    if(gpmc_prefetch_enable(0, PREFETCH_FIFOTHRESHOLD_MAX, 1, len, 0))
+    {
+        hang();
+    }
+}
+
+void async_nand_read_buf16_wait (void)
+{
+    while(!dma_is_transfer_complete(10));
+    // if transfer is complete reset prefetch engine and stop it
+    gpmc_prefetch_reset(0);
+}
+#endif
 #else
 void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
 {
@@ -463,7 +498,7 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 	ndelay(20);
         return ;
     }
-    
+
     if(command == NAND_CMD_RESET){
 		chip->cmd_ctrl(mtd, NAND_CMD_RESET, NAND_CLE);
 		ndelay(100);
@@ -471,7 +506,7 @@ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
 		nand_wait_ready(mtd);
 		ndelay(20);
 		return;
-	}    
+	}
 
 	/* Command latch cycle */
 	chip->cmd_ctrl(mtd, command & 0xff, NAND_CLE); // NAND_CLE = write command
@@ -1101,7 +1136,8 @@ static void __async_read_page_raw (void* handle, u8* buff)
     struct TrData *data_handle = handle;
 	struct nand_chip *chip = data_handle->mtd->priv;
 	data_handle->rbuffer = buff; /*save real buffer*/
-    dma_copy (chip->IO_ADDR_R, data_handle->tmp_buffer, (data_handle->mtd->writesize + data_handle->mtd->oobsize)>>2, 2);
+	async_nand_read_buf16(data_handle->tmp_buffer, (data_handle->mtd->writesize + data_handle->mtd->oobsize) );
+    // dma_copy (chip->IO_ADDR_R, data_handle->tmp_buffer, (data_handle->mtd->writesize + data_handle->mtd->oobsize)>>2, 2);
 }
 
 
@@ -1128,9 +1164,10 @@ static int __async_calc_ecc (struct mtd_info *mtd, struct nand_chip *chip, uint8
 	for (i = 0 ; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
 		int stat;
 		stat = chip->ecc.correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
-		if (stat < 0)
+		if (stat < 0){
 			mtd->ecc_stats.failed++;
-		else
+			return -1;
+		} else
 			mtd->ecc_stats.corrected += stat;
 	}
 	return 0;
@@ -1150,8 +1187,10 @@ int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata)
 	// -> nand_read_page_swecc
 	if(prevData){
 	    // Copy Previous page
-        memcpy(prevData, data_handle->tmp_buffer, data_handle->mtd->writesize);
-        memcpy(chip->oob_poi, data_handle->tmp_buffer + data_handle->mtd->writesize, data_handle->mtd->oobsize);
+	    dma_memcpy (0, data_handle->tmp_buffer, prevData, data_handle->mtd->writesize, 1);
+        // memcpy(prevData, data_handle->tmp_buffer, data_handle->mtd->writesize);
+        dma_memcpy (0, data_handle->tmp_buffer + data_handle->mtd->writesize, chip->oob_poi, data_handle->mtd->oobsize, 1);
+        // memcpy(chip->oob_poi, data_handle->tmp_buffer + data_handle->mtd->writesize, data_handle->mtd->oobsize);
 	}
 	if(nextdata){
 	    // Start Async DMA Copy
@@ -1160,7 +1199,9 @@ int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata)
 	}
 	if(prevData){
 	    // Calc ECC previous page
-	    __async_calc_ecc(data_handle->mtd, chip, prevData);
+	    if(__async_calc_ecc(data_handle->mtd, chip, prevData) == -1){
+            return -1;
+	    }
 	}
     return data_handle->mtd->writesize;
 }
@@ -1168,7 +1209,7 @@ int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata)
 /* Wait dma to complete the copy */
 void __async_dma_copy_done (void* handle)
 {
-    while(dma_is_busy());
+    async_nand_read_buf16_wait();
 }
 
 void __async_read_next (void* handle)
