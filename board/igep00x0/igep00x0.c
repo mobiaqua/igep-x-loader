@@ -45,6 +45,7 @@
 #include <linux/mtd/mtd.h>
 #include <asm/arch/gp_timer.h>
 #include <asm/arch/dss.h>
+#include <twl4030.h>
 
 // GPIO_LED_USER0 (led red)
 #define GPIO_LED_USER0      27
@@ -336,6 +337,7 @@ u32 wait_on_value(u32 read_bit_mask, u32 match_value, u32 read_addr, u32 bound)
  * get_sys_clk_speed - determine reference oscillator speed
  *  based on known 32kHz clock and gptimer.
  *************************************************************/
+#ifdef __notdef
 u32 get_osc_clk_speed(void)
 {
 	u32 start, cstart, cend, cdiff, cdiv, val;
@@ -395,6 +397,12 @@ u32 get_osc_clk_speed(void)
 	else
 		return (S12M);
 }
+#else
+u32 get_osc_clk_speed(void)
+{
+    return S26M;
+}
+#endif
 
 
 /******************************************************************************
@@ -404,6 +412,7 @@ u32 get_osc_clk_speed(void)
  *****************************************************************************/
 void get_sys_clkin_sel(u32 osc_clk, u32 *sys_clkin_sel)
 {
+#ifdef __notdef
 	if (osc_clk == S38_4M)
 		*sys_clkin_sel = 4;
 	else if (osc_clk == S26M)
@@ -414,8 +423,12 @@ void get_sys_clkin_sel(u32 osc_clk, u32 *sys_clkin_sel)
 		*sys_clkin_sel = 1;
 	else if (osc_clk == S12M)
 		*sys_clkin_sel = 0;
+#else
+    *sys_clkin_sel = 3;
+#endif
 }
 
+#ifdef __notdef
 /*
  * OMAP34x/35x specific functions
  */
@@ -558,7 +571,7 @@ static void iva_init_34xx(u32 sil_index, u32 clk_index)
 
 	wait_on_value(BIT0, 1, CM_IDLEST_PLL_IVA2, LDELAY);
 }
-
+#endif
 /*
  * OMAP3630 specific functions
  */
@@ -729,14 +742,17 @@ void prcm_init(void)
 	 * OMAP3630 is operated at 26M sys clock and this internal division
 	 * is not performed.
 	 */
+#ifdef __notdef
 	if((is_cpu_family() != CPU_OMAP36XX) && (sys_clkin_sel > 2)) {
 		sr32(PRM_CLKSRC_CTRL, 6, 2, 2);/* input clock divider */
 		clk_index = sys_clkin_sel/2;
 	} else {
+#endif
 		sr32(PRM_CLKSRC_CTRL, 6, 2, 1);/* input clock divider */
 		clk_index = sys_clkin_sel;
+#ifdef __notdef
 	}
-
+#endif
 	if (is_cpu_family() == CPU_OMAP36XX) {
         sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOW_POWER_BYPASS);
         wait_on_value(ST_MPU_CLK, 0, CM_IDLEST_PLL_MPU, LDELAY);
@@ -751,7 +767,9 @@ void prcm_init(void)
 #endif
 		sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
 		wait_on_value(ST_MPU_CLK, 1, CM_IDLEST_PLL_MPU, LDELAY);
-	} else {
+	}
+#ifdef __notdef
+	 else {
 		sil_index = get_cpu_rev() - 1;
 
 		/* The DPLL tables are defined according to sysclk value and
@@ -774,6 +792,7 @@ void prcm_init(void)
 		sr32(CM_CLKEN_PLL_MPU, 0, 3, PLL_LOCK);
 		wait_on_value(BIT0, 1, CM_IDLEST_PLL_MPU, LDELAY);
 	}
+#endif
 
         /* Set up GPTimers to sys_clk source only */
         sr32(CM_CLKSEL_PER, 0, 8, 0xff);
@@ -933,7 +952,7 @@ void config_nand_flash(void)
 
 	/* Enable the GPMC Mapping */
 	__raw_writel((((OMAP34XX_GPMC_CS0_SIZE & 0xF)<<8) |
-		      ((NAND_BASE_ADR>>24) & 0x3F) |
+		      ((NAND_ADDR_MAP>>24) & 0x3F) |
 		      (1<<6) ),  (GPMC_CONFIG7 + GPMC_CONFIG_CS0));
 	delay(2000);
 }
@@ -1203,6 +1222,8 @@ int board_init(void)
 {
     unsigned char data;
 
+    init_sys_dma();
+
     if(is_cpu_family() == CPU_OMAP36XX){
         // Init TPS65950 - Voltage Selection (1.35V)
         // Calculation using this formula:
@@ -1212,17 +1233,21 @@ int board_init(void)
         // 1.4 V
         // --> data = 0x40;
         i2c_write(0x4B, 0xb9, 1, &data, 1);
-
-        // twl4030_pmrecv_vsel_cfg();
-
+        /* Set VSIM to 1.8V (required for GPIO 126 to 129) */
+// #ifdef __notdef
+        twl4030_pmrecv_vsel_cfg(TWL4030_PM_RECEIVER_VSIM_DEDICATED,
+                                0x03,
+                                TWL4030_PM_RECEIVER_VSIM_DEV_GRP,
+                                TWL4030_PM_RECEIVER_DEV_GRP_P1);
+// #endif
     }
-    else {
+/*    else {
         if (get_prod_id() == CPU_35XX_720MHZ_DEV){
             // Init TPS65950 - Voltage Selection (1.35V)
             data = 0x3C;
             i2c_write(0x4B, 0xb9, 1, &data, 1);
         }
-    }
+    } */
     // Setup gpmc <-> Ethernet
     setup_net_chip(is_cpu_family());
     if(get_mem_type() == GPMC_NAND){
@@ -2121,6 +2146,11 @@ void raise(void)
  *****************************************************************************/
 void abort(void)
 {
+}
+
+void cpu_reset (void)
+{
+    __raw_writel(1 << 2 , PRM_RSTCTRL);
 }
 
 static void enable_tfp410 (void)
