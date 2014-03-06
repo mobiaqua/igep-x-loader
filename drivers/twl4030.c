@@ -42,6 +42,7 @@
 /*
  * Power Reset
  */
+#ifdef __notdef
 void twl4030_power_reset_init(void)
 {
 	u8 val = 0;
@@ -58,6 +59,7 @@ void twl4030_power_reset_init(void)
 		}
 	}
 }
+#endif
 
 /*
  * Set Device Group and Voltage
@@ -74,6 +76,7 @@ void twl4030_pmrecv_vsel_cfg(u8 vsel_reg, u8 vsel_val,
 				vsel_reg);
 }
 
+#ifdef __notdef
 void twl4030_power_init(void)
 {
 	/* set VAUX3 to 2.8V */
@@ -131,3 +134,4 @@ err:
 	}
 	return 0;
 }
+#endif
