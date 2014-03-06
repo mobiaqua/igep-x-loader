@@ -25,6 +25,7 @@
 #include <config.h>
 #include <setup.h>
 #include <asm/arch/omap3.h>
+#include <asm/io.h>
 
 // #define __DEBUG__
 
@@ -489,12 +490,12 @@ int load_kernel_image (struct Linux_Memory_Layout* layout)
     // load_kernel
     int bootr;
 #ifdef IGEP00X_ENABLE_MMC_BOOT
-    printf("XLoader: try load kernel from MMC\n");
+    // printf("XLoader: try load kernel from MMC\n");
     bootr = load_kernel (layout, IGEP_MMC_BOOT);
     if(bootr > 0) return bootr;
 #endif
 #ifdef IGEP00X_ENABLE_FLASH_BOOT
-    printf("XLoader: try load kernel from Flash\n");
+    // printf("XLoader: try load kernel from Flash\n");
     bootr = load_kernel (layout, IGEP_ONENAND_BOOT);
 #endif
     return bootr;
@@ -513,7 +514,7 @@ void setup_video (void)
 				enable_video_buffer(splash);
 			}
 			else {
-				enable_video_color(LMemoryLayout->dss_color);	
+				enable_video_color(LMemoryLayout->dss_color);
 			}
 		}
 		else
@@ -558,7 +559,7 @@ int boot_linux (/*int machine_id*/)
         if(bootr > 0){
             // If boot_kernel == 0 then we load a binary file and jump to it
 			if(!boot_kernel){
-                printf("XLoader: Boot ARM binary mode: %s ...\n", kImage_Name);
+                // printf("XLoader: Boot ARM binary mode: %s ...\n", kImage_Name);
                 cleanup_before_linux();
                 theARMExec = (void (*)(void)) LMemoryLayout->kbase_address;
                 theARMExec();
@@ -585,13 +586,13 @@ int boot_linux (/*int machine_id*/)
             /* Prepare the system for kernel boot */
             cleanup_before_linux();
             theKernel = (void (*)(int, int, uint)) LMemoryLayout->kbase_address;
-            if(LMemoryLayout->machine_id == IGEP0020_MACHINE_ID)
+            /*if(LMemoryLayout->machine_id == IGEP0020_MACHINE_ID)
                 printf("XLoader: IGEPv2 : kernel boot ...\n");
             else if(LMemoryLayout->machine_id == IGEP0030_MACHINE_ID)
                 printf("XLoader: IGEP Module : kernel boot ...\n");
             else if(LMemoryLayout->machine_id == IGEP0032_MACHINE_ID)
                 printf("XLoader: IGEP Module 0032 : kernel boot ...\n");
-            else printf("XLoader: Unknown %d : kernel boot ...\n", LMemoryLayout->machine_id);
+            else printf("XLoader: Unknown %d : kernel boot ...\n", LMemoryLayout->machine_id); */
             /* Kernel Boot */
 #ifdef __DEBUG__
 			printf("kernel %p size %d crc %08x\n", LMemoryLayout->kbase_address,
