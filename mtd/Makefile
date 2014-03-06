@@ -33,6 +33,7 @@ LIB	= libmtd.a
 # OneNand Objects
 #OBJS	+= onenand_uboot.o 
 OBJS	+= onenand_base.o
+#OBJS	+= nand.o
 OBJS	+= nand_base.o
 #OBJS	+= onenand_bbt.o
 

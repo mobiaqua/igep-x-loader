@@ -626,4 +626,64 @@ struct platform_nand_chip *get_platform_nandchip(struct mtd_info *mtd)
 	return chip->priv;
 }
 
+/* igep00x0: Interface */
+#define MAX_PARTITIONS                      3
+#define PART_MAX_SECTOR                     (12 * 1024 * 1024) / (128 * 1024)
+
+struct Nand_Memory;
+
+struct Nand_Page {
+    struct Nand_Memory* Memory; /* Pointer to Nand_Memory descrition */
+    u32 nand_addr;      /* Nand Address for this page */
+    u8 *page_dat;       /* 1024 bytes x 2 (bus 16 bits) */
+    u8 *spare_dat;      /* 32 bytes x 2 (bus 16 bits) */
+    u8 *ecc_calc;       /* Our ecc calculation -> size = ecc_total */
+    u8 *ecc_nand;       /* Nand ecc area -> size = ecc_total */
+    u8 ecc_fail;        /* 1 = ECC fail, 0 = Ecc OK */
+};
+
+struct Nand_Block {
+    u32 block_addrs;                        /* block address ( = first page address ) */
+    struct Nand_Page *Pages[64];            /* 1 block have 64 pages and every page has 2K == 1 block = 128Kib*/
+};
+
+struct Nand_Partition {
+    int in_use;                             /* Parition in use*/
+    u32 nand_start_addr;                    /* partition start address */
+    u32 nand_part_size;                     /* partirion size */
+    u32 sector_size;                        /* Sector size */
+    u32 sector_cnt;                         /* Number sectors in this partition */
+    struct Nand_Block* Block[PART_MAX_SECTOR];     /* Blocks list */
+};
+
+struct Nand_Memory {
+    struct nand_onfi_params onfi;           /* Onfi information */
+    u32 mem_size;                           /* total memory size */
+    u32 mem_page_size;                      /* page size */
+    u32 mem_page_spare_size;                /* spare size x page */
+    u32 mem_page_tsize;                     /* spare size + page size */
+    u32 mem_page_block;                     /* pages x block */
+    u32 mem_erase_size;                     /* mem erase size */
+    /* Ecc Control */
+    u32 mem_ecc_size;                       /* ecc size = 256 */
+    u32 mem_ecc_bytes;                      /* ecc_bytes = 3 */
+    u32 mem_ecc_steps;                      /* ecc_steps = page_size / ecc_size */
+    u32 mem_ecc_total;                      /* ecc_total = ecc_steps * ecc_bytes */
+    struct Nand_Partition part[MAX_PARTITIONS];   /* Device Partitions */
+};
+
+struct Nand_Mem_ECC {
+    u16 reserved;
+    u16 user_metadata_II;
+    u16 user_metadata_I[2];
+    u16 ecc [3];
+};
+
+struct Nand_MEM_SPARE {
+    struct Nand_Mem_ECC spare[4];
+};
+
+u32 nand_read_block (u32 block_id, u8* mem, u32 size);
+
+
 #endif /* __LINUX_MTD_NAND_H */
