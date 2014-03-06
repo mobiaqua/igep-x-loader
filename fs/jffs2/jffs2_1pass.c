@@ -182,7 +182,8 @@ typedef enum Nand_read_st {
     /* Next Configuratuion */
     nr_init,
     nr_wait,
-    nr_next
+    nr_next,
+    nr_abort
 
 }Nand_read_st;
 
@@ -200,6 +201,7 @@ extern int __async_dma_read_next (void* handle, u8* prevData, u8* nextdata);
 static int load_memory_cache ()
 {
     // Read Nand Handle
+    int abort_count = 0;
     void* dhandle = NULL;
     // Index Block
     int actual_block = 0;
@@ -250,6 +252,19 @@ static int load_memory_cache ()
                         /*} */
                     }
                     r_state = nr_wait;
+                    break;
+                case nr_abort:
+                    if(abort_count < 1){
+                        printf("load fail\n");
+                        __async_dma_copy_done(dhandle);
+                        __async_close_read_page(dhandle);
+                        actual_block = 0;
+                        r_state = n_sync_prepare;
+                    }
+                    else{
+                        cpu_reset();
+                    }
+                    abort_count++;
                     break;
             }
         }
@@ -325,9 +340,11 @@ static int read_nand_cached (u32 off, u32 size, u_char *buf)
 		// printf("BUG() - NULL buffer pointer\n");
 		return -1;
 	}
-	memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
+	if(size == 2048)
+        dma_memcpy (0, nand_cache + (off - CONFIG_JFFS2_PART_OFFSET), buf, size, 1);
+    else
+        memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
-
 }
 
 #ifdef __notdef
@@ -934,7 +951,12 @@ jffs2_1pass_read_inode(struct b_lists *pL, u32 inode, char *dest)
 #endif
 				switch (jNode->compr) {
 				case JFFS2_COMPR_NONE:
-					ret = (unsigned long) ldr_memcpy(lDest, src, jNode->dsize);
+                    // printf("node size: %u\n", jNode->dsize);
+                    dma_is_transfer_complete(0);
+                    if(jNode->dsize == 4096)
+                        dma_memcpy (0, src, lDest, jNode->dsize , 0);
+                    else
+                        ret = (unsigned long) ldr_memcpy(lDest, src, jNode->dsize);
 					break;
 				case JFFS2_COMPR_ZERO:
 					ret = 0;
@@ -1310,7 +1332,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 		uint32_t buf_len;
 		uint32_t ofs, prevofs;
 
-		printf(".");
+		// printf(".");
 
 		buf_len = EMPTY_SCAN_SIZE(part->sector_size);
 
