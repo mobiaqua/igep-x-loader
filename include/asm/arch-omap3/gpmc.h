@@ -25,6 +25,8 @@
 #ifndef _IGEP_GPMC_H_
 #define _IGEP_GPMC_H_
 
+#define __GPMC_PREFETCH_ENGINE__
+
 #ifdef __GPMC_PREFETCH_ENGINE__
 #define PREFETCH_FIFOTHRESHOLD_MAX      0x40
 #define PREFETCH_FIFOTHRESHOLD(val)     ((val) << 8)
