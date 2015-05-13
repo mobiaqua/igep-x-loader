@@ -91,9 +91,6 @@ loader for Embedded boards based on OMAP processors.
 * Support ISEE toolchain yocto 1.2
 * Added DSS Video Driver
 * Added DSS igep.ini variables
-
-[NEW in this Version]
-
 * New DMA driver
 * Nand Prefetch engine
 * Nand GPMC access bug fixes
@@ -102,6 +99,9 @@ loader for Embedded boards based on OMAP processors.
 * Remove support for OMAP35xx processors
 * Support arm-linux-gnueabihf-gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
 * This Version only support hard float toolchain included in Ubuntu 12.04 LTS
+
+[NEW in this Version]
+Disable DMA memcpy-function
 
 2.2 Issues & Limitations
 ------------------------
@@ -178,6 +178,8 @@ loader for Embedded boards based on OMAP processors.
 [2.6.0-1] Jffs2 improve performance
 [2.6.0-1] Activate VSIM LDO
 [2.6.0-1] Bug fixes
+----
+[2.6.0-2] Disable DMA memcpy-function
 
 
 3 Status:
