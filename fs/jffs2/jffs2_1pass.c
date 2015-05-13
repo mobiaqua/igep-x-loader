@@ -340,9 +340,9 @@ static int read_nand_cached (u32 off, u32 size, u_char *buf)
 		// printf("BUG() - NULL buffer pointer\n");
 		return -1;
 	}
-	if(size == 2048)
+	/*if(size == 2048)
         dma_memcpy (0, nand_cache + (off - CONFIG_JFFS2_PART_OFFSET), buf, size, 1);
-    else
+    else*/
         memcpy(buf, &(nand_cache[off - CONFIG_JFFS2_PART_OFFSET]), size);
 	return size;
 }
