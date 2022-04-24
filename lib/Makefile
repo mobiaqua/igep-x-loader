@@ -27,7 +27,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= lib$(ARCH).a
 
-AOBJS	= _udivsi3.o _umodsi3.o
+AOBJS	= _udivsi3.o _umodsi3.o _divsi3.o
 
 COBJS	= board.o printf.o div0.o boot_linux.o ini_parser.o cache-cp15.o dlmalloc.o display_options.o div64.o
 COBJS	+= crc32.o string.o
