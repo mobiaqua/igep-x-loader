@@ -90,7 +90,7 @@ ALL = x-load.bin System.map x-load.bin.ift
 all:		$(ALL)
  
 x-load.bin.ift: x-load.bin
-			contrib/signGP x-load.bin
+			signGP x-load.bin
 			cp x-load.bin.ift MLO
  
 x-load.bin:	x-load
